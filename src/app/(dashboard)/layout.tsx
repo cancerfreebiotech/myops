@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { LocaleSync } from '@/components/LocaleSync'
 import type { User } from '@/types'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -18,15 +19,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!dbUser || !dbUser.is_active) redirect('/login')
 
-  // Sync user's language preference to locale cookie for next-intl
+  // Read current locale cookie (read is OK in Server Components)
   const cookieStore = await cookies()
   const currentLocale = cookieStore.get('locale')?.value
-  if (dbUser.language && dbUser.language !== currentLocale) {
-    cookieStore.set('locale', dbUser.language, { path: '/', maxAge: 60 * 60 * 24 * 365 })
-  }
+  const needsSync = !!(dbUser.language && dbUser.language !== currentLocale)
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
+      {needsSync && <LocaleSync locale={dbUser.language} />}
       <div className="hidden lg:flex lg:flex-col">
         <Sidebar user={dbUser as User} />
       </div>
