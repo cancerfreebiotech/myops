@@ -7,6 +7,7 @@ import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, Shield, MessageSquarePlus, ChevronLeft, ChevronRight,
+  Users, Building2, BookOpen, AlertCircle, ClipboardList, SlidersHorizontal, MessageCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -37,9 +38,18 @@ export function Sidebar({ user }: SidebarProps) {
     { href: '/feedback/new', label: t('feedback'), icon: MessageSquarePlus },
   ]
 
-  if (isAdmin) {
-    navItems.push({ href: '/admin/users', label: t('admin'), icon: Shield })
-  }
+  const adminItems = isAdmin ? [
+    { href: '/admin/users', label: '使用者管理', icon: Users },
+    { href: '/admin/departments', label: '部門管理', icon: Building2 },
+    { href: '/admin/companies', label: '公司管理', icon: Building2 },
+    { href: '/admin/leave-types', label: '假別管理', icon: ClipboardList },
+    { href: '/admin/leave-balances', label: '假別額度', icon: CalendarDays },
+    { href: '/admin/overtime-rates', label: '加班費率', icon: SlidersHorizontal },
+    { href: '/admin/attendance-anomalies', label: '出勤異常', icon: AlertCircle },
+    { href: '/admin/feedback', label: '回饋管理', icon: MessageCircle },
+    { href: '/admin/audit', label: '稽核紀錄', icon: BookOpen },
+    { href: '/admin/settings', label: '系統設定', icon: Settings },
+  ] : []
 
   return (
     <aside className={cn(
@@ -79,6 +89,36 @@ export function Sidebar({ user }: SidebarProps) {
             </Link>
           )
         })}
+        {adminItems.length > 0 && (
+          <>
+            {!collapsed && (
+              <div className="px-4 pt-4 pb-1">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield size={12} /> 管理
+                </p>
+              </div>
+            )}
+            {collapsed && <div className="my-2 mx-3 border-t border-slate-200 dark:border-slate-700" />}
+            {adminItems.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={cn(
+                    'flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-sm transition-colors min-h-[40px]',
+                    active
+                      ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
+                  )}
+                >
+                  <Icon size={16} className="shrink-0" />
+                  {!collapsed && <span>{label}</span>}
+                </Link>
+              )
+            })}
+          </>
+        )}
       </nav>
 
       {/* User */}
