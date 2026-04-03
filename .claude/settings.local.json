@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'enterprise internal HR operations management professional clean dashboard' --design-system -p myOPS)",
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'dashboard todo approval workflow status' --domain ux -n 8)",
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'form table data list pagination filter' --domain ux -n 6)",
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'enterprise B2B HR professional' --domain color -n 3)",
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'sidebar navigation admin enterprise' --domain ux -n 5)",
+      "Bash(python C:/Users/PoChen/.claude/plugins/cache/ui-ux-pro-max-skill/ui-ux-pro-max/2.5.0/src/ui-ux-pro-max/scripts/search.py 'enterprise internal HR operations management professional clean dashboard' --design-system --persist -p myOPS -f markdown)",
+      "Bash(bash:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(len\\(d.get\\('envs',[]\\)\\)\\)\")",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(cp:*)",
+      "Bash(rsync:*)",
+      "Read(//c/Users/PoChen/**)",
+      "Bash(powershell -Command ':*)",
+      "Bash(npm install:*)",
+      "Bash(npx shadcn@latest:*)"
+    ]
+  },
+  "enabledPlugins": {
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  }
+}
