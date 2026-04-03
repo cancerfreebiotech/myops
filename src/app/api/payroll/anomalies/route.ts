@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { lastDayOfMonth } from '@/lib/date-utils'
 
 // T50: Payroll anomaly detection API
 // Scans payroll records for anomalies and flags them
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     .in('user_id', userIds)
     .in('status', ['approved', 'coo_approved', 'lead_approved'])
     .gte('ot_date', `${year}-${String(month).padStart(2, '0')}-01`)
-    .lte('ot_date', `${year}-${String(month).padStart(2, '0')}-31`)
+    .lte('ot_date', `${lastDayOfMonth(year, month)}`)
 
   // Sum OT hours per user
   const otHoursMap = new Map<string, number>()
@@ -72,6 +73,14 @@ export async function POST(request: NextRequest) {
     .in('user_id', userIds)
 
   const profileMap = new Map(profiles?.map(p => [p.user_id, p]) ?? [])
+
+  // Clear all existing anomaly flags for this month before re-scanning
+  await service
+    .from('payroll_records')
+    .update({ anomaly_flags: null })
+    .eq('year', year)
+    .eq('month', month)
+    .not('anomaly_flags', 'is', null)
 
   // Detect anomalies
   const anomalies: any[] = []
@@ -177,5 +186,17 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ data: data ?? [] })
+
+  // Transform to match POST response shape: { id, user_id, display_name, net_pay, flags }
+  const transformed = (data ?? []).map((rec: any) => {
+    const u = Array.isArray(rec.user) ? rec.user[0] : rec.user
+    return {
+      id: rec.id,
+      user_id: rec.user_id,
+      display_name: u?.display_name ?? '—',
+      net_pay: rec.net_pay,
+      flags: rec.anomaly_flags ?? [],
+    }
+  })
+  return NextResponse.json({ data: transformed })
 }

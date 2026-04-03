@@ -14,21 +14,20 @@ export default async function LeaveCalendarPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role, department_id, display_name')
+    .select('id, role, granted_features, department_id, display_name')
     .eq('id', user.id)
     .single()
 
   const isAdmin = currentUser?.role === 'admin'
-  const isManager =
-    currentUser?.role === 'manager' || currentUser?.role === 'hr'
+  const isHR = (currentUser?.granted_features as string[] ?? []).includes('hr_manager')
 
-  // Compute current month boundaries (server-side for initial load)
-  const now = new Date()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-
-  const monthStartStr = monthStart.toISOString().slice(0, 10)
-  const monthEndStr = monthEnd.toISOString().slice(0, 10)
+  // Use Taipei-local date to avoid UTC offset issues
+  const nowTaipei = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }))
+  const year = nowTaipei.getFullYear()
+  const month = nowTaipei.getMonth()
+  const monthStartStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const monthEndStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
   // Build base query
   let query = service
@@ -36,33 +35,25 @@ export default async function LeaveCalendarPage() {
     .select(
       `id, user_id, leave_type_id, start_date, end_date, status, reason,
        users!leave_requests_user_id_fkey(id, display_name, department_id),
-       leave_types!leave_requests_leave_type_id_fkey(id, name)`
+       leave_types!leave_requests_leave_type_id_fkey(id, name_zh)`
     )
     .in('status', ['approved', 'pending'])
     .lte('start_date', monthEndStr)
     .gte('end_date', monthStartStr)
 
-  // Scope by role
-  if (!isAdmin && !isManager) {
-    // Regular employees: only their department
-    query = query.eq(
-      'users.department_id',
-      currentUser?.department_id ?? ''
-    )
-  } else if (isManager && !isAdmin) {
-    // Managers see their department only
+  // Scope by role — admin and HR see all
+  if (!isAdmin && !isHR) {
     query = query.eq(
       'users.department_id',
       currentUser?.department_id ?? ''
     )
   }
-  // Admins see all — no additional filter
 
   const { data: leaveRequests } = await query.order('start_date', {
     ascending: true,
   })
 
-  // Fetch all departments for admin filter bar
+  // Fetch all departments for admin/HR filter bar
   const { data: departments } = await service
     .from('departments')
     .select('id, name')
@@ -78,7 +69,7 @@ export default async function LeaveCalendarPage() {
     reason: lr.reason,
     display_name: lr.users?.display_name ?? '',
     department_id: lr.users?.department_id ?? '',
-    leave_type_name: lr.leave_types?.name ?? '',
+    leave_type_name: lr.leave_types?.name_zh ?? '',
   }))
 
   return (
@@ -91,12 +82,15 @@ export default async function LeaveCalendarPage() {
         initialLeaves={normalised}
         currentUser={{
           id: currentUser?.id ?? '',
-          role: currentUser?.role ?? 'employee',
+          role: currentUser?.role ?? 'member',
           department_id: currentUser?.department_id ?? '',
           display_name: currentUser?.display_name ?? '',
+          isHR,
         }}
         departments={departments ?? []}
-        isAdmin={isAdmin}
+        isAdmin={isAdmin || isHR}
+        initialYear={year}
+        initialMonth={month}
       />
     </div>
   )

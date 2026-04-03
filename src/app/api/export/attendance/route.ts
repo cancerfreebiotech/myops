@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
+import { lastDayOfMonth } from '@/lib/date-utils'
 
 // T59: Export attendance records as xlsx
 export async function GET(request: NextRequest) {
@@ -24,8 +25,11 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const yearMonth = searchParams.get('month') // format: 2026-04
-  const startDate = yearMonth ? `${yearMonth}-01` : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`
-  const endDate = yearMonth ? `${yearMonth}-31` : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-31`
+  const now = new Date()
+  const y = yearMonth ? parseInt(yearMonth.split('-')[0]) : now.getFullYear()
+  const m = yearMonth ? parseInt(yearMonth.split('-')[1]) : now.getMonth() + 1
+  const startDate = `${y}-${String(m).padStart(2, '0')}-01`
+  const endDate = lastDayOfMonth(y, m)
 
   const { data } = await service
     .from('attendance_records')

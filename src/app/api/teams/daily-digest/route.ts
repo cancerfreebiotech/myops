@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
 
   const service = await createServiceClient()
 
-  // Get all active users
+  // Get all active users with their manager relationships
   const { data: users } = await service
     .from('users')
-    .select('id, display_name, email, language')
+    .select('id, display_name, email, language, role, granted_features, manager_id')
     .eq('is_active', true)
 
   if (!users?.length) return NextResponse.json({ data: { sent: 0 } })
@@ -39,21 +39,35 @@ export async function POST(request: NextRequest) {
   let sent = 0
 
   for (const u of users) {
-    // Get pending items for this user
+    // Get pending items scoped to this user's responsibilities
+    // Leave approvals: only count leaves where this user is the manager of the requester
+    const leaveQuery = service
+      .from('leave_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending')
+
+    // Only managers/HR/admin see pending leaves
+    const isAdmin = u.role === 'admin'
+    const isHR = (u.granted_features as string[] ?? []).includes('hr_manager')
+    if (!isAdmin && !isHR) {
+      // Regular managers: only see leaves from their direct reports
+      leaveQuery.eq('user_id', '__skip__') // will be filtered below
+    }
+
+    // Contracts: only users with approve_contract or admin see pending contracts
+    const canApproveContracts = isAdmin || (u.granted_features as string[] ?? []).includes('approve_contract')
+
+    // Unconfirmed announcements for this specific user
     const [leaveRes, contractRes, announcementRes] = await Promise.all([
-      // Pending leave approvals (where user is the approver)
-      service
-        .from('leave_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending'),
-      // Pending contracts
-      service
-        .from('documents')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'pending')
-        .in('doc_type', ['NDA', 'MOU', 'CONTRACT', 'AMEND'])
-        .is('deleted_at', null),
-      // Unconfirmed announcements
+      // Pending leaves where this user is the approver (manager_id of the requester)
+      isAdmin || isHR
+        ? service.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+        : service.from('leave_requests').select('id, user:users!leave_requests_user_id_fkey(manager_id)', { count: 'exact', head: true }).eq('status', 'pending').eq('user.manager_id', u.id),
+      // Pending contracts (only if user can approve)
+      canApproveContracts
+        ? service.from('documents').select('id', { count: 'exact', head: true }).eq('status', 'pending').in('doc_type', ['NDA', 'MOU', 'CONTRACT', 'AMEND']).is('deleted_at', null)
+        : Promise.resolve({ count: 0 }),
+      // Unconfirmed announcements for this user
       service
         .from('document_recipients')
         .select('document_id', { count: 'exact', head: true })
@@ -62,7 +76,8 @@ export async function POST(request: NextRequest) {
 
     const pendingLeaves = leaveRes.count ?? 0
     const pendingContracts = contractRes.count ?? 0
-    const totalPending = pendingLeaves + pendingContracts
+    const unconfirmedAnnouncements = announcementRes.count ?? 0
+    const totalPending = pendingLeaves + pendingContracts + unconfirmedAnnouncements
 
     if (totalPending === 0) continue
 

@@ -57,13 +57,14 @@ export async function POST(request: NextRequest) {
 
     const event = await graphRes.json()
 
-    // Save event ID to leave_request
+    // Save event ID to leave_request — verify ownership
     const { createServiceClient } = await import('@/lib/supabase/server')
     const service = await createServiceClient()
     await service
       .from('leave_requests')
       .update({ outlook_event_id: event.id })
       .eq('id', leave_request_id)
+      .eq('user_id', user.id)
 
     return NextResponse.json({ data: { event_id: event.id } })
   } catch (err: any) {

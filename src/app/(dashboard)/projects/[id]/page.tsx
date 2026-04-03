@@ -34,6 +34,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   if (!project) notFound()
 
+  // Access check: only admin, project lead, or project members can view
+  const isMember = project.members?.some((m: any) => m.user_id === currentUser?.id)
+  const isProjectLead = project.project_lead_id === currentUser?.id
+  if (currentUser?.role !== 'admin' && !isProjectLead && !isMember) {
+    redirect('/projects')
+  }
+
   const { data: overtimeRequests } = await service
     .from('overtime_requests')
     .select(`

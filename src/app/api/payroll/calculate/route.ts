@@ -1,25 +1,34 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { lastDayOfMonth } from '@/lib/date-utils'
 
 // T48: Payroll auto-calculation API
 // Generates draft payroll records for all active TW full-time employees
 export async function POST(request: NextRequest) {
-  const supabase = await createClient()
   const service = await createServiceClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // Support both user auth and cron secret
+  const authHeader = request.headers.get('authorization')
+  const cronSecret = process.env.CRON_SECRET
 
-  const { data: currentUser } = await supabase
-    .from('users')
-    .select('role, granted_features')
-    .eq('id', user.id)
-    .single()
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    // Called by cron — proceed without user auth
+  } else {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const isAdmin = currentUser?.role === 'admin'
-  const isHR = currentUser?.granted_features?.includes('hr_manager')
-  if (!isAdmin && !isHR) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('role, granted_features')
+      .eq('id', user.id)
+      .single()
+
+    const isAdmin = currentUser?.role === 'admin'
+    const isHR = currentUser?.granted_features?.includes('hr_manager')
+    if (!isAdmin && !isHR) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   const body = await request.json()
@@ -32,6 +41,7 @@ export async function POST(request: NextRequest) {
     .select('id, display_name, employment_type, work_region')
     .eq('is_active', true)
     .eq('work_region', 'TW')
+    .eq('employment_type', 'full_time')
 
   if (!employees?.length) {
     return NextResponse.json({ data: { generated: 0, message: '無符合條件的員工' } })
@@ -54,7 +64,7 @@ export async function POST(request: NextRequest) {
     .in('user_id', userIds)
     .in('status', ['approved', 'coo_approved', 'lead_approved'])
     .gte('ot_date', `${year}-${String(month).padStart(2, '0')}-01`)
-    .lte('ot_date', `${year}-${String(month).padStart(2, '0')}-31`)
+    .lte('ot_date', `${lastDayOfMonth(year, month)}`)
 
   // 4. Get overtime rates
   const { data: rates } = await service
@@ -70,7 +80,7 @@ export async function POST(request: NextRequest) {
     .in('user_id', userIds)
     .eq('status', 'approved')
     .gte('start_date', `${year}-${String(month).padStart(2, '0')}-01`)
-    .lte('start_date', `${year}-${String(month).padStart(2, '0')}-31`)
+    .lte('start_date', `${lastDayOfMonth(year, month)}`)
 
   const { data: leaveTypes } = await service
     .from('leave_types')
@@ -113,11 +123,8 @@ export async function POST(request: NextRequest) {
 
   for (const emp of employees) {
     const profile = profileMap.get(emp.id)
-    const baseSalary = emp.employment_type === 'full_time'
-      ? Number(profile?.monthly_salary ?? 0)
-      : 0
-
-    if (baseSalary === 0 && emp.employment_type === 'full_time') continue
+    const baseSalary = Number(profile?.monthly_salary ?? 0)
+    if (baseSalary === 0) continue
 
     // Calculate overtime pay
     const empOT = overtimeRecords?.filter(o => o.user_id === emp.id) ?? []

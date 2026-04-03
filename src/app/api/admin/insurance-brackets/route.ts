@@ -54,27 +54,39 @@ export async function POST(request: NextRequest) {
 
   const table = type === 'labor' ? 'labor_insurance_brackets' : 'health_insurance_brackets'
 
-  // Delete existing rows for this year
-  const { error: deleteError } = await service
-    .from(table)
-    .delete()
-    .eq('effective_year', year)
-
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 })
-  }
-
-  // Build insert payload
+  // Build insert payload first — validate before deleting
   const insertRows = rows.map(row => ({
     ...row,
     effective_year: year,
     uploaded_by: user.id,
   }))
 
-  const { error: insertError } = await service.from(table).insert(insertRows)
+  // Validate all rows have required fields
+  for (const row of insertRows) {
+    if (!row.grade || !row.insured_salary) {
+      return NextResponse.json({ error: '資料中有缺少等級或投保薪資的列' }, { status: 400 })
+    }
+  }
+
+  // Use a transaction-like approach: try insert first, then delete old
+  // Step 1: Insert new rows (they'll coexist temporarily with old ones)
+  const { data: inserted, error: insertError } = await service
+    .from(table)
+    .insert(insertRows)
+    .select('id')
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 })
+    return NextResponse.json({ error: `上傳失敗：${insertError.message}` }, { status: 500 })
+  }
+
+  // Step 2: Delete old rows for this year (exclude the ones we just inserted)
+  const newIds = (inserted ?? []).map((r: any) => r.id)
+  if (newIds.length > 0) {
+    await service
+      .from(table)
+      .delete()
+      .eq('effective_year', year)
+      .not('id', 'in', `(${newIds.join(',')})`)
   }
 
   return NextResponse.json({ data: { inserted: insertRows.length } })

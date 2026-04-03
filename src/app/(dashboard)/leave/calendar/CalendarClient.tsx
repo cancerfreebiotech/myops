@@ -45,6 +45,7 @@ interface CurrentUser {
   role: string
   department_id: string
   display_name: string
+  isHR?: boolean
 }
 
 interface Props {
@@ -52,6 +53,8 @@ interface Props {
   currentUser: CurrentUser
   departments: Department[]
   isAdmin: boolean
+  initialYear?: number
+  initialMonth?: number
 }
 
 // ─── Week header labels ───────────────────────────────────────────────────────
@@ -83,43 +86,75 @@ export function CalendarClient({
   currentUser,
   departments,
   isAdmin,
+  initialYear,
+  initialMonth,
 }: Props) {
-  const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
+  const [currentMonth, setCurrentMonth] = useState<Date>(
+    initialYear !== undefined && initialMonth !== undefined
+      ? new Date(initialYear, initialMonth, 1)
+      : new Date()
+  )
+  const [leaves, setLeaves] = useState<LeaveRecord[]>(initialLeaves)
   const [selectedDeptId, setSelectedDeptId] = useState<string>('all')
   const [myDeptOnly, setMyDeptOnly] = useState<boolean>(false)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
+  const [loadingMonth, setLoadingMonth] = useState(false)
 
   const listSectionRef = useRef<HTMLDivElement>(null)
+
+  // Fetch leaves when month changes
+  const fetchMonth = useCallback(async (date: Date) => {
+    setLoadingMonth(true)
+    const y = date.getFullYear()
+    const m = date.getMonth() + 1
+    const lastDay = new Date(y, m, 0).getDate()
+    const start = `${y}-${String(m).padStart(2, '0')}-01`
+    const end = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+    try {
+      const res = await fetch(`/api/leave/requests?start=${start}&end=${end}&calendar=1`)
+      if (res.ok) {
+        const json = await res.json()
+        setLeaves(json.data ?? [])
+      }
+    } catch { /* keep old data */ }
+    setLoadingMonth(false)
+  }, [])
+
+  const handleMonthChange = useCallback((date: Date) => {
+    setCurrentMonth(date)
+    setSelectedDay(null)
+    fetchMonth(date)
+  }, [fetchMonth])
 
   // ── Filtering ──────────────────────────────────────────────────────────────
 
   const filteredLeaves = useMemo<LeaveRecord[]>(() => {
-    let leaves = initialLeaves
+    let filtered = leaves
 
     if (isAdmin && selectedDeptId !== 'all') {
-      leaves = leaves.filter((l) => l.department_id === selectedDeptId)
+      filtered = filtered.filter((l) => l.department_id === selectedDeptId)
     }
 
     if (myDeptOnly) {
-      leaves = leaves.filter(
+      filtered = filtered.filter(
         (l) => l.department_id === currentUser.department_id
       )
     }
 
-    return leaves
-  }, [initialLeaves, selectedDeptId, myDeptOnly, isAdmin, currentUser.department_id])
+    return filtered
+  }, [leaves, selectedDeptId, myDeptOnly, isAdmin, currentUser.department_id])
 
   // ── Month navigation ───────────────────────────────────────────────────────
 
   const prevMonth = useCallback(() => {
-    setCurrentMonth((d) => subMonths(d, 1))
-    setSelectedDay(null)
-  }, [])
+    const d = subMonths(currentMonth, 1)
+    handleMonthChange(d)
+  }, [currentMonth, handleMonthChange])
 
   const nextMonth = useCallback(() => {
-    setCurrentMonth((d) => addMonths(d, 1))
-    setSelectedDay(null)
-  }, [])
+    const d = addMonths(currentMonth, 1)
+    handleMonthChange(d)
+  }, [currentMonth, handleMonthChange])
 
   // ── Calendar grid computation ──────────────────────────────────────────────
 

@@ -68,8 +68,8 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
     .is('deleted_at', null)
     .order('display_name')
 
-  // Today's stats
-  const today = now.toISOString().split('T')[0]
+  // Today's stats — use Taipei time to avoid UTC offset
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' })
   const { data: todayRecords } = await service
     .from('attendance_records')
     .select('id, user_id, clock_in, is_auto_in')
