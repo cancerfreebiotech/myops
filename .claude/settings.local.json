@@ -15,7 +15,13 @@
       "Read(//c/Users/PoChen/**)",
       "Bash(powershell -Command ':*)",
       "Bash(npm install:*)",
-      "Bash(npx shadcn@latest:*)"
+      "Bash(npx shadcn@latest:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_56560582b578c2538b3146946c17a96e9e44780f npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_56560582b578c2538b3146946c17a96e9e44780f SUPABASE_DB_PASSWORD='hG!gg$29S$@JN%2u&#eV9g' npx supabase:*)"
     ]
   },
   "enabledPlugins": {
