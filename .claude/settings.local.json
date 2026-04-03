@@ -21,7 +21,16 @@
       "Bash(git commit -m ':*)",
       "Bash(npx supabase:*)",
       "Bash(SUPABASE_ACCESS_TOKEN=sbp_56560582b578c2538b3146946c17a96e9e44780f npx supabase:*)",
-      "Bash(SUPABASE_ACCESS_TOKEN=sbp_56560582b578c2538b3146946c17a96e9e44780f SUPABASE_DB_PASSWORD='hG!gg$29S$@JN%2u&#eV9g' npx supabase:*)"
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_56560582b578c2538b3146946c17a96e9e44780f SUPABASE_DB_PASSWORD='hG!gg$29S$@JN%2u&#eV9g' npx supabase:*)",
+      "Bash(npx tsc:*)",
+      "Bash(SUPABASE_DB_PASSWORD='hG!gg4C.0w:P' npx supabase db push)",
+      "Bash(python -m json.tool)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('mcpServers', {}\\), indent=2\\)\\)\")",
+      "mcp__plugin_supabase_supabase__list_projects",
+      "mcp__plugin_supabase_supabase__list_migrations",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "mcp__plugin_supabase_supabase__list_tables",
+      "mcp__plugin_supabase_supabase__deploy_edge_function"
     ]
   },
   "enabledPlugins": {
