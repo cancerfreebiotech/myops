@@ -30,7 +30,15 @@
       "mcp__plugin_supabase_supabase__list_migrations",
       "mcp__plugin_supabase_supabase__apply_migration",
       "mcp__plugin_supabase_supabase__list_tables",
-      "mcp__plugin_supabase_supabase__deploy_edge_function"
+      "mcp__plugin_supabase_supabase__deploy_edge_function",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d.get\\('login'\\), d.get\\('name'\\)\\)\")",
+      "Bash(gh --version)",
+      "Bash(npm list:*)",
+      "Bash(gh run:*)",
+      "Bash(grep -v \"^$\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('name:', d.get\\('name'\\)\\); print\\('framework:', d.get\\('framework'\\)\\); [print\\('domain:', a.get\\('value'\\)\\) for a in d.get\\('alias',[]\\)]\")",
+      "Bash(nslookup ops.cancerfree.io)",
+      "Bash(npx next:*)"
     ]
   },
   "enabledPlugins": {
