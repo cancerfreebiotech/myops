@@ -1,0 +1,56 @@
+{
+  "common": {
+    "save": "儲存",
+    "cancel": "取消",
+    "confirm": "確認",
+    "delete": "刪除",
+    "edit": "編輯",
+    "back": "返回",
+    "loading": "載入中...",
+    "submitting": "送出中...",
+    "success": "成功",
+    "error": "發生錯誤",
+    "required": "必填",
+    "search": "搜尋",
+    "filter": "篩選",
+    "export": "匯出",
+    "noData": "無資料"
+  },
+  "auth": {
+    "login": "登入",
+    "logout": "登出",
+    "loginWith": "使用 Microsoft 帳號登入",
+    "loginDescription": "請使用 @cancerfree.io 帳號登入",
+    "unauthorized": "你沒有權限存取此頁面"
+  },
+  "mfa": {
+    "setup": {
+      "title": "設定雙因素驗證（2FA）",
+      "description": "為保護帳號安全，請使用 Authenticator App 掃描 QR Code",
+      "scanQR": "掃描 QR Code",
+      "enterCode": "輸入驗證碼",
+      "verify": "驗證並啟用",
+      "success": "2FA 設定成功"
+    },
+    "verify": {
+      "title": "輸入驗證碼",
+      "description": "請輸入 Authenticator App 上的 6 位數驗證碼",
+      "code": "驗證碼",
+      "submit": "驗證"
+    }
+  },
+  "nav": {
+    "dashboard": "首頁",
+    "documents": "文件",
+    "announcements": "公告",
+    "contracts": "合約",
+    "attendance": "打卡",
+    "leave": "請假",
+    "overtime": "加班",
+    "payroll": "薪資",
+    "projects": "專案",
+    "settings": "設定",
+    "admin": "管理後台",
+    "feedback": "意見回饋"
+  }
+}

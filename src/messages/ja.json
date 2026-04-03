@@ -1,0 +1,56 @@
+{
+  "common": {
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "delete": "削除",
+    "edit": "編集",
+    "back": "戻る",
+    "loading": "読み込み中...",
+    "submitting": "送信中...",
+    "success": "成功",
+    "error": "エラーが発生しました",
+    "required": "必須",
+    "search": "検索",
+    "filter": "フィルター",
+    "export": "エクスポート",
+    "noData": "データなし"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "loginWith": "Microsoftアカウントでログイン",
+    "loginDescription": "@cancerfree.ioのアカウントでログインしてください",
+    "unauthorized": "このページへのアクセス権限がありません"
+  },
+  "mfa": {
+    "setup": {
+      "title": "二要素認証（2FA）の設定",
+      "description": "アカウントを保護するため、AuthenticatorアプリでQRコードをスキャンしてください",
+      "scanQR": "QRコードをスキャン",
+      "enterCode": "確認コードを入力",
+      "verify": "確認して有効化",
+      "success": "2FAの設定が完了しました"
+    },
+    "verify": {
+      "title": "確認コードを入力",
+      "description": "AuthenticatorアプリのBの6桁コードを入力してください",
+      "code": "確認コード",
+      "submit": "確認"
+    }
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "documents": "ドキュメント",
+    "announcements": "お知らせ",
+    "contracts": "契約",
+    "attendance": "出退勤",
+    "leave": "休暇",
+    "overtime": "残業",
+    "payroll": "給与",
+    "projects": "プロジェクト",
+    "settings": "設定",
+    "admin": "管理",
+    "feedback": "フィードバック"
+  }
+}

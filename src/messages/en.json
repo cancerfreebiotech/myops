@@ -1,0 +1,56 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "loading": "Loading...",
+    "submitting": "Submitting...",
+    "success": "Success",
+    "error": "An error occurred",
+    "required": "Required",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "noData": "No data"
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "loginWith": "Sign in with Microsoft",
+    "loginDescription": "Please sign in with your @cancerfree.io account",
+    "unauthorized": "You do not have permission to access this page"
+  },
+  "mfa": {
+    "setup": {
+      "title": "Set Up Two-Factor Authentication (2FA)",
+      "description": "To protect your account, please scan the QR Code with your Authenticator App",
+      "scanQR": "Scan QR Code",
+      "enterCode": "Enter verification code",
+      "verify": "Verify & Enable",
+      "success": "2FA setup successful"
+    },
+    "verify": {
+      "title": "Enter Verification Code",
+      "description": "Please enter the 6-digit code from your Authenticator App",
+      "code": "Verification Code",
+      "submit": "Verify"
+    }
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "documents": "Documents",
+    "announcements": "Announcements",
+    "contracts": "Contracts",
+    "attendance": "Attendance",
+    "leave": "Leave",
+    "overtime": "Overtime",
+    "payroll": "Payroll",
+    "projects": "Projects",
+    "settings": "Settings",
+    "admin": "Admin",
+    "feedback": "Feedback"
+  }
+}
