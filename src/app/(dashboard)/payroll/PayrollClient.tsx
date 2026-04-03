@@ -96,7 +96,8 @@ export function PayrollClient({
     return false
   }
 
-  const formatCurrency = (n: number) => `NT$ ${n.toLocaleString()}`
+  const formatCurrency = (n: number | null) =>
+    n == null ? '—' : `NT$ ${Number(n).toLocaleString('zh-TW')}`
 
   return (
     <div className="space-y-4">
@@ -151,10 +152,10 @@ export function PayrollClient({
                       <p className="font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name}</p>
                       <p className="text-xs text-slate-400">{r.user?.department?.name}</p>
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(r.base_salary)}</td>
-                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400">{formatCurrency(r.overtime_pay)}</td>
-                    <td className="px-4 py-3 text-right text-red-500">{formatCurrency(r.deductions)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-slate-800 dark:text-slate-200">{formatCurrency(r.net_salary)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.base_salary)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.overtime_pay)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-red-500">{formatCurrency(r.deductions)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-bold text-slate-800 dark:text-slate-200">{formatCurrency(r.net_salary)}</td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                     <td className="px-4 py-3">
                       {canAct(r.status) && FLOW_ACTIONS[r.status] && (
@@ -194,19 +195,19 @@ export function PayrollClient({
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-slate-400">底薪</p>
-                  <p className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(r.base_salary)}</p>
+                  <p className="font-medium tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(r.base_salary)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">加班費</p>
-                  <p className="font-medium text-slate-700 dark:text-slate-300">{formatCurrency(r.overtime_pay)}</p>
+                  <p className="font-medium tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(r.overtime_pay)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">扣除項</p>
-                  <p className="font-medium text-red-500">{formatCurrency(r.deductions)}</p>
+                  <p className="font-medium tabular-nums text-red-500">{formatCurrency(r.deductions)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">實發</p>
-                  <p className="font-bold text-blue-600 dark:text-blue-400">{formatCurrency(r.net_salary)}</p>
+                  <p className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(r.net_salary)}</p>
                 </div>
               </div>
             </div>
