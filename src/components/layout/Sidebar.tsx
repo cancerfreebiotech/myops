@@ -48,7 +48,7 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
       )}
     >
-      <Icon size={18} className="shrink-0" aria-hidden="true" />
+      <Icon size={20} className="shrink-0" aria-hidden="true" />
       {!collapsed && <span>{label}</span>}
     </Link>
   )
@@ -60,7 +60,14 @@ export function Sidebar({ user }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const isAdmin = user.role === 'admin'
 
-  const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.0'
+  const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.2'
+  const deployTimeRaw = process.env.NEXT_PUBLIC_DEPLOY_TIME ?? ''
+  let deployTime = ''
+  if (deployTimeRaw) {
+    const utc = new Date(deployTimeRaw.replace(' ', 'T') + ':00Z')
+    const taipei = new Date(utc.getTime() + 8 * 60 * 60 * 1000)
+    deployTime = taipei.toISOString().slice(0, 16).replace('T', ' ')
+  }
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
@@ -72,7 +79,8 @@ export function Sidebar({ user }: SidebarProps) {
       .update({ language: lang })
       .eq('id', user.id)
     if (error) { toast.error('語言切換失敗'); return }
-    // Reload to apply new locale
+    // Set locale cookie so next-intl picks it up
+    document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
     window.location.reload()
   }
 
@@ -118,7 +126,9 @@ export function Sidebar({ user }: SidebarProps) {
             <Link href="/" className="font-semibold text-slate-900 dark:text-slate-100 text-lg font-[Lexend] hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               myOPS
             </Link>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">v{version}</p>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">
+              v{version}{deployTime ? ` · ${deployTime}` : ''}
+            </p>
           </div>
         )}
         <button

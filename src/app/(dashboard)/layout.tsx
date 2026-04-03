@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
@@ -16,6 +17,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .single()
 
   if (!dbUser || !dbUser.is_active) redirect('/login')
+
+  // Sync user's language preference to locale cookie for next-intl
+  const cookieStore = await cookies()
+  const currentLocale = cookieStore.get('locale')?.value
+  if (dbUser.language && dbUser.language !== currentLocale) {
+    cookieStore.set('locale', dbUser.language, { path: '/', maxAge: 60 * 60 * 24 * 365 })
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900">

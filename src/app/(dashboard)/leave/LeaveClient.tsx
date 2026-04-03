@@ -213,7 +213,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
               ) : records.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-8 text-slate-400">無紀錄</td></tr>
               ) : records.map((r: any) => (
-                <tr key={r.id} className="bg-white dark:bg-slate-800">
+                <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.leave_type?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_date}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.end_date}</td>
@@ -223,11 +223,11 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
                     {r.status === 'pending' && (
                       <Button
                         size="sm" variant="ghost"
-                        className="min-h-[32px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                        className="min-h-[44px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
                         onClick={() => setCancelConfirm(r.id)}
                         aria-label="取消請假申請"
                       >
-                        <Ban size={13} className="mr-1" /> 取消
+                        <Ban size={16} className="mr-1" /> 取消
                       </Button>
                     )}
                   </td>
@@ -254,7 +254,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
 
       {/* Cancel confirm dialog */}
       <Dialog open={!!cancelConfirm} onOpenChange={() => setCancelConfirm(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>確認取消請假申請？</DialogTitle></DialogHeader>
           <p className="text-sm text-slate-500">取消後申請將無法恢復，需重新提交。</p>
           <DialogFooter>

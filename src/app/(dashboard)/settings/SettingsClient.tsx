@@ -48,6 +48,8 @@ export function SettingsClient({ profile }: { profile: any }) {
       .update({ language: lang })
       .eq('id', profile.id)
     if (error) { toast.error('語言切換失敗'); return }
+    // Set locale cookie so next-intl picks it up
+    document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
     toast.success('語言已切換，重新載入中...')
     setTimeout(() => window.location.reload(), 500)
   }

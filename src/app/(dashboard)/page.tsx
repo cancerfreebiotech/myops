@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -182,21 +183,25 @@ export default async function DashboardPage() {
         <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">快速入口</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[
-            { href: '/attendance', label: '打卡', emoji: '⏰' },
-            { href: '/leave', label: '請假', emoji: '📅' },
-            { href: '/overtime', label: '加班', emoji: '💼' },
-            { href: '/documents', label: '文件管理', emoji: '📄' },
-            { href: '/announcements', label: '公告', emoji: '📢' },
-            { href: '/contracts', label: '合約', emoji: '📝' },
-            ...(currentUser?.role === 'admin' || currentUser?.role === 'hr' ? [{ href: '/payroll', label: '薪資', emoji: '💰' }] : []),
-          ].map(item => (
-            <Link key={item.href} href={item.href}>
-              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors flex items-center gap-3">
-                <span className="text-xl">{item.emoji}</span>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
-              </div>
-            </Link>
-          ))}
+            { href: '/attendance', label: '打卡', icon: 'Clock' },
+            { href: '/leave', label: '請假', icon: 'CalendarDays' },
+            { href: '/overtime', label: '加班', icon: 'Timer' },
+            { href: '/documents', label: '文件管理', icon: 'FileText' },
+            { href: '/announcements', label: '公告', icon: 'Megaphone' },
+            { href: '/contracts', label: '合約', icon: 'FileSignature' },
+            ...(currentUser?.role === 'admin' || currentUser?.role === 'hr' ? [{ href: '/payroll', label: '薪資', icon: 'DollarSign' }] : []),
+          ].map(item => {
+            const IconMap: Record<string, any> = { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign }
+            const Icon = IconMap[item.icon]
+            return (
+              <Link key={item.href} href={item.href}>
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors flex items-center gap-3 cursor-pointer active:scale-[0.97]">
+                  {Icon && <Icon size={20} className="text-slate-400" aria-hidden="true" />}
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </div>
     </div>

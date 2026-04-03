@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal, Timer, Megaphone, FileSignature, DollarSign } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
@@ -58,18 +58,18 @@ export function BottomNav() {
             <div className="w-12 h-1 bg-slate-300 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-4 gap-3">
               {[
-                { href: '/overtime', label: '加班', emoji: '💼' },
-                { href: '/announcements', label: '公告', emoji: '📢' },
-                { href: '/contracts', label: '合約', emoji: '📝' },
-                { href: '/payroll', label: '薪資', emoji: '💰' },
+                { href: '/overtime', label: '加班', icon: Timer },
+                { href: '/announcements', label: '公告', icon: Megaphone },
+                { href: '/contracts', label: '合約', icon: FileSignature },
+                { href: '/payroll', label: '薪資', icon: DollarSign },
               ].map(item => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMoreOpen(false)}
-                  className="flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-700"
+                  className="flex flex-col items-center gap-1 p-3 rounded-xl bg-slate-50 dark:bg-slate-700 min-h-[44px]"
                 >
-                  <span className="text-2xl">{item.emoji}</span>
+                  <item.icon size={24} className="text-slate-500 dark:text-slate-400" aria-hidden="true" />
                   <span className="text-xs text-slate-600 dark:text-slate-300">{item.label}</span>
                 </Link>
               ))}
