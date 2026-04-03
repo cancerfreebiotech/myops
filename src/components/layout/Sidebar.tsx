@@ -2,15 +2,18 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
-  Settings, Shield, MessageSquarePlus, ChevronLeft, ChevronRight,
+  Settings, MessageSquarePlus, ChevronLeft, ChevronRight,
   Users, Building2, BookOpen, AlertCircle, ClipboardList,
-  SlidersHorizontal, MessageCircle,
+  SlidersHorizontal, MessageCircle, Sun, Moon, Globe,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import type { User } from '@/types'
 
 interface SidebarProps {
@@ -18,6 +21,12 @@ interface SidebarProps {
 }
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
+
+const LANGUAGES = [
+  { code: 'zh-TW', label: '中文' },
+  { code: 'en', label: 'EN' },
+  { code: 'ja', label: '日本語' },
+] as const
 
 function SectionHeader({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="my-2 mx-3 border-t border-slate-200 dark:border-slate-700" />
@@ -47,11 +56,25 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
   const [collapsed, setCollapsed] = useState(false)
   const isAdmin = user.role === 'admin'
 
+  const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.0'
+
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  const handleLanguageChange = async (lang: string) => {
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('users')
+      .update({ language: lang })
+      .eq('id', user.id)
+    if (error) { toast.error('語言切換失敗'); return }
+    // Reload to apply new locale
+    window.location.reload()
+  }
 
   const dmsItems: NavItem[] = [
     { href: '/documents',    label: '文件',   icon: FileText },
@@ -88,10 +111,15 @@ export function Sidebar({ user }: SidebarProps) {
       'flex flex-col h-full bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 transition-all duration-200',
       collapsed ? 'w-16' : 'w-56'
     )}>
-      {/* Logo */}
+      {/* Logo + version */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-700">
         {!collapsed && (
-          <span className="font-semibold text-slate-900 dark:text-slate-100 text-lg font-[Lexend]">myOPS</span>
+          <div>
+            <Link href="/" className="font-semibold text-slate-900 dark:text-slate-100 text-lg font-[Lexend] hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              myOPS
+            </Link>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">v{version}</p>
+          </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
@@ -135,14 +163,50 @@ export function Sidebar({ user }: SidebarProps) {
         )}
       </nav>
 
-      {/* User info */}
+      {/* Theme + Language toggles */}
       {!collapsed && (
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+          {/* Dark / Light toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? '切換淺色模式' : '切換深色模式'}
+            className="p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* Language selector */}
+          <div className="flex items-center gap-0.5 ml-auto">
+            <Globe size={14} className="text-slate-400 mr-1" aria-hidden="true" />
+            {LANGUAGES.map(lang => (
+              <button
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className={cn(
+                  'px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer',
+                  (user as any).language === lang.code
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                )}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* User info — click to go to settings */}
+      {!collapsed && (
+        <Link
+          href="/settings"
+          className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer block"
+        >
           <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
             {user.display_name ?? user.email}
           </p>
           <p className="text-xs text-slate-400 truncate">{user.email}</p>
-        </div>
+        </Link>
       )}
     </aside>
   )

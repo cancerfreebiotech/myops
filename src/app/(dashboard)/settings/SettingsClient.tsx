@@ -2,15 +2,19 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { Save, Shield } from 'lucide-react'
+import { Save, Shield, Sun, Moon, Globe } from 'lucide-react'
 
 export function SettingsClient({ profile }: { profile: any }) {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
+  const [language, setLanguage] = useState(profile?.language ?? 'zh-TW')
   const [loading, setLoading] = useState(false)
 
   const handleSave = async () => {
@@ -25,6 +29,27 @@ export function SettingsClient({ profile }: { profile: any }) {
     if (error) { toast.error(error.message); return }
     toast.success('已儲存')
     router.refresh()
+  }
+
+  const handleThemeChange = async (newTheme: string) => {
+    setTheme(newTheme)
+    const supabase = createClient()
+    await supabase
+      .from('users')
+      .update({ theme: newTheme })
+      .eq('id', profile.id)
+  }
+
+  const handleLanguageChange = async (lang: string) => {
+    setLanguage(lang)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('users')
+      .update({ language: lang })
+      .eq('id', profile.id)
+    if (error) { toast.error('語言切換失敗'); return }
+    toast.success('語言已切換，重新載入中...')
+    setTimeout(() => window.location.reload(), 500)
   }
 
   const handleResetMfa = async () => {
@@ -44,12 +69,12 @@ export function SettingsClient({ profile }: { profile: any }) {
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-4">
         <h3 className="font-medium text-slate-800 dark:text-slate-200">基本資料</h3>
         <div>
-          <label className="text-sm text-slate-600 dark:text-slate-400">Email</label>
-          <Input value={profile?.email ?? ''} disabled className="mt-1 bg-slate-50 dark:bg-slate-900" />
+          <label htmlFor="settings-email" className="text-sm text-slate-600 dark:text-slate-400">Email</label>
+          <Input id="settings-email" value={profile?.email ?? ''} disabled className="mt-1 bg-slate-50 dark:bg-slate-900" />
         </div>
         <div>
-          <label className="text-sm text-slate-600 dark:text-slate-400">顯示名稱</label>
-          <Input value={displayName} onChange={e => setDisplayName(e.target.value)} className="mt-1" />
+          <label htmlFor="settings-name" className="text-sm text-slate-600 dark:text-slate-400">顯示名稱</label>
+          <Input id="settings-name" value={displayName} onChange={e => setDisplayName(e.target.value)} className="mt-1" />
         </div>
         <div className="flex gap-3 text-sm text-slate-500">
           <span>角色：{profile?.role}</span>
@@ -60,6 +85,52 @@ export function SettingsClient({ profile }: { profile: any }) {
           <Save size={15} className="mr-1.5" />
           {loading ? '儲存中...' : '儲存變更'}
         </Button>
+      </div>
+
+      {/* Theme */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-4">
+        <h3 className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />} 主題
+        </h3>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleThemeChange('light')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer min-h-[44px] ${
+              theme !== 'dark'
+                ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-950 dark:text-blue-300'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Sun size={16} /> 淺色模式
+          </button>
+          <button
+            onClick={() => handleThemeChange('dark')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors cursor-pointer min-h-[44px] ${
+              theme === 'dark'
+                ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-950 dark:text-blue-300'
+                : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700'
+            }`}
+          >
+            <Moon size={16} /> 深色模式
+          </button>
+        </div>
+      </div>
+
+      {/* Language */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 space-y-4">
+        <h3 className="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
+          <Globe size={16} /> 語言
+        </h3>
+        <Select value={language} onValueChange={handleLanguageChange}>
+          <SelectTrigger className="max-w-[200px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="zh-TW">繁體中文</SelectItem>
+            <SelectItem value="en">English</SelectItem>
+            <SelectItem value="ja">日本語</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* MFA */}
