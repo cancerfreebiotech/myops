@@ -48,13 +48,17 @@ export async function middleware(request: NextRequest) {
   const currentLevel = aalData?.currentLevel
   const nextLevel = aalData?.nextLevel
 
+  const isApiRoute = pathname.startsWith('/api/')
+
   if (nextLevel === 'aal2' && currentLevel !== 'aal2') {
     // Has MFA enrolled but not verified this session
+    if (isApiRoute) return NextResponse.json({ error: 'MFA required' }, { status: 401 })
     return NextResponse.redirect(new URL('/mfa/verify', request.url))
   }
 
   if (currentLevel === 'aal1' && nextLevel === 'aal1') {
     // No MFA enrolled yet — force setup
+    if (isApiRoute) return NextResponse.json({ error: 'MFA setup required' }, { status: 401 })
     return NextResponse.redirect(new URL('/mfa/setup', request.url))
   }
 

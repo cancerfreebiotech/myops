@@ -47,6 +47,7 @@ export default function MFAVerifyPage() {
       return
     }
 
+    router.refresh()
     router.push('/')
   }
 

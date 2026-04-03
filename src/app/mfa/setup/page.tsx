@@ -52,6 +52,7 @@ export default function MFASetupPage() {
       setLoading(false)
       return
     }
+    router.refresh()
     router.push('/')
   }
 
