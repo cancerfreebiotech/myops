@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
-import { Plus, CheckCircle, XCircle } from 'lucide-react'
+import { Plus, CheckCircle, XCircle, Ban } from 'lucide-react'
 import { format, differenceInCalendarDays, addDays, parseISO } from 'date-fns'
 
 const PAY_LABELS: Record<string, string> = { full: '全薪', half: '半薪', none: '無薪' }
@@ -29,6 +29,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
   const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance'>('balance')
   const [records, setRecords] = useState<any[]>([])
   const [approvals, setApprovals] = useState(pendingApprovals)
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
 
@@ -90,6 +91,20 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
     toast.success('請假申請已送出')
     setApplyOpen(false)
     setSelectedType(''); setStartDate(''); setEndDate(''); setReason(''); setDeputyId(''); setHalfDay('')
+    router.refresh()
+  }
+
+  const handleCancel = async (id: string) => {
+    const res = await fetch(`/api/leave/requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cancel' }),
+    })
+    const { error } = await res.json()
+    if (error) { toast.error(error); return }
+    toast.success('請假申請已取消')
+    setCancelConfirm(null)
+    fetchRecords()
     router.refresh()
   }
 
@@ -189,6 +204,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
                 <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">結束</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">天數</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">狀態</th>
+              <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -203,6 +219,18 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.end_date}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.total_days}</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                  <td className="px-4 py-3">
+                    {r.status === 'pending' && (
+                      <Button
+                        size="sm" variant="ghost"
+                        className="min-h-[32px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                        onClick={() => setCancelConfirm(r.id)}
+                        aria-label="取消請假申請"
+                      >
+                        <Ban size={13} className="mr-1" /> 取消
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -223,6 +251,18 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
           ))}
         </div>
       )}
+
+      {/* Cancel confirm dialog */}
+      <Dialog open={!!cancelConfirm} onOpenChange={() => setCancelConfirm(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>確認取消請假申請？</DialogTitle></DialogHeader>
+          <p className="text-sm text-slate-500">取消後申請將無法恢復，需重新提交。</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelConfirm(null)}>返回</Button>
+            <Button variant="destructive" className="cursor-pointer" onClick={() => cancelConfirm && handleCancel(cancelConfirm)}>確認取消</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Apply dialog */}
       <Dialog open={applyOpen} onOpenChange={setApplyOpen}>
