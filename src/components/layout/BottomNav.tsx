@@ -44,13 +44,12 @@ export function BottomNav({ userId }: BottomNavProps) {
   const [moreOpen, setMoreOpen] = useState(false)
 
   const handleLanguageChange = async (lang: string) => {
-    const res = await fetch('/api/locale', {
+    await fetch('/api/locale', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ locale: lang }),
     })
-    if (!res.ok) { toast.error('語言切換失敗'); return }
-    window.location.reload() // mobile needs full reload
+    window.location.reload()
   }
 
   const handleLogout = async () => {

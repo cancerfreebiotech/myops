@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.12] - 2026-04-04
+
+### Fixed
+- 語言切換 API 簡化：`/api/locale` 只設 cookie（不動 DB、不需 auth），完全對齊 mycrm
+- DB 語言儲存改為 fire-and-forget，不阻塞 cookie 設定
+
 ## [0.2.11] - 2026-04-04
 
 ### Fixed

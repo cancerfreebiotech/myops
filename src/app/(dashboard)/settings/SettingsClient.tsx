@@ -42,14 +42,15 @@ export function SettingsClient({ profile }: { profile: any }) {
 
   const handleLanguageChange = async (lang: string) => {
     setLanguage(lang)
-    const res = await fetch('/api/locale', {
+    await fetch('/api/locale', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ locale: lang }),
     })
-    if (!res.ok) { toast.error('語言切換失敗'); return }
-    toast.success('語言已切換，重新載入中...')
-    setTimeout(() => window.location.reload(), 500)
+    // Save to DB (fire-and-forget)
+    const supabase = createClient()
+    supabase.from('users').update({ language: lang }).eq('id', profile.id).then()
+    window.location.reload()
   }
 
   const handleResetMfa = async () => {

@@ -82,12 +82,16 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   const handleLanguageChange = async (lang: string) => {
-    const res = await fetch('/api/locale', {
+    // 1. Set cookie (fast, no auth needed)
+    await fetch('/api/locale', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ locale: lang }),
     })
-    if (!res.ok) { toast.error('語言切換失敗'); return }
+    // 2. Save to DB (fire-and-forget)
+    const supabase = createClient()
+    supabase.from('users').update({ language: lang }).eq('id', user.id).then()
+    // 3. Refresh page with new locale
     router.refresh()
   }
 
