@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { LocaleSync } from '@/components/LocaleSync'
+import { LOCALE_COOKIE } from '@/i18n/config'
 import type { User } from '@/types'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Read current locale cookie (read is OK in Server Components)
   const cookieStore = await cookies()
-  const currentLocale = cookieStore.get('locale')?.value
+  const currentLocale = cookieStore.get(LOCALE_COOKIE)?.value
   const needsSync = !!(dbUser.language && dbUser.language !== currentLocale)
 
   return (

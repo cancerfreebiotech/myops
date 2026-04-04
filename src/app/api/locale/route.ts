@@ -1,12 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-
-const VALID_LOCALES = ['zh-TW', 'en', 'ja']
+import { LOCALE_COOKIE, SUPPORTED_LOCALES } from '@/i18n/config'
 
 export async function POST(request: NextRequest) {
   const { locale } = await request.json()
 
-  if (!locale || !VALID_LOCALES.includes(locale)) {
+  if (!locale || !(SUPPORTED_LOCALES as readonly string[]).includes(locale)) {
     return NextResponse.json({ error: 'Invalid locale' }, { status: 400 })
   }
 
@@ -21,11 +20,10 @@ export async function POST(request: NextRequest) {
 
   // Set cookie via Set-Cookie header (server-side, most reliable)
   const response = NextResponse.json({ ok: true })
-  response.cookies.set('locale', locale, {
+  response.cookies.set(LOCALE_COOKIE, locale, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',
-    secure: true,
   })
 
   return response

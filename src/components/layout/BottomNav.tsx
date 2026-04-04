@@ -50,7 +50,7 @@ export function BottomNav({ userId }: BottomNavProps) {
       body: JSON.stringify({ locale: lang }),
     })
     if (!res.ok) { toast.error('語言切換失敗'); return }
-    window.location.reload()
+    window.location.reload() // mobile needs full reload
   }
 
   const handleLogout = async () => {

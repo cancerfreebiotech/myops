@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import {
@@ -57,6 +57,7 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const [collapsed, setCollapsed] = useState(false)
@@ -87,7 +88,7 @@ export function Sidebar({ user }: SidebarProps) {
       body: JSON.stringify({ locale: lang }),
     })
     if (!res.ok) { toast.error('語言切換失敗'); return }
-    window.location.reload()
+    router.refresh()
   }
 
   const dmsItems: NavItem[] = [

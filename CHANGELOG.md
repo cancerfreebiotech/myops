@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.11] - 2026-04-04
+
+### Fixed
+- 語言切換重構：對齊 mycrm 的做法
+  - Cookie 名改為 `MYOPS_LOCALE`（避免 generic `locale` 衝突）
+  - 移除 `Secure` flag（mycrm/EDC 都沒用，會在 HTTP 環境失效）
+  - Sidebar 改用 `router.refresh()` 取代 `window.location.reload()`
+  - 新增 `src/i18n/config.ts` 統一管理 cookie 名、支援語言、預設值
+
 ## [0.2.10] - 2026-04-04
 
 ### Fixed

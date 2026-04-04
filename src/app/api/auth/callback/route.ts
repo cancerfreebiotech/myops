@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { LOCALE_COOKIE } from '@/i18n/config'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -34,11 +35,10 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(`${origin}${next}`)
   if (dbUser?.language) {
-    response.cookies.set('locale', dbUser.language, {
+    response.cookies.set(LOCALE_COOKIE, dbUser.language, {
       path: '/',
       maxAge: 60 * 60 * 24 * 365,
       sameSite: 'lax',
-      secure: true,
     })
   }
 
