@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2026-04-04
+
+### Fixed
+- Leave calendar 月份切換：API 新增 `start/end/calendar` 參數支援，修正切月後資料錯誤
+- 公告語言解析：`resolveContent` 正確處理 `zh-TW` → `zh` 對應
+- Daily digest 公告計數：加入 `requires_confirmation=true` + `confirmed_at IS NULL` 過濾
+
 ## [0.2.5] - 2026-04-04
 
 ### Fixed

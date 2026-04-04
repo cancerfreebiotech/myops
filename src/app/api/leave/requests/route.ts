@@ -70,9 +70,57 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view') ?? 'mine'
+  const calendarMode = searchParams.get('calendar') === '1'
+  const startParam = searchParams.get('start')
+  const endParam = searchParams.get('end')
 
-  const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr'
+  const { data: currentUser } = await supabase
+    .from('users')
+    .select('role, granted_features, department_id')
+    .eq('id', user.id)
+    .single()
+  const isAdmin = currentUser?.role === 'admin'
+  const isHR = (currentUser?.granted_features as string[] ?? []).includes('hr_manager')
+
+  // Calendar mode: return department/all leaves for a date range
+  if (calendarMode && startParam && endParam) {
+    let calQuery = service
+      .from('leave_requests')
+      .select(`id, user_id, leave_type_id, start_date, end_date, status, reason,
+        user:users!leave_requests_user_id_fkey(id, display_name, department_id),
+        leave_type:leave_types(name)`)
+      .in('status', ['approved', 'pending'])
+      .lte('start_date', endParam)
+      .gte('end_date', startParam)
+
+    if (!isAdmin && !isHR) {
+      // Regular user: only same department
+      calQuery = calQuery.eq('user.department_id', currentUser?.department_id)
+    }
+
+    const { data: calData, error: calError } = await calQuery
+    if (calError) return NextResponse.json({ error: calError.message }, { status: 500 })
+
+    // Flatten for CalendarClient
+    const flat = (calData ?? []).map((r: any) => {
+      const u = Array.isArray(r.user) ? r.user[0] : r.user
+      const lt = Array.isArray(r.leave_type) ? r.leave_type[0] : r.leave_type
+      return {
+        id: r.id,
+        user_id: r.user_id,
+        leave_type_id: r.leave_type_id,
+        start_date: r.start_date,
+        end_date: r.end_date,
+        status: r.status,
+        reason: r.reason,
+        display_name: u?.display_name ?? '',
+        department_id: u?.department_id ?? '',
+        leave_type_name: lt?.name ?? '',
+      }
+    })
+
+    return NextResponse.json({ data: flat })
+  }
 
   let query = service
     .from('leave_requests')
@@ -82,12 +130,12 @@ export async function GET(request: NextRequest) {
   if (view === 'mine') {
     query = query.eq('user_id', user.id)
   } else if (view === 'approve') {
-    if (isAdmin) {
+    if (isAdmin || isHR) {
       query = query.eq('status', 'pending')
     } else {
       query = query.eq('approver_id', user.id).eq('status', 'pending')
     }
-  } else if (view === 'team' && isAdmin) {
+  } else if (view === 'team' && (isAdmin || isHR)) {
     // All requests
   }
 

@@ -91,7 +91,9 @@ function resolveContent(
     ja: doc.content_ja,
   }
 
-  const preferred = langMap[userLang]
+  // Normalize locale codes: zh-TW → zh
+  const normalizedLang = userLang.startsWith('zh') ? 'zh' : userLang
+  const preferred = langMap[normalizedLang]
   if (preferred) return { content: preferred, lang: userLang, isFallback: false }
 
   // Fallback chain: zh → en → ja

@@ -67,11 +67,13 @@ export async function POST(request: NextRequest) {
       canApproveContracts
         ? service.from('documents').select('id', { count: 'exact', head: true }).eq('status', 'pending').in('doc_type', ['NDA', 'MOU', 'CONTRACT', 'AMEND']).is('deleted_at', null)
         : Promise.resolve({ count: 0 }),
-      // Unconfirmed announcements for this user
+      // Unconfirmed announcements that require confirmation for this user
       service
         .from('document_recipients')
         .select('document_id', { count: 'exact', head: true })
-        .eq('user_id', u.id),
+        .eq('user_id', u.id)
+        .eq('requires_confirmation', true)
+        .is('confirmed_at', null),
     ])
 
     const pendingLeaves = leaveRes.count ?? 0
