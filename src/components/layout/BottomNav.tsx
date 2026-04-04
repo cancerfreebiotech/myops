@@ -9,7 +9,7 @@ import {
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
@@ -42,6 +42,8 @@ export function BottomNav({ userId }: BottomNavProps) {
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const [moreOpen, setMoreOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const handleLanguageChange = async (lang: string) => {
     await fetch('/api/locale', {
@@ -124,8 +126,8 @@ export function BottomNav({ userId }: BottomNavProps) {
                 aria-label={theme === 'dark' ? '切換淺色模式' : '切換深色模式'}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors min-h-[44px]"
               >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                <span className="text-xs">{theme === 'dark' ? '淺色模式' : '深色模式'}</span>
+                {mounted && theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <span className="text-xs">{mounted && theme === 'dark' ? '淺色模式' : '深色模式'}</span>
               </button>
 
               {/* Language selector */}

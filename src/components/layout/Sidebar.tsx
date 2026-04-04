@@ -12,7 +12,7 @@ import {
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import type { User } from '@/types'
@@ -61,6 +61,8 @@ export function Sidebar({ user }: SidebarProps) {
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const [collapsed, setCollapsed] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
   const isAdmin = user.role === 'admin'
 
   const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.2'
@@ -193,7 +195,7 @@ export function Sidebar({ user }: SidebarProps) {
             aria-label={theme === 'dark' ? '切換淺色模式' : '切換深色模式'}
             className="p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {mounted && theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
           {/* Language selector */}

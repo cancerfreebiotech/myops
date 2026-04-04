@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.13] - 2026-04-04
+
+### Fixed
+- React hydration error #418：useTheme() SSR/client mismatch，加 mounted guard
+
 ## [0.2.12] - 2026-04-04
 
 ### Fixed
