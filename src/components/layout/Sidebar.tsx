@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
+import { useLocale } from 'next-intl'
 import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
@@ -57,6 +58,7 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
+  const activeLocale = useLocale()
   const [collapsed, setCollapsed] = useState(false)
   const isAdmin = user.role === 'admin'
 
@@ -194,7 +196,7 @@ export function Sidebar({ user }: SidebarProps) {
                 onClick={() => handleLanguageChange(lang.code)}
                 className={cn(
                   'px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer',
-                  (user as any).language === lang.code
+                  activeLocale === lang.code
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                 )}

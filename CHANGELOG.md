@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.5] - 2026-04-04
+
+### Fixed
+- 網頁版語言切換：改用 `useLocale()` 判斷當前語言，修正高亮不同步問題
+
+### Added
+- 手機版「更多」面板新增 Dark/Light mode 切換按鈕
+- 手機版「更多」面板新增語言切換（中文/EN/日本語）
+
 ## [0.1.0-alpha.1] - 2026-04-03
 
 ### Added
