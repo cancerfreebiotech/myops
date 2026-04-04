@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
-  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe,
+  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -53,6 +53,12 @@ export function BottomNav({ userId }: BottomNavProps) {
     if (error) { toast.error('語言切換失敗'); return }
     document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax;Secure`
     window.location.reload()
+  }
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
   }
 
   return (
@@ -143,6 +149,17 @@ export function BottomNav({ userId }: BottomNavProps) {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Logout */}
+            <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-3">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full min-h-[44px]"
+              >
+                <LogOut size={18} />
+                <span className="text-sm font-medium">登出</span>
+              </button>
             </div>
           </div>
         </div>

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.9] - 2026-04-04
+
+### Added
+- Desktop Sidebar: 使用者資訊旁新增登出按鈕（hover 變紅），collapsed 狀態也有 icon
+- Mobile BottomNav「更多」面板底部新增「登出」按鈕（紅色文字）
+
 ## [0.2.7] - 2026-04-04
 
 ### Fixed

@@ -9,7 +9,7 @@ import {
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight,
   Users, Building2, BookOpen, AlertCircle, ClipboardList,
-  SlidersHorizontal, MessageCircle, Sun, Moon, Globe,
+  SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState } from 'react'
@@ -73,6 +73,12 @@ export function Sidebar({ user }: SidebarProps) {
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href)
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
 
   const handleLanguageChange = async (lang: string) => {
     const supabase = createClient()
@@ -208,17 +214,36 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
       )}
 
-      {/* User info — click to go to settings */}
-      {!collapsed && (
-        <Link
-          href="/settings"
-          className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer block"
-        >
-          <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-            {user.display_name ?? user.email}
-          </p>
-          <p className="text-xs text-slate-400 truncate">{user.email}</p>
-        </Link>
+      {/* User info + logout */}
+      {!collapsed ? (
+        <div className="flex items-center border-t border-slate-200 dark:border-slate-700">
+          <Link
+            href="/settings"
+            className="flex-1 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer block min-w-0"
+          >
+            <p className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
+              {user.display_name ?? user.email}
+            </p>
+            <p className="text-xs text-slate-400 truncate">{user.email}</p>
+          </Link>
+          <button
+            onClick={handleLogout}
+            aria-label="登出"
+            className="p-3 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      ) : (
+        <div className="border-t border-slate-200 dark:border-slate-700 flex justify-center py-2">
+          <button
+            onClick={handleLogout}
+            aria-label="登出"
+            className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-md transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       )}
     </aside>
   )
