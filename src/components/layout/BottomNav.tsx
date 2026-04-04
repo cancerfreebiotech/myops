@@ -44,14 +44,12 @@ export function BottomNav({ userId }: BottomNavProps) {
   const [moreOpen, setMoreOpen] = useState(false)
 
   const handleLanguageChange = async (lang: string) => {
-    if (!userId) return
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('users')
-      .update({ language: lang })
-      .eq('id', userId)
-    if (error) { toast.error('語言切換失敗'); return }
-    document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax;Secure`
+    const res = await fetch('/api/locale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: lang }),
+    })
+    if (!res.ok) { toast.error('語言切換失敗'); return }
     window.location.reload()
   }
 

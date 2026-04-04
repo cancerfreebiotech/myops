@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 /**
  * Client component that syncs the user's DB language preference to the locale cookie.
- * Server Components can't set cookies, so this runs client-side on mount.
+ * Uses the /api/locale endpoint to set cookie server-side (most reliable).
  */
 export function LocaleSync({ locale }: { locale: string }) {
   useEffect(() => {
@@ -14,8 +14,13 @@ export function LocaleSync({ locale }: { locale: string }) {
       ?.split('=')[1]
 
     if (current !== locale) {
-      document.cookie = `locale=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax;Secure`
-      window.location.reload()
+      fetch('/api/locale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale }),
+      }).then(res => {
+        if (res.ok) window.location.reload()
+      })
     }
   }, [locale])
 

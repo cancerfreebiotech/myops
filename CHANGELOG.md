@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.10] - 2026-04-04
+
+### Fixed
+- 語言切換改用 server-side API route（`/api/locale`）設定 cookie，取代不可靠的 `document.cookie`
+- 所有語言切換入口統一走同一個 API：Sidebar、BottomNav、Settings、LocaleSync
+
 ## [0.2.9] - 2026-04-04
 
 ### Added
