@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -24,5 +24,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`)
   }
 
-  return NextResponse.redirect(`${origin}${next}`)
+  // Sync locale cookie from user's saved language preference
+  const service = await createServiceClient()
+  const { data: dbUser } = await service
+    .from('users')
+    .select('language')
+    .eq('id', data.user.id)
+    .single()
+
+  const response = NextResponse.redirect(`${origin}${next}`)
+  if (dbUser?.language) {
+    response.cookies.set('locale', dbUser.language, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      secure: true,
+    })
+  }
+
+  return response
 }

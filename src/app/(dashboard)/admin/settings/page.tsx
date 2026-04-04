@@ -14,7 +14,7 @@ export default async function SettingsPage() {
 
   const { data: settings } = await service
     .from('system_settings')
-    .select('key, value, description')
+    .select('key, value')
     .order('key')
 
   return (

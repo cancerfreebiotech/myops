@@ -14,7 +14,7 @@ export function LocaleSync({ locale }: { locale: string }) {
       ?.split('=')[1]
 
     if (current !== locale) {
-      document.cookie = `locale=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
+      document.cookie = `locale=${locale};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax;Secure`
       window.location.reload()
     }
   }, [locale])

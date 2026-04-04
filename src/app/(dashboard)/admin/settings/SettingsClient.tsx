@@ -9,18 +9,28 @@ import { useRouter } from 'next/navigation'
 
 const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret']
 const SETTING_LABELS: Record<string, string> = {
+  // AI
   gemini_api_key: 'Gemini API Key（AI 翻譯）',
-  mfa_grace_period_minutes: 'MFA 寬限期（分鐘）',
-  auto_clock_in_time: '自動上班補打時間（HH:MM，台灣時間）',
-  auto_clock_out_time: '自動下班補打時間（HH:MM，台灣時間）',
-  announcement_reminder_days: '公告未確認提醒間隔（天）',
-  contract_expiry_warn_days: '合約到期提醒天數',
+  // 打卡
+  default_clock_in_time: '預設上班時間（HH:MM，台灣時間）',
+  default_clock_out_time: '預設下班時間（HH:MM，台灣時間）',
+  auto_clock_check_delay_minutes: '自動打卡檢查延遲（分鐘）',
+  intern_missed_clock_alert_threshold: '實習生漏打卡警告門檻（次）',
+  fulltime_auto_clock_alert_days: '正職自動打卡警告天數',
+  // 通知
+  contract_reminder_days_first: '合約到期第一次提醒（天前）',
+  contract_reminder_days_second: '合約到期第二次提醒（天前）',
+  daily_digest_time: 'Daily Digest 發送時間（HH:MM）',
   teams_webhook_url: 'Teams Webhook URL',
   teams_bot_id: 'Teams Bot ID',
   teams_bot_secret: 'Teams Bot Secret',
-  app_url: '系統網址',
-  payroll_day: '發薪日（每月幾號）',
-  overtime_advance_hours: '加班申請需提前幾小時',
+  // 系統
+  maintenance_mode: '維護模式（true/false）',
+  mfa_approval_session_minutes: 'MFA 審批 Session 有效期（分鐘）',
+  overtime_min_advance_hours: '加班申請最少提前（小時）',
+  project_ot_coo_threshold_hours: '專案加班 COO 審批門檻（小時）',
+  payroll_pay_day: '發薪日（每月幾號）',
+  payroll_auto_generate_day: '薪資自動產出日（每月幾號）',
 }
 
 interface Setting { key: string; value: string; description?: string }
@@ -47,12 +57,23 @@ export function SettingsClient({ settings }: { settings: Setting[] }) {
     router.refresh()
   }
 
-  const groups: Record<string, Setting[]> = {
-    'AI 功能': settings.filter(s => s.key.includes('gemini')),
-    '打卡設定': settings.filter(s => s.key.includes('clock')),
-    '通知設定': settings.filter(s => ['announcement_reminder_days', 'contract_expiry_warn_days', 'teams_webhook_url', 'teams_bot_id', 'teams_bot_secret'].includes(s.key)),
-    '系統參數': settings.filter(s => ['mfa_grace_period_minutes', 'app_url', 'payroll_day', 'overtime_advance_hours'].includes(s.key)),
+  const groupDefs: [string, (key: string) => boolean][] = [
+    ['AI 功能', k => k.includes('gemini')],
+    ['打卡設定', k => k.includes('clock') || k.includes('intern_missed') || k.includes('fulltime_auto')],
+    ['通知設定', k => k.includes('contract_reminder') || k.includes('daily_digest') || k.includes('teams_')],
+    ['系統參數', k => ['maintenance_mode', 'mfa_approval_session_minutes', 'overtime_min_advance_hours', 'project_ot_coo_threshold_hours', 'payroll_pay_day', 'payroll_auto_generate_day'].includes(k)],
+  ]
+  const grouped = new Set<string>()
+  const groups: Record<string, Setting[]> = {}
+  for (const [name, matcher] of groupDefs) {
+    groups[name] = settings.filter(s => {
+      if (matcher(s.key)) { grouped.add(s.key); return true }
+      return false
+    })
   }
+  // Catch-all for any settings not in a group
+  const ungrouped = settings.filter(s => !grouped.has(s.key))
+  if (ungrouped.length > 0) groups['其他'] = ungrouped
 
   return (
     <div className="space-y-6 max-w-2xl">

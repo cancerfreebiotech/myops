@@ -51,7 +51,7 @@ export function BottomNav({ userId }: BottomNavProps) {
       .update({ language: lang })
       .eq('id', userId)
     if (error) { toast.error('語言切換失敗'); return }
-    document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax`
+    document.cookie = `locale=${lang};path=/;max-age=${60 * 60 * 24 * 365};SameSite=Lax;Secure`
     window.location.reload()
   }
 

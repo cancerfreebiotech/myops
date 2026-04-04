@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.7] - 2026-04-04
+
+### Fixed
+- 系統設定頁：key 名稱對齊 DB seed data，加入 catch-all 群組，移除不存在的 description 欄位
+- 語言切換：auth callback 登入時同步 locale cookie，避免多餘的 reload
+- 所有 locale cookie 統一加 Secure flag（HTTPS 環境）
+
 ## [0.2.6] - 2026-04-04
 
 ### Fixed
