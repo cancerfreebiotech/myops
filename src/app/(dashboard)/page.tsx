@@ -2,11 +2,15 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { getTranslations } from 'next-intl/server'
 import { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const service = await createServiceClient()
+  const t = await getTranslations('dashboard')
+  const tNav = await getTranslations('nav')
+  const tAtt = await getTranslations('attendance')
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -85,27 +89,27 @@ export default async function DashboardPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              早安，{currentUser?.display_name}
+              {t('welcome')}，{currentUser?.display_name}
             </h2>
-            <p className="text-sm text-slate-500 mt-0.5">{format(new Date(), 'yyyy 年 MM 月 dd 日')}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{format(new Date(), 'yyyy-MM-dd')}</p>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <div className="text-center">
-              <p className="text-xs text-slate-400">上班</p>
+              <p className="text-xs text-slate-400">{tAtt('clockIn')}</p>
               <p className={`font-mono font-bold ${todayAttendance?.clock_in ? 'text-green-600 dark:text-green-400' : 'text-slate-300'}`}>
                 {todayAttendance?.clock_in ? format(new Date(todayAttendance.clock_in), 'HH:mm') : '—'}
-                {todayAttendance?.is_auto_in && <span className="ml-1 text-xs font-normal text-amber-500">自動</span>}
+                {todayAttendance?.is_auto_in && <span className="ml-1 text-xs font-normal text-amber-500">{tAtt('autoClocked')}</span>}
               </p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-slate-400">下班</p>
+              <p className="text-xs text-slate-400">{tAtt('clockOut')}</p>
               <p className={`font-mono font-bold ${todayAttendance?.clock_out ? 'text-blue-600 dark:text-blue-400' : 'text-slate-300'}`}>
                 {todayAttendance?.clock_out ? format(new Date(todayAttendance.clock_out), 'HH:mm') : '—'}
               </p>
             </div>
             <Link href="/attendance">
               <div className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors min-h-[36px] flex items-center">
-                去打卡
+                {tAtt('clockIn')}
               </div>
             </Link>
           </div>
@@ -115,13 +119,13 @@ export default async function DashboardPage() {
       {/* Pending items */}
       {totalPending > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">待處理事項</h3>
+          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{t('todayTasks')}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {counts.pendingAnnouncements > 0 && (
               <Link href="/announcements">
                 <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-4 hover:border-amber-300 transition-colors">
                   <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{counts.pendingAnnouncements}</p>
-                  <p className="text-sm text-amber-600 dark:text-amber-500 mt-0.5">待確認公告</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-500 mt-0.5">{t('unconfirmedAnnouncements')}</p>
                 </div>
               </Link>
             )}
@@ -129,7 +133,7 @@ export default async function DashboardPage() {
               <Link href="/leave">
                 <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-4 hover:border-blue-300 transition-colors">
                   <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{counts.pendingLeave}</p>
-                  <p className="text-sm text-blue-600 dark:text-blue-500 mt-0.5">待審假單</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-500 mt-0.5">{t('pendingLeave')}</p>
                 </div>
               </Link>
             )}
@@ -137,7 +141,7 @@ export default async function DashboardPage() {
               <Link href="/overtime">
                 <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 p-4 hover:border-purple-300 transition-colors">
                   <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{counts.pendingOT}</p>
-                  <p className="text-sm text-purple-600 dark:text-purple-500 mt-0.5">待審加班</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-500 mt-0.5">{t('pendingContracts')}</p>
                 </div>
               </Link>
             )}
@@ -145,7 +149,7 @@ export default async function DashboardPage() {
               <Link href="/documents">
                 <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 hover:border-slate-300 transition-colors">
                   <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">{counts.pendingDocs}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">待審文件</p>
+                  <p className="text-sm text-slate-500 mt-0.5">{t('pendingContracts')}</p>
                 </div>
               </Link>
             )}
@@ -156,7 +160,7 @@ export default async function DashboardPage() {
       {/* Expiring contracts */}
       {(expiringContracts?.length ?? 0) > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">即將到期合約（30 天內）</h3>
+          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{tNav('contracts')} — {t('pendingContracts')}</h3>
           <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-800 overflow-hidden">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-orange-100 dark:divide-orange-900">
@@ -180,16 +184,16 @@ export default async function DashboardPage() {
 
       {/* Quick links */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">快速入口</h3>
+        <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{t('goHandle')}</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[
-            { href: '/attendance', label: '打卡', icon: 'Clock' },
-            { href: '/leave', label: '請假', icon: 'CalendarDays' },
-            { href: '/overtime', label: '加班', icon: 'Timer' },
-            { href: '/documents', label: '文件管理', icon: 'FileText' },
-            { href: '/announcements', label: '公告', icon: 'Megaphone' },
-            { href: '/contracts', label: '合約', icon: 'FileSignature' },
-            ...(currentUser?.role === 'admin' || currentUser?.role === 'hr' ? [{ href: '/payroll', label: '薪資', icon: 'DollarSign' }] : []),
+            { href: '/attendance', label: tNav('attendance'), icon: 'Clock' },
+            { href: '/leave', label: tNav('leave'), icon: 'CalendarDays' },
+            { href: '/overtime', label: tNav('overtime'), icon: 'Timer' },
+            { href: '/documents', label: tNav('documents'), icon: 'FileText' },
+            { href: '/announcements', label: tNav('announcements'), icon: 'Megaphone' },
+            { href: '/contracts', label: tNav('contracts'), icon: 'FileSignature' },
+            ...(currentUser?.role === 'admin' ? [{ href: '/payroll', label: tNav('payroll'), icon: 'DollarSign' }] : []),
           ].map(item => {
             const IconMap: Record<string, any> = { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign }
             const Icon = IconMap[item.icon]

@@ -1,11 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import LoginButton from './LoginButton'
 
 export default async function LoginPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/')
+
+  const t = await getTranslations('auth')
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
@@ -15,12 +18,12 @@ export default async function LoginPage() {
             myOPS
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            精拓生技 營運管理系統
+            CancerFree Biotech OPS
           </p>
         </div>
         <LoginButton />
         <p className="text-xs text-slate-400 text-center">
-          僅限 @cancerfree.io 帳號登入
+          {t('loginDescription')}
         </p>
       </div>
     </div>

@@ -3,9 +3,12 @@
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function LoginButton() {
   const [loading, setLoading] = useState(false)
+  const t = useTranslations('auth')
+  const tc = useTranslations('common')
 
   const handleLogin = async () => {
     setLoading(true)
@@ -26,7 +29,7 @@ export default function LoginButton() {
       className="w-full"
       size="lg"
     >
-      {loading ? '登入中...' : '使用 Microsoft 帳號登入'}
+      {loading ? tc('loading') : t('loginWith')}
     </Button>
   )
 }

@@ -92,7 +92,10 @@
     "adminAudit": "Audit Logs",
     "adminSettings": "System Settings",
     "expand": "Expand menu",
-    "collapse": "Collapse menu"
+    "collapse": "Collapse menu",
+    "more": "More",
+    "themeLight": "Light Mode",
+    "themeDark": "Dark Mode"
   },
   "dashboard": {
     "welcome": "Welcome back",

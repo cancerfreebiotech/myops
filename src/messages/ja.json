@@ -92,7 +92,10 @@
     "adminAudit": "監査ログ",
     "adminSettings": "システム設定",
     "expand": "メニューを展開",
-    "collapse": "メニューを折りたたむ"
+    "collapse": "メニューを折りたたむ",
+    "more": "その他",
+    "themeLight": "ライトモード",
+    "themeDark": "ダークモード"
   },
   "dashboard": {
     "welcome": "おかえりなさい",

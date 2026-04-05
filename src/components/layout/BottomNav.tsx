@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut,
@@ -11,21 +11,6 @@ import {
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-
-const PRIMARY_ITEMS = [
-  { href: '/', label: '首頁', icon: LayoutDashboard },
-  { href: '/attendance', label: '打卡', icon: Clock },
-  { href: '/leave', label: '請假', icon: CalendarDays },
-  { href: '/documents', label: '文件', icon: FileText },
-]
-
-const MORE_ITEMS = [
-  { href: '/overtime', label: '加班', icon: Timer },
-  { href: '/announcements', label: '公告', icon: Megaphone },
-  { href: '/contracts', label: '合約', icon: FileSignature },
-  { href: '/payroll', label: '薪資', icon: DollarSign },
-]
 
 const LANGUAGES = [
   { code: 'zh-TW', label: '中文' },
@@ -41,9 +26,25 @@ export function BottomNav({ userId }: BottomNavProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
+  const t = useTranslations('nav')
+  const tAuth = useTranslations('auth')
   const [moreOpen, setMoreOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  const PRIMARY_ITEMS = [
+    { href: '/', label: t('dashboard'), icon: LayoutDashboard },
+    { href: '/attendance', label: t('attendance'), icon: Clock },
+    { href: '/leave', label: t('leave'), icon: CalendarDays },
+    { href: '/documents', label: t('documents'), icon: FileText },
+  ]
+
+  const MORE_ITEMS = [
+    { href: '/overtime', label: t('overtime'), icon: Timer },
+    { href: '/announcements', label: t('announcements'), icon: Megaphone },
+    { href: '/contracts', label: t('contracts'), icon: FileSignature },
+    { href: '/payroll', label: t('payroll'), icon: DollarSign },
+  ]
 
   const handleLanguageChange = (lang: string) => {
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
@@ -81,7 +82,7 @@ export function BottomNav({ userId }: BottomNavProps) {
           className="flex-1 flex flex-col items-center justify-center gap-0.5 text-xs text-slate-500 dark:text-slate-400"
         >
           <MoreHorizontal size={20} />
-          <span>更多</span>
+          <span>{t('more')}</span>
         </button>
       </nav>
 
@@ -115,17 +116,14 @@ export function BottomNav({ userId }: BottomNavProps) {
 
             {/* Theme + Language controls */}
             <div className="flex items-center justify-between px-1">
-              {/* Theme toggle */}
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                aria-label={theme === 'dark' ? '切換淺色模式' : '切換深色模式'}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors min-h-[44px]"
               >
                 {mounted && theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                <span className="text-xs">{mounted && theme === 'dark' ? '淺色模式' : '深色模式'}</span>
+                <span className="text-xs">{mounted && theme === 'dark' ? t('themeLight') : t('themeDark')}</span>
               </button>
 
-              {/* Language selector */}
               <div className="flex items-center gap-1">
                 <Globe size={16} className="text-slate-400 mr-1" aria-hidden="true" />
                 {LANGUAGES.map(lang => (
@@ -152,7 +150,7 @@ export function BottomNav({ userId }: BottomNavProps) {
                 className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full min-h-[44px]"
               >
                 <LogOut size={18} />
-                <span className="text-sm font-medium">登出</span>
+                <span className="text-sm font-medium">{tAuth('logout')}</span>
               </button>
             </div>
           </div>

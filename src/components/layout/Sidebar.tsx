@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
@@ -14,7 +14,6 @@ import {
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { toast } from 'sonner'
 import type { User } from '@/types'
 
 interface SidebarProps {
@@ -59,6 +58,8 @@ export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
+  const t = useTranslations('nav')
+  const tAuth = useTranslations('auth')
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -83,41 +84,39 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   const handleLanguageChange = (lang: string) => {
-    // Save to DB (fire-and-forget)
     const supabase = createClient()
     supabase.from('users').update({ language: lang }).eq('id', user.id).then()
-    // Redirect to API which sets cookie server-side, then redirects back
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 
   const dmsItems: NavItem[] = [
-    { href: '/documents',    label: '文件',   icon: FileText },
-    { href: '/announcements',label: '公告',   icon: Megaphone },
-    { href: '/contracts',    label: '合約',   icon: FileSignature },
+    { href: '/documents',    label: t('documents'),     icon: FileText },
+    { href: '/announcements',label: t('announcements'),  icon: Megaphone },
+    { href: '/contracts',    label: t('contracts'),      icon: FileSignature },
   ]
 
   const hrItems: NavItem[] = [
-    { href: '/attendance', label: '打卡',   icon: Clock },
-    { href: '/leave',      label: '請假',   icon: CalendarDays },
-    { href: '/overtime',   label: '加班',   icon: Timer },
-    { href: '/payroll',    label: '薪資',   icon: DollarSign },
-    { href: '/projects',   label: '專案',   icon: FolderKanban },
+    { href: '/attendance', label: t('attendance'), icon: Clock },
+    { href: '/leave',      label: t('leave'),      icon: CalendarDays },
+    { href: '/overtime',   label: t('overtime'),   icon: Timer },
+    { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
+    { href: '/projects',   label: t('projects'),   icon: FolderKanban },
   ]
 
   const adminItems: NavItem[] = isAdmin ? [
-    { href: '/admin/users',                 label: '使用者',   icon: Users },
-    { href: '/admin/departments',           label: '部門',     icon: Building2 },
-    { href: '/admin/companies',             label: '公司',     icon: Building2 },
-    { href: '/admin/leave-types',           label: '假別管理', icon: ClipboardList },
-    { href: '/admin/leave-balances',        label: '假別額度', icon: CalendarDays },
-    { href: '/admin/overtime-rates',        label: '加班費率', icon: SlidersHorizontal },
-    { href: '/admin/insurance-brackets',    label: '勞健保級距', icon: ClipboardList },
-    { href: '/admin/bonuses',               label: '獎金管理', icon: DollarSign },
-    { href: '/admin/payroll/anomalies',     label: '薪資異常', icon: AlertCircle },
-    { href: '/admin/attendance-anomalies',  label: '出勤異常', icon: AlertCircle },
-    { href: '/admin/feedback',              label: '回饋管理', icon: MessageCircle },
-    { href: '/admin/audit',                 label: '稽核紀錄', icon: BookOpen },
-    { href: '/admin/settings',              label: '系統設定', icon: Settings },
+    { href: '/admin/users',                 label: t('adminUsers'),               icon: Users },
+    { href: '/admin/departments',           label: t('adminDepartments'),         icon: Building2 },
+    { href: '/admin/companies',             label: t('adminCompanies'),           icon: Building2 },
+    { href: '/admin/leave-types',           label: t('adminLeaveTypes'),          icon: ClipboardList },
+    { href: '/admin/leave-balances',        label: t('adminLeaveBalances'),       icon: CalendarDays },
+    { href: '/admin/overtime-rates',        label: t('adminOvertimeRates'),       icon: SlidersHorizontal },
+    { href: '/admin/insurance-brackets',    label: t('adminInsuranceBrackets'),   icon: ClipboardList },
+    { href: '/admin/bonuses',               label: t('adminBonuses'),             icon: DollarSign },
+    { href: '/admin/payroll/anomalies',     label: t('adminPayrollAnomalies'),    icon: AlertCircle },
+    { href: '/admin/attendance-anomalies',  label: t('adminAttendanceAnomalies'), icon: AlertCircle },
+    { href: '/admin/feedback',              label: t('adminFeedback'),            icon: MessageCircle },
+    { href: '/admin/audit',                 label: t('adminAudit'),               icon: BookOpen },
+    { href: '/admin/settings',              label: t('adminSettings'),            icon: Settings },
   ] : []
 
   return (
@@ -139,7 +138,7 @@ export function Sidebar({ user }: SidebarProps) {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? '展開選單' : '收合選單'}
+          aria-label={collapsed ? t('expand') : t('collapse')}
           className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors duration-150"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -147,31 +146,26 @@ export function Sidebar({ user }: SidebarProps) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3" aria-label="主選單">
-        {/* Dashboard */}
-        <NavLink href="/" label="總覽" icon={LayoutDashboard} collapsed={collapsed} active={isActive('/')} />
+      <nav className="flex-1 overflow-y-auto py-3" aria-label="Navigation">
+        <NavLink href="/" label={t('dashboard')} icon={LayoutDashboard} collapsed={collapsed} active={isActive('/')} />
 
-        {/* DMS */}
-        <SectionHeader label="文件管理" collapsed={collapsed} />
+        <SectionHeader label={t('dms')} collapsed={collapsed} />
         {dmsItems.map(item => (
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
         ))}
 
-        {/* HR */}
-        <SectionHeader label="人資管理" collapsed={collapsed} />
+        <SectionHeader label={t('hr')} collapsed={collapsed} />
         {hrItems.map(item => (
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
         ))}
 
-        {/* Other */}
-        <SectionHeader label="其他" collapsed={collapsed} />
-        <NavLink href="/settings"     label="個人設定" icon={Settings}          collapsed={collapsed} active={isActive('/settings')} />
-        <NavLink href="/feedback/new" label="回饋"     icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />
+        <SectionHeader label={t('other')} collapsed={collapsed} />
+        <NavLink href="/settings"     label={t('settings')}  icon={Settings}          collapsed={collapsed} active={isActive('/settings')} />
+        <NavLink href="/feedback/new" label={t('feedback')}  icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />
 
-        {/* Admin */}
         {adminItems.length > 0 && (
           <>
-            <SectionHeader label="管理後台" collapsed={collapsed} />
+            <SectionHeader label={t('admin')} collapsed={collapsed} />
             {adminItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
@@ -182,16 +176,13 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Theme + Language toggles */}
       {!collapsed && (
         <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
-          {/* Dark / Light toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={theme === 'dark' ? '切換淺色模式' : '切換深色模式'}
             className="p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
           >
             {mounted && theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
 
-          {/* Language selector */}
           <div className="flex items-center gap-0.5 ml-auto">
             <Globe size={14} className="text-slate-400 mr-1" aria-hidden="true" />
             {LANGUAGES.map(lang => (
@@ -226,7 +217,7 @@ export function Sidebar({ user }: SidebarProps) {
           </Link>
           <button
             onClick={handleLogout}
-            aria-label="登出"
+            aria-label={tAuth('logout')}
             className="p-3 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0"
           >
             <LogOut size={16} />
@@ -236,7 +227,7 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="border-t border-slate-200 dark:border-slate-700 flex justify-center py-2">
           <button
             onClick={handleLogout}
-            aria-label="登出"
+            aria-label={tAuth('logout')}
             className="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-md transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <LogOut size={18} />

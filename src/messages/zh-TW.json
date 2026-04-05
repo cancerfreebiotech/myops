@@ -92,7 +92,10 @@
     "adminAudit": "稽核紀錄",
     "adminSettings": "系統設定",
     "expand": "展開選單",
-    "collapse": "收合選單"
+    "collapse": "收合選單",
+    "more": "更多",
+    "themeLight": "淺色模式",
+    "themeDark": "深色模式"
   },
   "dashboard": {
     "welcome": "歡迎回來",

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.18] - 2026-04-05
+
+### Fixed
+- **語言切換根本修復**：所有 component 接上 `useTranslations()` / `getTranslations()`
+  - Sidebar：所有導航標籤、section header、aria-label 使用翻譯 key
+  - BottomNav：所有導航標籤、theme label、logout 使用翻譯 key
+  - Login page：按鈕文字、說明文字使用翻譯 key
+  - Dashboard：歡迎訊息、待辦事項、快速入口使用翻譯 key
+- 新增翻譯 key：`nav.more`、`nav.themeLight`、`nav.themeDark`（三語言）
+
 ## [0.2.17] - 2026-04-05
 
 ### Fixed
