@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.26] - 2026-04-05
+
+### Fixed
+- Cookie `secure` flag 改為 `process.env.NODE_ENV === 'production'`，本機開發（HTTP）不再失效
+- BottomNav 語言切換 DB update 改為 `await`，確保寫入完成再跳轉
+
 ## [0.2.25] - 2026-04-05
 
 ### Added

@@ -42,10 +42,10 @@ export function BottomNav({ userId }: BottomNavProps) {
     { href: '/help', label: t('help'), icon: HelpCircle },
   ]
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = async (lang: string) => {
     if (userId) {
       const supabase = createClient()
-      supabase.from('users').update({ language: lang }).eq('id', userId).then()
+      await supabase.from('users').update({ language: lang }).eq('id', userId)
     }
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
