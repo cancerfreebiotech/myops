@@ -11,18 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Download, CheckCircle, XCircle, Archive, Globe, FileText, Clock, Send } from 'lucide-react'
 import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-
-const DOC_TYPE_LABELS: Record<string, string> = {
-  ANN: '公告', REG: '規章', NDA: '保密協議', MOU: '合作備忘錄',
-  CONTRACT: '合約', AMEND: '合約修正', INTERNAL: '內部文件',
-}
-const FOLDER_LABELS: Record<string, string> = {
-  shared: '全公司共用', contracts: '外部合約', internal: '內部文件', archived: '封存',
-}
-const ACTION_LABELS: Record<string, string> = {
-  upload: '上傳', approve: '核准', reject: '退回', archive: '封存',
-  publish: '發佈', translate: 'AI 翻譯', confirm: '確認閱讀',
-}
+import { useTranslations } from 'next-intl'
 
 interface Props {
   doc: any
@@ -37,6 +26,10 @@ interface Props {
 
 export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, canApprove, canPublish, downloadUrl, allUsers = [] }: Props) {
   const router = useRouter()
+  const t = useTranslations('documents')
+  const td = useTranslations('documents.detail')
+  const ta = useTranslations('documents.actions')
+  const tc = useTranslations('common')
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [publishOpen, setPublishOpen] = useState(false)
@@ -65,18 +58,18 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
 
   const handleApprove = async () => {
     const ok = await patch({ status: 'approved', approved_at: new Date().toISOString(), _action: 'approve' })
-    if (ok) { toast.success('已核准'); router.refresh() }
+    if (ok) { toast.success(td('approved')); router.refresh() }
   }
 
   const handleReject = async () => {
-    if (!rejectReason.trim()) { toast.error('請填寫退回原因'); return }
+    if (!rejectReason.trim()) { toast.error(td('rejectReasonRequired')); return }
     const ok = await patch({ status: 'rejected', reject_reason: rejectReason, _action: 'reject' })
-    if (ok) { setRejectOpen(false); toast.success('已退回'); router.refresh() }
+    if (ok) { setRejectOpen(false); toast.success(td('rejected')); router.refresh() }
   }
 
   const handleArchive = async () => {
     const ok = await patch({ status: 'archived', folder: 'archived', _action: 'archive' })
-    if (ok) { toast.success('已封存'); router.refresh() }
+    if (ok) { toast.success(td('archived')); router.refresh() }
   }
 
   const handlePublish = async () => {
@@ -94,7 +87,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
     setLoading(false)
     if (error) { toast.error(error); return }
     setPublishOpen(false)
-    toast.success('公告已發佈')
+    toast.success(td('announcementPublished'))
     router.refresh()
   }
 
@@ -103,9 +96,9 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
     const res = await fetch(`/api/documents/${doc.id}/confirm`, { method: 'POST' })
     const { error, code } = await res.json()
     setConfirming(false)
-    if (code === 'MFA_REQUIRED') { toast.error('請先完成雙重驗證'); router.push('/mfa/verify'); return }
+    if (code === 'MFA_REQUIRED') { toast.error(td('mfaRequired')); router.push('/mfa/verify'); return }
     if (error) { toast.error(error); return }
-    toast.success('已確認閱讀')
+    toast.success(td('confirmed'))
     router.refresh()
   }
 
@@ -118,7 +111,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
     const { error } = await res.json()
     setTranslating(false)
     if (error) { toast.error(error); return }
-    toast.success('AI 翻譯完成')
+    toast.success(td('aiTranslateComplete'))
     router.refresh()
   }
 
@@ -132,8 +125,8 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{doc.title}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}</Badge>
-                <span className="text-xs text-slate-400">{FOLDER_LABELS[doc.folder] ?? doc.folder}</span>
+                <Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}</Badge>
+                <span className="text-xs text-slate-400">{t(`folders.${doc.folder}` as any) ?? doc.folder}</span>
               </div>
             </div>
             <StatusBadge status={doc.status} />
@@ -141,34 +134,34 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="text-slate-400">上傳者</span>
+              <span className="text-slate-400">{td('uploader')}</span>
               <p className="text-slate-700 dark:text-slate-300 mt-0.5">{doc.uploaded_by_user?.display_name ?? '—'}</p>
             </div>
             <div>
-              <span className="text-slate-400">上傳時間</span>
+              <span className="text-slate-400">{td('uploadTime')}</span>
               <p className="text-slate-700 dark:text-slate-300 mt-0.5">{format(new Date(doc.created_at), 'yyyy/MM/dd HH:mm')}</p>
             </div>
             {doc.company && (
               <div>
-                <span className="text-slate-400">關聯公司</span>
+                <span className="text-slate-400">{td('relatedCompany')}</span>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">{doc.company.name}</p>
               </div>
             )}
             {doc.department && (
               <div>
-                <span className="text-slate-400">所屬部門</span>
+                <span className="text-slate-400">{td('department')}</span>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">{doc.department.name}</p>
               </div>
             )}
             {doc.expires_at && (
               <div>
-                <span className="text-slate-400">到期日</span>
+                <span className="text-slate-400">{td('expiresAt')}</span>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">{doc.expires_at}</p>
               </div>
             )}
             {doc.approved_by_user && (
               <div>
-                <span className="text-slate-400">核准者</span>
+                <span className="text-slate-400">{td('approver')}</span>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">{doc.approved_by_user.display_name}</p>
               </div>
             )}
@@ -184,7 +177,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
               {downloadUrl && (
                 <a href={downloadUrl} target="_blank" rel="noreferrer">
                   <Button variant="outline" size="sm" className="min-h-[36px]">
-                    <Download size={14} className="mr-1" /> 下載
+                    <Download size={14} className="mr-1" /> {td('download')}
                   </Button>
                 </a>
               )}
@@ -196,17 +189,17 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         {isAnnouncement && doc.content_zh && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-slate-800 dark:text-slate-200">公告內容</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">{td('announcementContent')}</h3>
               {canPublish && !doc.ai_translated && (
                 <Button variant="outline" size="sm" onClick={handleTranslate} disabled={translating} className="min-h-[36px]">
                   <Globe size={14} className="mr-1" />
-                  {translating ? 'AI 翻譯中...' : 'AI 翻譯'}
+                  {translating ? td('aiTranslating') : td('aiTranslate')}
                 </Button>
               )}
             </div>
             <div className="space-y-4">
               <div>
-                <p className="text-xs text-slate-400 mb-1">中文</p>
+                <p className="text-xs text-slate-400 mb-1">{td('chinese')}</p>
                 <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{doc.content_zh}</p>
               </div>
               {doc.content_en && (
@@ -228,7 +221,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         {/* Recipients (for announcements) */}
         {isAnnouncement && recipients.length > 0 && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
-            <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">收件人確認狀況</h3>
+            <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">{td('recipientStatus')}</h3>
             <div className="space-y-2">
               {recipients.map((r: any) => (
                 <div key={r.id} className="flex items-center justify-between text-sm">
@@ -240,7 +233,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
                         <span className="text-green-600 dark:text-green-400 text-xs">{format(new Date(r.confirmed_at), 'MM/dd HH:mm')}</span>
                       </>
                     ) : (
-                      <span className="text-slate-400 text-xs">未確認</span>
+                      <span className="text-slate-400 text-xs">{td('unconfirmed')}</span>
                     )}
                   </div>
                 </div>
@@ -255,23 +248,23 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         {/* Actions */}
         {doc.status === 'pending' && canApprove && !isAnnouncement && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-2">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">審核操作</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{td('reviewActions')}</h3>
             <Button className="w-full min-h-[44px]" onClick={handleApprove} disabled={loading}>
-              <CheckCircle size={15} className="mr-1.5" /> 核准
+              <CheckCircle size={15} className="mr-1.5" /> {td('approve')}
             </Button>
             <Button variant="outline" className="w-full min-h-[44px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => setRejectOpen(true)} disabled={loading}>
-              <XCircle size={15} className="mr-1.5" /> 退回
+              <XCircle size={15} className="mr-1.5" /> {td('reject')}
             </Button>
           </div>
         )}
         {doc.status === 'pending' && canPublish && isAnnouncement && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-2">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">發佈操作</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{td('publishActions')}</h3>
             <Button className="w-full min-h-[44px]" onClick={() => setPublishOpen(true)} disabled={loading}>
-              <Send size={15} className="mr-1.5" /> 發佈公告
+              <Send size={15} className="mr-1.5" /> {td('publishAnnouncement')}
             </Button>
             <Button variant="outline" className="w-full min-h-[44px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => setRejectOpen(true)} disabled={loading}>
-              <XCircle size={15} className="mr-1.5" /> 退回
+              <XCircle size={15} className="mr-1.5" /> {td('reject')}
             </Button>
           </div>
         )}
@@ -282,7 +275,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
           if (myRecord.confirmed_at) return (
             <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-center">
               <CheckCircle size={20} className="text-green-500 mx-auto mb-1" />
-              <p className="text-sm text-green-700 dark:text-green-400">已確認閱讀</p>
+              <p className="text-sm text-green-700 dark:text-green-400">{td('confirmed')}</p>
               <p className="text-xs text-slate-400">{format(new Date(myRecord.confirmed_at), 'MM/dd HH:mm')}</p>
             </div>
           )
@@ -290,7 +283,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
               <Button className="w-full min-h-[44px]" onClick={handleConfirmRead} disabled={confirming}>
                 <CheckCircle size={15} className="mr-1.5" />
-                {confirming ? '確認中...' : '確認已閱讀（需 2FA）'}
+                {confirming ? td('confirming') : td('confirmReadWith2fa')}
               </Button>
             </div>
           )
@@ -298,7 +291,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         {doc.status === 'approved' && canApprove && !['ANN', 'REG'].includes(doc.doc_type) && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
             <Button variant="outline" className="w-full min-h-[44px] text-slate-600" onClick={handleArchive} disabled={loading}>
-              <Archive size={15} className="mr-1.5" /> 封存文件
+              <Archive size={15} className="mr-1.5" /> {td('archiveDocument')}
             </Button>
           </div>
         )}
@@ -306,20 +299,20 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         {/* Audit log */}
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
-            <Clock size={14} /> 操作記錄
+            <Clock size={14} /> {td('auditLog')}
           </h3>
           {auditLogs.length === 0 ? (
-            <p className="text-xs text-slate-400">無記錄</p>
+            <p className="text-xs text-slate-400">{td('noRecords')}</p>
           ) : (
             <div className="space-y-3">
               {auditLogs.map((log: any) => (
                 <div key={log.id} className="text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{ACTION_LABELS[log.action] ?? log.action}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{ta(log.action as any) ?? log.action}</span>
                     <span className="text-slate-400">{format(new Date(log.created_at), 'MM/dd HH:mm')}</span>
                   </div>
                   <p className="text-slate-400 mt-0.5">{log.user?.display_name}</p>
-                  {log.detail?.reason && <p className="text-red-500 mt-0.5">原因：{log.detail.reason}</p>}
+                  {log.detail?.reason && <p className="text-red-500 mt-0.5">{td('reason', { reason: log.detail.reason })}</p>}
                 </div>
               ))}
             </div>
@@ -330,20 +323,20 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
       {/* Reject dialog */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>退回文件</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{td('rejectDocument')}</DialogTitle></DialogHeader>
           <div className="py-2">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">退回原因</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{td('rejectReason')}</label>
             <Textarea
               className="mt-1"
               rows={3}
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              placeholder="請說明退回原因..."
+              placeholder={td('rejectReasonPlaceholder')}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectOpen(false)}>取消</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={loading}>確認退回</Button>
+            <Button variant="outline" onClick={() => setRejectOpen(false)}>{tc('cancel')}</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={loading}>{td('confirmReject')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -351,11 +344,11 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
       {/* Publish dialog */}
       <Dialog open={publishOpen} onOpenChange={setPublishOpen}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>發佈公告</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{td('publishDialog')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">選擇收件人</label>
-              <p className="text-xs text-slate-400 mb-2">不選擇則發佈給所有人</p>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{td('selectRecipients')}</label>
+              <p className="text-xs text-slate-400 mb-2">{td('selectRecipientsHint')}</p>
               <div className="space-y-1 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-md p-2">
                 {allUsers.map((u: any) => (
                   <label key={u.id} className="flex items-center gap-2 text-sm cursor-pointer py-1 px-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded">
@@ -371,7 +364,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
                 ))}
               </div>
               {selectedUsers.length > 0 && (
-                <p className="text-xs text-blue-600 mt-1">已選 {selectedUsers.length} 人</p>
+                <p className="text-xs text-blue-600 mt-1">{td('selectedCount', { count: selectedUsers.length })}</p>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -382,12 +375,12 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
                   onChange={e => setRequireConfirm(e.target.checked)}
                   className="accent-blue-600"
                 />
-                <span className="text-slate-700 dark:text-slate-300">需要確認閱讀</span>
+                <span className="text-slate-700 dark:text-slate-300">{td('requireConfirmRead')}</span>
               </label>
             </div>
             {requireConfirm && (
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">提醒間隔（天）</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{td('reminderDays')}</label>
                 <Input
                   type="number"
                   min="1"
@@ -400,10 +393,10 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPublishOpen(false)}>取消</Button>
+            <Button variant="outline" onClick={() => setPublishOpen(false)}>{tc('cancel')}</Button>
             <Button onClick={handlePublish} disabled={loading}>
               <Send size={14} className="mr-1.5" />
-              {loading ? '發佈中...' : '確認發佈'}
+              {loading ? td('publishing') : td('confirmPublish')}
             </Button>
           </DialogFooter>
         </DialogContent>

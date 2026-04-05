@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ContractsClient } from './ContractsClient'
 
@@ -23,9 +24,11 @@ export default async function ContractsPage() {
   const canApprove = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('approve_contract')
 
+  const t = await getTranslations('contracts')
+
   return (
     <div>
-      <PageHeader title="合約管理" description="NDA、MOU、合約、修正案" />
+      <PageHeader title={t('title')} description={t('description')} />
       <ContractsClient
         companies={companies ?? []}
         currentUser={currentUser}

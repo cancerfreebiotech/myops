@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,13 +12,6 @@ import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { Plus, FileText } from 'lucide-react'
-
-const FLOW_ACTIONS: Record<string, { label: string; next: string }> = {
-  draft:             { label: 'HR 審核', next: 'hr_review' },
-  hr_reviewed:       { label: '財務確認', next: 'finance_confirm' },
-  finance_confirmed: { label: '營運長核准', next: 'coo_approve' },
-  coo_approved:      { label: '確認發薪', next: 'pay' },
-}
 
 interface Props {
   currentUser: any
@@ -38,6 +32,16 @@ export function PayrollClient({
   currentYear, currentMonth,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('payroll')
+  const tc = useTranslations('common')
+
+  const FLOW_ACTIONS: Record<string, { label: string; next: string }> = {
+    draft:             { label: t('hrReview'), next: 'hr_review' },
+    hr_reviewed:       { label: t('financeConfirm'), next: 'finance_confirm' },
+    finance_confirmed: { label: t('cooApprove'), next: 'coo_approve' },
+    coo_approved:      { label: t('confirmPay'), next: 'pay' },
+  }
+
   const [tab, setTab] = useState<'records' | 'payslips' | 'create'>(canViewPayroll ? 'records' : 'payslips')
   const [records, setRecords] = useState(payrollRecords)
   const [loading, setLoading] = useState(false)
@@ -52,7 +56,7 @@ export function PayrollClient({
   const [notes, setNotes] = useState('')
 
   const handleCreate = async () => {
-    if (!selUser || !baseSalary) { toast.error('請填寫員工與底薪'); return }
+    if (!selUser || !baseSalary) { toast.error(t('employeeAndBase')); return }
     setLoading(true)
     const res = await fetch('/api/payroll', {
       method: 'POST',
@@ -71,7 +75,7 @@ export function PayrollClient({
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
-    toast.success('薪資紀錄已建立')
+    toast.success(t('recordCreated'))
     setCreateOpen(false)
     router.refresh()
   }
@@ -84,7 +88,7 @@ export function PayrollClient({
     })
     const { error } = await res.json()
     if (error) { toast.error(error); return }
-    toast.success('狀態已更新')
+    toast.success(t('statusUpdated'))
     router.refresh()
   }
 
@@ -104,8 +108,8 @@ export function PayrollClient({
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          ...(canViewPayroll ? [{ key: 'records', label: `${currentYear}/${currentMonth} 薪資表` }] : []),
-          { key: 'payslips', label: '我的薪資單' },
+          ...(canViewPayroll ? [{ key: 'records', label: t('payrollTableWithDate', { year: currentYear, month: currentMonth }) }] : []),
+          { key: 'payslips', label: t('myPayslips') },
         ].map((t: any) => (
           <button
             key={t.key}
@@ -126,7 +130,7 @@ export function PayrollClient({
           {isHR && (
             <div className="flex justify-end">
               <Button onClick={() => setCreateOpen(true)} className="min-h-[44px]">
-                <Plus size={15} className="mr-1.5" /> 建立薪資紀錄
+                <Plus size={15} className="mr-1.5" /> {t('createRecord')}
               </Button>
             </div>
           )}
@@ -134,18 +138,18 @@ export function PayrollClient({
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">員工</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">底薪</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">加班費</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">扣除</th>
-                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">實發</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">狀態</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('baseSalary')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('overtimePay')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('deductions')}</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('netPay')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tc('status')}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {records.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-8 text-slate-400">本月尚無薪資紀錄</td></tr>
+                  <tr><td colSpan={7} className="text-center py-8 text-slate-400">{t('noRecordsMonth')}</td></tr>
                 ) : records.map((r: any) => (
                   <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                     <td className="px-4 py-3">
@@ -180,33 +184,33 @@ export function PayrollClient({
       {tab === 'payslips' && (
         <div className="space-y-3">
           {myPayslips.length === 0 ? (
-            <p className="text-center py-8 text-slate-400 text-sm">無薪資單</p>
+            <p className="text-center py-8 text-slate-400 text-sm">{t('noPayslips')}</p>
           ) : myPayslips.map((r: any) => (
             <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <FileText size={16} className="text-blue-500" />
                   <span className="font-medium text-slate-800 dark:text-slate-200">
-                    {r.year} 年 {r.month} 月薪資單
+                    {t('payslipTitle', { year: r.year, month: r.month })}
                   </span>
                 </div>
                 <StatusBadge status={r.status} />
               </div>
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-xs text-slate-400">底薪</p>
+                  <p className="text-xs text-slate-400">{t('baseSalary')}</p>
                   <p className="font-medium tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(r.base_salary)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">加班費</p>
+                  <p className="text-xs text-slate-400">{t('overtimePay')}</p>
                   <p className="font-medium tabular-nums text-slate-700 dark:text-slate-300">{formatCurrency(r.overtime_pay)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">扣除項</p>
+                  <p className="text-xs text-slate-400">{t('deductions')}</p>
                   <p className="font-medium tabular-nums text-red-500">{formatCurrency(r.deductions)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">實發</p>
+                  <p className="text-xs text-slate-400">{t('netPay')}</p>
                   <p className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(r.net_salary)}</p>
                 </div>
               </div>
@@ -218,12 +222,12 @@ export function PayrollClient({
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>建立薪資紀錄 ({currentYear}/{currentMonth})</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('createTitle', { year: currentYear, month: currentMonth })}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">員工</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('employee')}</label>
               <Select value={selUser} onValueChange={v => setSelUser(v ?? '')}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="選擇員工" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={t('selectEmployee')} /></SelectTrigger>
                 <SelectContent>
                   {allUsers.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
                 </SelectContent>
@@ -231,35 +235,35 @@ export function PayrollClient({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">底薪 (NT$)</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('baseSalaryNT')}</label>
                 <Input type="number" value={baseSalary} onChange={e => setBaseSalary(e.target.value)} className="mt-1" min="0" />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">加班費 (NT$)</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('overtimePayNT')}</label>
                 <Input type="number" value={otPay} onChange={e => setOtPay(e.target.value)} className="mt-1" min="0" />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">獎金 (NT$)</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('bonusNT')}</label>
                 <Input type="number" value={bonus} onChange={e => setBonus(e.target.value)} className="mt-1" min="0" />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">扣除項 (NT$)</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('deductionsNT')}</label>
                 <Input type="number" value={deductions} onChange={e => setDeductions(e.target.value)} className="mt-1" min="0" />
               </div>
             </div>
             {baseSalary && (
               <p className="text-sm text-blue-600">
-                實發：NT$ {((parseFloat(baseSalary || '0') + parseFloat(otPay || '0') + parseFloat(bonus || '0')) - parseFloat(deductions || '0')).toLocaleString()}
+                {t('netPayEstimate', { amount: ((parseFloat(baseSalary || '0') + parseFloat(otPay || '0') + parseFloat(bonus || '0')) - parseFloat(deductions || '0')).toLocaleString() })}
               </p>
             )}
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">備註</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('notes')}</label>
               <Textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} className="mt-1" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>取消</Button>
-            <Button onClick={handleCreate} disabled={loading}>{loading ? '建立中...' : '建立'}</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{tc('cancel')}</Button>
+            <Button onClick={handleCreate} disabled={loading}>{loading ? tc('creating') : tc('create')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

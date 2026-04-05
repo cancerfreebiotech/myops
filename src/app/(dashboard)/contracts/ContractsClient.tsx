@@ -12,9 +12,7 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Search, FileText, AlertTriangle } from 'lucide-react'
 import { format, parseISO, differenceInDays } from 'date-fns'
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  NDA: '保密協議', MOU: '合作備忘錄', CONTRACT: '合約', AMEND: '合約修正',
-}
+const DOC_TYPE_KEYS = ['NDA', 'MOU', 'CONTRACT', 'AMEND'] as const
 
 interface Props {
   companies: any[]
@@ -72,10 +70,10 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
           <Input placeholder={`${tc('search')}...`} value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
         <Select value={filterType} onValueChange={v => { setFilterType(v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="所有類型" /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue placeholder={t('allTypes')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有類型</SelectItem>
-            {Object.entries(DOC_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            <SelectItem value="">{t('allTypes')}</SelectItem>
+            {DOC_TYPE_KEYS.map(k => <SelectItem key={k} value={k}>{t(`docTypes.${k}`)}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v ?? ''); setPage(1) }}>
@@ -85,8 +83,8 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
             <SelectItem value="pending">{tc('pending')}</SelectItem>
             <SelectItem value="approved">{tc('approved')}</SelectItem>
             <SelectItem value="rejected">{tc('rejected')}</SelectItem>
-            <SelectItem value="archived">已封存</SelectItem>
-            <SelectItem value="expired">已到期</SelectItem>
+            <SelectItem value="archived">{t('statusFilter.archived')}</SelectItem>
+            <SelectItem value="expired">{t('statusFilter.expired')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterCompany} onValueChange={v => { setFilterCompany(v ?? ''); setPage(1) }}>
@@ -103,9 +101,9 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
               <TableHead>{t('title')}</TableHead>
-              <TableHead>類型</TableHead>
+              <TableHead>{t('type')}</TableHead>
               <TableHead>{t('company')}</TableHead>
-              <TableHead>狀態</TableHead>
+              <TableHead>{t('status')}</TableHead>
               <TableHead>{t('expiresAt')}</TableHead>
               <TableHead>{t('owner')}</TableHead>
             </TableRow>
@@ -129,7 +127,7 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
                       <span className="font-medium text-sm truncate max-w-[220px]">{doc.title}</span>
                     </div>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}</Badge></TableCell>
                   <TableCell className="text-sm text-slate-500">{doc.company?.name ?? '—'}</TableCell>
                   <TableCell><StatusBadge status={doc.status} /></TableCell>
                   <TableCell>
@@ -154,9 +152,9 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
         <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
           <span>{tc('total')} {count}</span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="min-h-[36px]">上一頁</Button>
+            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="min-h-[36px]">{t('prevPage')}</Button>
             <span>{page} / {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="min-h-[36px]">下一頁</Button>
+            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="min-h-[36px]">{t('nextPage')}</Button>
           </div>
         </div>
       )}

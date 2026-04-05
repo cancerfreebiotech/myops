@@ -22,33 +22,31 @@ const STATUS_STYLE: Record<string, string> = {
   urgent:            'bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800',
 }
 
-/** Map status to common.* i18n key, or a hardcoded fallback for statuses without translation keys */
-const STATUS_LABEL: Record<string, { key: string } | { fallback: string }> = {
-  pending:           { key: 'pending' },
-  approved:          { key: 'approved' },
-  rejected:          { key: 'rejected' },
-  cancelled:         { key: 'cancelled' },
-  draft:             { key: 'draft' },
-  paid:              { key: 'paid' },
-  archived:          { fallback: '已封存' },
-  expired:           { fallback: '已到期' },
-  open:              { fallback: '待處理' },
-  in_progress:       { fallback: '處理中' },
-  done:              { fallback: '已完成' },
-  hr_reviewed:       { fallback: 'HR 已審' },
-  finance_confirmed: { fallback: '財務確認' },
-  coo_approved:      { fallback: '營運長核准' },
-  lead_approved:     { fallback: '負責人核准' },
-  urgent:            { fallback: '緊急' },
+/** Map status to common.* i18n key */
+const STATUS_KEY: Record<string, string> = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  cancelled: 'cancelled',
+  draft: 'draft',
+  paid: 'paid',
+  archived: 'archived',
+  expired: 'expired',
+  open: 'open',
+  in_progress: 'in_progress',
+  done: 'done',
+  hr_reviewed: 'hr_reviewed',
+  finance_confirmed: 'finance_confirmed',
+  coo_approved: 'coo_approved',
+  lead_approved: 'lead_approved',
+  urgent: 'urgent',
 }
 
 export function StatusBadge({ status }: { status: string }) {
   const t = useTranslations('common')
   const style = STATUS_STYLE[status] ?? 'bg-slate-50 text-slate-600 border-slate-200'
-  const entry = STATUS_LABEL[status]
-  const label = entry
-    ? ('key' in entry ? t(entry.key) : entry.fallback)
-    : status
+  const key = STATUS_KEY[status]
+  const label = key ? t(key) : status
   return (
     <span className={cn(
       'inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-medium',

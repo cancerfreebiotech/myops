@@ -11,6 +11,8 @@ import { useRouter } from 'next/navigation'
 import { FEATURE_KEYS } from '@/lib/features'
 import { useTranslations } from 'next-intl'
 
+
+
 const schema = z.object({
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
@@ -35,6 +37,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
   const router = useRouter()
   const t = useTranslations('admin.users')
   const tc = useTranslations('common')
+  const tFeatures = useTranslations('features')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -184,7 +187,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
         <div>
           <FormLabel className="text-sm">{t('grantedFeatures')}</FormLabel>
           <div className="mt-2 flex flex-wrap gap-2">
-            {FEATURE_KEYS.map(({ key, label }) => (
+            {FEATURE_KEYS.map((key) => (
               <button
                 key={key}
                 type="button"
@@ -195,7 +198,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600'
                 }`}
               >
-                {label}
+                {tFeatures(key)}
               </button>
             ))}
           </div>

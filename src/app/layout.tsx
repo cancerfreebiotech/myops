@@ -1,14 +1,17 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale, getMessages } from 'next-intl/server'
+import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: 'myOPS',
-  description: '精拓生技 營運管理系統',
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('app')
+  return {
+    title: 'myOPS',
+    description: t('description'),
+  }
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

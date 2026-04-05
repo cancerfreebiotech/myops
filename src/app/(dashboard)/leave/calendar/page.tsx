@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CalendarClient } from './CalendarClient'
 
@@ -72,11 +73,13 @@ export default async function LeaveCalendarPage() {
     leave_type_name: lr.leave_types?.name_zh ?? '',
   }))
 
+  const t = await getTranslations('leave')
+
   return (
     <div>
       <PageHeader
-        title="團隊請假日曆"
-        description="查看團隊成員的請假排程"
+        title={t('calendar')}
+        description={t('calendarDescription')}
       />
       <CalendarClient
         initialLeaves={normalised}

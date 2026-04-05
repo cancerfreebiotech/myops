@@ -16,10 +16,11 @@ export default async function OvertimeRatesPage() {
   const { data: rates } = await service.from('overtime_rates').select('*').order('ot_type')
 
   const t = await getTranslations('nav')
+  const tAdmin = await getTranslations('admin.overtimeRates')
 
   return (
     <div>
-      <PageHeader title={t('adminOvertimeRates')} description="各類加班費率設定" />
+      <PageHeader title={t('adminOvertimeRates')} description={tAdmin('description')} />
       <OvertimeRatesManager rates={rates ?? []} />
     </div>
   )

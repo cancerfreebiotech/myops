@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -13,21 +14,6 @@ import {
 } from 'lucide-react'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  NDA: '保密協議',
-  MOU: '合作備忘錄',
-  CONTRACT: '合約',
-  AMEND: '合約修正',
-}
-
-const ACTION_LABELS: Record<string, string> = {
-  upload: '上傳',
-  approve: '核准',
-  reject: '退回',
-  archive: '封存',
-  download: '下載',
-}
-
 interface Props {
   doc: any
   relatedDocs: any[]
@@ -37,40 +23,12 @@ interface Props {
   canApprove: boolean
 }
 
-function ExpiryDisplay({ expiresAt }: { expiresAt: string | null }) {
-  if (!expiresAt) return <span className="text-slate-400">—</span>
-
-  const days = differenceInCalendarDays(parseISO(expiresAt), new Date())
-
-  if (days < 0) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
-        <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}（已到期）</span>
-      </div>
-    )
-  }
-  if (days <= 30) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
-        <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}（剩 {days} 天）</span>
-      </div>
-    )
-  }
-  if (days <= 90) {
-    return (
-      <div className="flex items-center gap-1.5">
-        <AlertTriangle size={14} className="text-orange-400 shrink-0" aria-hidden />
-        <span className="text-orange-600 dark:text-orange-400 font-medium">{expiresAt}（剩 {days} 天）</span>
-      </div>
-    )
-  }
-  return <span className="text-slate-700 dark:text-slate-300">{expiresAt}</span>
-}
-
 export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, currentUser, canApprove }: Props) {
   const router = useRouter()
+  const t = useTranslations('contracts')
+  const td = useTranslations('contracts.detail2')
+  const ta = useTranslations('contracts.actions')
+  const tc = useTranslations('common')
   const [approveOpen, setApproveOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -97,13 +55,13 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
     })
     if (ok) {
       setApproveOpen(false)
-      toast.success('合約已核准')
+      toast.success(td('contractApproved'))
       router.refresh()
     }
   }
 
   const handleReject = async () => {
-    if (!rejectReason.trim()) { toast.error('請填寫退回原因'); return }
+    if (!rejectReason.trim()) { toast.error(td('rejectReasonRequired')); return }
     const ok = await patch({
       status: 'rejected',
       reject_reason: rejectReason,
@@ -112,12 +70,44 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
     if (ok) {
       setRejectOpen(false)
       setRejectReason('')
-      toast.success('合約已退回')
+      toast.success(td('contractRejected'))
       router.refresh()
     }
   }
 
   const fileSizeMb = doc.file_size ? (doc.file_size / 1024 / 1024).toFixed(2) : null
+
+  const ExpiryDisplay = ({ expiresAt }: { expiresAt: string | null }) => {
+    if (!expiresAt) return <span className="text-slate-400">—</span>
+
+    const days = differenceInCalendarDays(parseISO(expiresAt), new Date())
+
+    if (days < 0) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
+          <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('expired')})</span>
+        </div>
+      )
+    }
+    if (days <= 30) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
+          <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
+        </div>
+      )
+    }
+    if (days <= 90) {
+      return (
+        <div className="flex items-center gap-1.5">
+          <AlertTriangle size={14} className="text-orange-400 shrink-0" aria-hidden />
+          <span className="text-orange-600 dark:text-orange-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
+        </div>
+      )
+    }
+    return <span className="text-slate-700 dark:text-slate-300">{expiresAt}</span>
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -139,7 +129,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                   </span>
                 )}
                 <Badge variant="outline" className="text-xs">
-                  {DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}
+                  {t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}
                 </Badge>
               </div>
             </div>
@@ -150,7 +140,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
           {doc.expires_at && (
             <div className="flex items-center gap-2 text-sm">
               <Calendar size={14} className="text-slate-400 shrink-0" aria-hidden />
-              <span className="text-slate-400 shrink-0">到期日</span>
+              <span className="text-slate-400 shrink-0">{t('expiresAt')}</span>
               <ExpiryDisplay expiresAt={doc.expires_at} />
             </div>
           )}
@@ -160,7 +150,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
             <div className="flex items-start gap-2">
               <User size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
               <div>
-                <p className="text-slate-400 text-xs">負責人</p>
+                <p className="text-slate-400 text-xs">{td('owner')}</p>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">
                   {doc.uploaded_by_user?.display_name ?? '—'}
                 </p>
@@ -169,7 +159,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
             <div className="flex items-start gap-2">
               <Calendar size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
               <div>
-                <p className="text-slate-400 text-xs">上傳日期</p>
+                <p className="text-slate-400 text-xs">{td('uploadDate')}</p>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">
                   {format(new Date(doc.created_at), 'yyyy-MM-dd')}
                 </p>
@@ -179,7 +169,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               <div className="flex items-start gap-2">
                 <HardDrive size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
                 <div>
-                  <p className="text-slate-400 text-xs">檔案大小</p>
+                  <p className="text-slate-400 text-xs">{td('fileSize')}</p>
                   <p className="text-slate-700 dark:text-slate-300 mt-0.5">{fileSizeMb} MB</p>
                 </div>
               </div>
@@ -187,9 +177,9 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
             <div className="flex items-start gap-2">
               <FileText size={14} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
               <div>
-                <p className="text-slate-400 text-xs">文件類型</p>
+                <p className="text-slate-400 text-xs">{td('docType')}</p>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">
-                  {DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}
+                  {t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}
                 </p>
               </div>
             </div>
@@ -201,10 +191,10 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               <a href={downloadUrl} target="_blank" rel="noreferrer">
                 <Button
                   className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-150"
-                  aria-label={`下載 ${doc.file_name ?? '合約文件'}`}
+                  aria-label={td('downloadLabel', { name: doc.file_name ?? t('title') })}
                 >
                   <Download size={16} className="mr-2" aria-hidden />
-                  下載合約文件
+                  {td('downloadContract')}
                 </Button>
               </a>
               {doc.file_name && (
@@ -218,7 +208,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
         {relatedDocs.length > 0 && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-              同公司其他文件
+              {td('relatedDocs')}
             </h3>
             <div className="space-y-2">
               {relatedDocs.map((rd) => (
@@ -233,7 +223,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                       {rd.title}
                     </span>
                     <Badge variant="outline" className="text-xs shrink-0">
-                      {DOC_TYPE_LABELS[rd.doc_type] ?? rd.doc_type}
+                      {t(`docTypes.${rd.doc_type}` as any) ?? rd.doc_type}
                     </Badge>
                   </div>
                   <StatusBadge status={rd.status} />
@@ -249,14 +239,14 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
         {/* Approve / Reject actions */}
         {doc.status === 'pending' && canApprove && (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-2">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">審核操作</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{td('reviewActions')}</h3>
             <Button
               className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-150"
               onClick={() => setApproveOpen(true)}
               disabled={loading}
             >
               <CheckCircle size={15} className="mr-1.5" aria-hidden />
-              核准合約
+              {td('approveContract')}
             </Button>
             <Button
               variant="outline"
@@ -265,7 +255,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               disabled={loading}
             >
               <XCircle size={15} className="mr-1.5" aria-hidden />
-              退回合約
+              {td('rejectContract')}
             </Button>
           </div>
         )}
@@ -274,18 +264,18 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
             <Clock size={14} aria-hidden />
-            操作記錄
+            {td('auditLog')}
           </h3>
           {auditLogs.length === 0 ? (
-            <p className="text-xs text-slate-400">尚無記錄</p>
+            <p className="text-xs text-slate-400">{td('noRecords')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700">
-                    <th className="text-left text-slate-400 font-medium pb-2">動作</th>
-                    <th className="text-left text-slate-400 font-medium pb-2">操作者</th>
-                    <th className="text-left text-slate-400 font-medium pb-2">時間</th>
+                    <th className="text-left text-slate-400 font-medium pb-2">{td('action')}</th>
+                    <th className="text-left text-slate-400 font-medium pb-2">{td('operator')}</th>
+                    <th className="text-left text-slate-400 font-medium pb-2">{td('time')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
@@ -293,10 +283,10 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                     <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                       <td className="py-2 pr-2">
                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {ACTION_LABELS[log.action] ?? log.action}
+                          {ta(log.action as any) ?? log.action}
                         </span>
                         {log.detail?.reason && (
-                          <p className="text-red-500 mt-0.5">原因：{log.detail.reason}</p>
+                          <p className="text-red-500 mt-0.5">{td('reason', { reason: log.detail.reason })}</p>
                         )}
                       </td>
                       <td className="py-2 pr-2 text-slate-500">
@@ -318,21 +308,21 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
       <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>確認核准此合約？</DialogTitle>
+            <DialogTitle>{td('approveConfirmTitle')}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-slate-600 dark:text-slate-400 py-2">
-            核准後狀態將更新為「已核准」，此操作將記錄於稽核日誌。
+            {td('approveConfirmMsg')}
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setApproveOpen(false)} disabled={loading}>
-              取消
+              {tc('cancel')}
             </Button>
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] transition-colors duration-150"
               onClick={handleApprove}
               disabled={loading}
             >
-              {loading ? '核准中...' : '確認核准'}
+              {loading ? td('approving') : td('confirmApprove')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -342,11 +332,11 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>確認退回此合約？</DialogTitle>
+            <DialogTitle>{td('rejectConfirmTitle')}</DialogTitle>
           </DialogHeader>
           <div className="py-2">
             <label htmlFor="reject-reason" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              退回原因 <span className="text-red-500" aria-hidden>*</span>
+              {td('rejectReason')} <span className="text-red-500" aria-hidden>*</span>
             </label>
             <Textarea
               id="reject-reason"
@@ -354,12 +344,12 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               rows={3}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="請說明退回原因..."
+              placeholder={td('rejectReasonPlaceholder')}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectOpen(false)} disabled={loading}>
-              取消
+              {tc('cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -367,7 +357,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               onClick={handleReject}
               disabled={loading}
             >
-              {loading ? '退回中...' : '確認退回'}
+              {loading ? td('rejecting') : td('confirmReject')}
             </Button>
           </DialogFooter>
         </DialogContent>

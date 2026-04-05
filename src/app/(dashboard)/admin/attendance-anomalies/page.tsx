@@ -67,10 +67,11 @@ export default async function AttendanceAnomaliesPage() {
   const internAnomalies = Object.values(internMap).filter(({ missed }) => missed > 3)
 
   const t = await getTranslations('nav')
+  const tAdmin = await getTranslations('admin.attendanceAnomalies')
 
   return (
     <div>
-      <PageHeader title={t('adminAttendanceAnomalies')} description="連續自動補打、實習生漏打統計" />
+      <PageHeader title={t('adminAttendanceAnomalies')} description={tAdmin('description')} />
       <AnomaliesClient anomalies={anomalies} internAnomalies={internAnomalies} />
     </div>
   )

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -11,6 +12,8 @@ import { Send } from 'lucide-react'
 
 export function FeedbackForm() {
   const router = useRouter()
+  const t = useTranslations('feedback')
+  const tc = useTranslations('common')
   const [type, setType] = useState('feature')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -19,7 +22,7 @@ export function FeedbackForm() {
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
-      toast.error('請填寫標題與說明')
+      toast.error(t('requiredFields'))
       return
     }
     setLoading(true)
@@ -47,34 +50,34 @@ export function FeedbackForm() {
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
-    toast.success('回饋已送出，謝謝！')
+    toast.success(t('submitted'))
     router.push('/')
   }
 
   return (
     <div className="max-w-lg space-y-5">
       <div>
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">類型 <span className="text-red-500">*</span></label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('formType')} <span className="text-red-500">*</span></label>
         <Select value={type} onValueChange={v => setType(v ?? 'feature')}>
           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="feature">新功能需求</SelectItem>
-            <SelectItem value="bug">Bug 回報</SelectItem>
-            <SelectItem value="improvement">改善建議</SelectItem>
-            <SelectItem value="other">其他</SelectItem>
+            <SelectItem value="feature">{t('typeFeature')}</SelectItem>
+            <SelectItem value="bug">{t('typeBug')}</SelectItem>
+            <SelectItem value="improvement">{t('typeImprovement')}</SelectItem>
+            <SelectItem value="other">{t('typeOther')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">標題 <span className="text-red-500">*</span></label>
-        <Input value={title} onChange={e => setTitle(e.target.value)} className="mt-1" placeholder="一句話說明問題或需求" />
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('formTitle')} <span className="text-red-500">*</span></label>
+        <Input value={title} onChange={e => setTitle(e.target.value)} className="mt-1" placeholder={t('titlePlaceholder')} />
       </div>
       <div>
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">詳細說明 <span className="text-red-500">*</span></label>
-        <Textarea rows={5} value={description} onChange={e => setDescription(e.target.value)} className="mt-1" placeholder="盡量描述背景、期望行為、實際行為..." />
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('formDescription')} <span className="text-red-500">*</span></label>
+        <Textarea rows={5} value={description} onChange={e => setDescription(e.target.value)} className="mt-1" placeholder={t('descriptionPlaceholder')} />
       </div>
       <div>
-        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">截圖（選填）</label>
+        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('screenshotOptional')}</label>
         <input
           type="file"
           accept="image/*"
@@ -85,7 +88,7 @@ export function FeedbackForm() {
       </div>
       <Button onClick={handleSubmit} disabled={loading} className="min-h-[44px]">
         <Send size={15} className="mr-1.5" />
-        {loading ? '送出中...' : '送出回饋'}
+        {loading ? tc('submitting') : t('submitFeedback')}
       </Button>
     </div>
   )

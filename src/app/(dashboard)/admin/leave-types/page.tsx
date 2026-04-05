@@ -20,10 +20,11 @@ export default async function LeaveTypesPage() {
     .order('name')
 
   const t = await getTranslations('nav')
+  const tAdmin = await getTranslations('admin.leaveTypes')
 
   return (
     <div>
-      <PageHeader title={t('adminLeaveTypes')} description="設定可用假別與規則" />
+      <PageHeader title={t('adminLeaveTypes')} description={tAdmin('description')} />
       <LeaveTypesManager leaveTypes={leaveTypes ?? []} />
     </div>
   )

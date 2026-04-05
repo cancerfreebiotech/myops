@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.20] - 2026-04-05
+
+### Added
+- 深度 i18n 補完：所有剩餘硬編碼中文字串替換為翻譯 key
+  - Contracts（合約類型/狀態篩選/到期警告/操作按鈕）
+  - Documents（上傳表單/詳情/分類/狀態）
+  - Overtime（申請表單/狀態/計算說明）
+  - Leave（申請/審核/類型標籤）
+  - Payroll（薪資明細/anomalies/年度報告）
+  - Feedback（回饋表單）
+  - StatusBadge（通用狀態標籤多語系）
+  - Admin（settings/users/leave-types/overtime-rates/attendance-anomalies）
+- 三語 JSON 全面同步（686 key，zh-TW/en/ja 完全對齊）
+
 ## [0.2.19] - 2026-04-05
 
 ### Added

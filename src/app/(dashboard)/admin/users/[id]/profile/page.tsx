@@ -44,7 +44,7 @@ export default async function UserProfilePage({
     <div>
       <PageHeader
         title={`${targetUser.display_name ?? targetUser.email} — ${t('title')}`}
-        description="編輯員工人事基本資料、薪資設定與銀行資訊"
+        description={t('profileDescription')}
       />
       <ProfileClient
         targetUser={targetUser}

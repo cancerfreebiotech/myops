@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SettingsClient } from './SettingsClient'
 
@@ -14,9 +15,11 @@ export default async function SettingsPage() {
     .eq('id', user.id)
     .single()
 
+  const t = await getTranslations('settings')
+
   return (
     <div>
-      <PageHeader title="個人設定" description="管理你的帳號與偏好設定" />
+      <PageHeader title={t('title')} description={t('description')} />
       <SettingsClient profile={profile} />
     </div>
   )
