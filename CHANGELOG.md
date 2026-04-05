@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.15] - 2026-04-05
+
+### Fixed
+- Sidebar 語言切換改回 `window.location.reload()`（`router.refresh()` 不會重新載入 root layout 的 NextIntlClientProvider）
+
 ## [0.2.14] - 2026-04-04
 
 ### Fixed

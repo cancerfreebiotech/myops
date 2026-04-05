@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import {
@@ -57,7 +57,6 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const [collapsed, setCollapsed] = useState(false)
@@ -93,8 +92,8 @@ export function Sidebar({ user }: SidebarProps) {
     // 2. Save to DB (fire-and-forget)
     const supabase = createClient()
     supabase.from('users').update({ language: lang }).eq('id', user.id).then()
-    // 3. Refresh page with new locale
-    router.refresh()
+    // 3. Full reload to pick up new locale in root layout
+    window.location.reload()
   }
 
   const dmsItems: NavItem[] = [
