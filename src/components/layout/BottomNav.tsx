@@ -47,7 +47,7 @@ export function BottomNav({ userId }: BottomNavProps) {
       const supabase = createClient()
       const timeout = new Promise(resolve => setTimeout(resolve, 2000))
       await Promise.race([
-        supabase.from('users').update({ language: lang }).eq('id', userId),
+        supabase.from('users').update({ language: lang }).eq('id', userId).catch(() => {}),
         timeout,
       ])
     }

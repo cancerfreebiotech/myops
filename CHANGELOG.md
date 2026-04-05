@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.28] - 2026-04-06
+
+### Fixed
+- 語言切換 DB update 加 `.catch(() => {})`，Supabase reject 時不阻擋 navigation
+
 ## [0.2.27] - 2026-04-06
 
 ### Fixed
