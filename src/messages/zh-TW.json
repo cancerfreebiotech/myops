@@ -56,7 +56,8 @@
     "logout": "登出",
     "loginWith": "使用 Microsoft 帳號登入",
     "loginDescription": "請使用 @cancerfree.io 帳號登入",
-    "unauthorized": "你沒有權限存取此頁面"
+    "unauthorized": "你沒有權限存取此頁面",
+    "quickStartLink": "首次使用？查看快速入門指南"
   },
   "mfa": {
     "setup": {

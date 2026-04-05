@@ -27,7 +27,7 @@ export default async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Public routes — no auth required
-  const publicRoutes = ['/login', '/api/auth/callback', '/api/locale']
+  const publicRoutes = ['/login', '/quick-start', '/api/auth/callback', '/api/locale']
   if (publicRoutes.some(r => pathname.startsWith(r))) {
     return supabaseResponse
   }

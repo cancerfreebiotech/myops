@@ -56,7 +56,8 @@
     "logout": "ログアウト",
     "loginWith": "Microsoftアカウントでログイン",
     "loginDescription": "@cancerfree.ioのアカウントでログインしてください",
-    "unauthorized": "このページへのアクセス権限がありません"
+    "unauthorized": "このページへのアクセス権限がありません",
+    "quickStartLink": "初めてご利用の方はクイックスタートガイドをご覧ください"
   },
   "mfa": {
     "setup": {

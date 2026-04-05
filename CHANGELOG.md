@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.24] - 2026-04-05
+
+### Added
+- 登入頁右上角新增語言切換 + Dark/Light 主題切換（`LoginControls` client component）
+- 新增 Quick Start 指南頁面 `/quick-start`（三語言，zh-TW/en/ja 內容完整）
+  - 6 步驟說明：開啟系統 → 登入 → Microsoft 驗證 → MFA 設定 → MFA 驗證 → 完成
+  - 頁面內語言切換（無需登入）
+  - 推薦驗證器 App 說明（Google/Microsoft Authenticator）
+- 登入頁底部新增「Quick Start 指南」連結
+- `/quick-start` 加入公開路由（不需登入可存取）
+
+### Fixed
+- 英文 projects 頁面：`memberCount`/`totalRecords` 改用 ICU plural 格式（"1 member" 而非 "1 members"）
+
 ## [0.2.22] - 2026-04-05
 
 ### Fixed

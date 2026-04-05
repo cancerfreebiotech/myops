@@ -56,7 +56,8 @@
     "logout": "Sign Out",
     "loginWith": "Sign in with Microsoft",
     "loginDescription": "Please sign in with your @cancerfree.io account",
-    "unauthorized": "You do not have permission to access this page"
+    "unauthorized": "You do not have permission to access this page",
+    "quickStartLink": "New user? View Quick Start Guide"
   },
   "mfa": {
     "setup": {
@@ -593,7 +594,7 @@
     "ownerPrefix": "Owner: ",
     "active": "Active",
     "closed": "Closed",
-    "memberCount": "{count} members",
+    "memberCount": "{count, plural, one {# member} other {# members}}",
     "membersManage": "Member Management",
     "noMembers": "No members yet",
     "selectMemberPlaceholder": "Select member",
@@ -610,7 +611,7 @@
     "memberAdded": "Member added",
     "ongoing": "Ongoing",
     "overtimeRecords": "Overtime Records",
-    "totalRecords": "{count} records",
+    "totalRecords": "{count, plural, one {# record} other {# records}}",
     "noOvertimeRecords": "No overtime records for this project",
     "thDate": "Date",
     "thApplicant": "Applicant",
