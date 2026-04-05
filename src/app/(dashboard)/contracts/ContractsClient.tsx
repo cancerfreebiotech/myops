@@ -100,7 +100,7 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
-              <TableHead>{t('title')}</TableHead>
+              <TableHead>{t('nameColumn')}</TableHead>
               <TableHead>{t('type')}</TableHead>
               <TableHead>{t('company')}</TableHead>
               <TableHead>{t('status')}</TableHead>

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.22] - 2026-04-05
+
+### Fixed
+- Contracts 表格欄位標題：`contracts.title`（頁面標題）改用獨立 `contracts.nameColumn` key
+- DocumentsClient：DB 動態值 `doc_type`/`folder` 改用 guard check，避免 unknown key 觸發 next-intl 報錯
+- DocumentDetailClient：audit log `action` 改用 guard check，不在 catalog 內的值 fallback 回原始字串
+
 ## [0.2.21] - 2026-04-05
 
 ### Fixed

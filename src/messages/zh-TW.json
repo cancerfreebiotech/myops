@@ -330,7 +330,8 @@
       "reject": "退回",
       "archive": "封存",
       "download": "下載"
-    }
+    },
+    "nameColumn": "合約名稱"
   },
   "attendance": {
     "title": "打卡",

@@ -330,7 +330,8 @@
       "reject": "却下",
       "archive": "アーカイブ",
       "download": "ダウンロード"
-    }
+    },
+    "nameColumn": "契約名"
   },
   "attendance": {
     "title": "出退勤",

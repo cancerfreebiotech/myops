@@ -126,8 +126,8 @@ export function DocumentsClient({ departments, companies, currentUser }: Documen
                     <span className="font-medium text-sm truncate max-w-[260px]">{doc.title}</span>
                   </div>
                 </TableCell>
-                <TableCell><Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}</Badge></TableCell>
-                <TableCell className="text-sm text-slate-500">{t(`folders.${doc.folder}` as any) ?? doc.folder}</TableCell>
+                <TableCell><Badge variant="outline" className="text-xs">{(DOC_TYPE_KEYS as readonly string[]).includes(doc.doc_type) ? t(`docTypes.${doc.doc_type}`) : doc.doc_type}</Badge></TableCell>
+                <TableCell className="text-sm text-slate-500">{(FOLDER_KEYS as readonly string[]).includes(doc.folder) ? t(`folders.${doc.folder}`) : doc.folder}</TableCell>
                 <TableCell><StatusBadge status={doc.status} /></TableCell>
                 <TableCell className="text-sm text-slate-500">{doc.expires_at ?? '—'}</TableCell>
                 <TableCell className="text-sm text-slate-500">{doc.uploaded_by_user?.display_name ?? '—'}</TableCell>

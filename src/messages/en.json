@@ -330,7 +330,8 @@
       "reject": "Reject",
       "archive": "Archive",
       "download": "Download"
-    }
+    },
+    "nameColumn": "Contract Name"
   },
   "attendance": {
     "title": "Attendance",

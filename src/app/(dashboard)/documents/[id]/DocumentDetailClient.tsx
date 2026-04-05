@@ -13,6 +13,8 @@ import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 
+const KNOWN_AUDIT_ACTIONS = new Set(['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm'])
+
 interface Props {
   doc: any
   auditLogs: any[]
@@ -308,7 +310,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
               {auditLogs.map((log: any) => (
                 <div key={log.id} className="text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{ta(log.action as any) ?? log.action}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{KNOWN_AUDIT_ACTIONS.has(log.action) ? ta(log.action as any) : log.action}</span>
                     <span className="text-slate-400">{format(new Date(log.created_at), 'MM/dd HH:mm')}</span>
                   </div>
                   <p className="text-slate-400 mt-0.5">{log.user?.display_name}</p>
