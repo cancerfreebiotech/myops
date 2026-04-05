@@ -46,8 +46,7 @@ export function BottomNav({ userId }: BottomNavProps) {
   useEffect(() => setMounted(true), [])
 
   const handleLanguageChange = (lang: string) => {
-    document.cookie = `MYOPS_LOCALE=${lang};path=/;max-age=31536000`
-    window.location.reload()
+    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 
   const handleLogout = async () => {

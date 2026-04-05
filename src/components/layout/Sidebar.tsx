@@ -82,12 +82,12 @@ export function Sidebar({ user }: SidebarProps) {
     window.location.href = '/login'
   }
 
-  const handleLanguageChange = async (lang: string) => {
-    document.cookie = `MYOPS_LOCALE=${lang};path=/;max-age=31536000`
+  const handleLanguageChange = (lang: string) => {
     // Save to DB (fire-and-forget)
     const supabase = createClient()
     supabase.from('users').update({ language: lang }).eq('id', user.id).then()
-    window.location.reload()
+    // Redirect to API which sets cookie server-side, then redirects back
+    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 
   const dmsItems: NavItem[] = [

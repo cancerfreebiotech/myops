@@ -5,6 +5,7 @@ import { LOCALE_COOKIE } from '@/i18n/config'
 
 /**
  * Syncs the user's DB language preference to the locale cookie on mount.
+ * Redirects through /api/locale to set cookie server-side.
  */
 export function LocaleSync({ locale }: { locale: string }) {
   useEffect(() => {
@@ -14,8 +15,7 @@ export function LocaleSync({ locale }: { locale: string }) {
       ?.split('=')[1]
 
     if (current !== locale) {
-      document.cookie = `${LOCALE_COOKIE}=${locale};path=/;max-age=31536000`
-      window.location.reload()
+      window.location.href = `/api/locale?lang=${locale}&redirect=${encodeURIComponent(window.location.pathname)}`
     }
   }, [locale])
 

@@ -42,11 +42,11 @@ export function SettingsClient({ profile }: { profile: any }) {
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang)
-    document.cookie = `MYOPS_LOCALE=${lang};path=/;max-age=31536000`
     // Save to DB (fire-and-forget)
     const supabase = createClient()
     supabase.from('users').update({ language: lang }).eq('id', profile.id).then()
-    window.location.reload()
+    // Redirect to API which sets cookie server-side, then redirects back
+    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent('/settings')}`
   }
 
   const handleResetMfa = async () => {

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.17] - 2026-04-05
+
+### Fixed
+- 語言切換改用 GET redirect：`/api/locale?lang=en&redirect=/` → server 設 cookie + 302 回原頁
+- 最可靠的 cookie 設定方式：瀏覽器處理 Set-Cookie + redirect，不依賴 fetch 或 document.cookie
+
 ## [0.2.16] - 2026-04-05
 
 ### Fixed
