@@ -45,7 +45,11 @@ export function BottomNav({ userId }: BottomNavProps) {
   const handleLanguageChange = async (lang: string) => {
     if (userId) {
       const supabase = createClient()
-      await supabase.from('users').update({ language: lang }).eq('id', userId)
+      const timeout = new Promise(resolve => setTimeout(resolve, 2000))
+      await Promise.race([
+        supabase.from('users').update({ language: lang }).eq('id', userId),
+        timeout,
+      ])
     }
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }

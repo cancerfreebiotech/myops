@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.27] - 2026-04-06
+
+### Fixed
+- Sidebar / BottomNav 語言切換 DB update 改為 `Promise.race` + 2 秒 timeout，避免 Supabase 慢或失敗時卡住
+
 ## [0.2.26] - 2026-04-05
 
 ### Fixed

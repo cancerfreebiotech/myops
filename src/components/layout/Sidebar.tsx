@@ -78,9 +78,13 @@ export function Sidebar({ user }: SidebarProps) {
     window.location.href = '/login'
   }
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = async (lang: string) => {
     const supabase = createClient()
-    supabase.from('users').update({ language: lang }).eq('id', user.id).then()
+    const timeout = new Promise(resolve => setTimeout(resolve, 2000))
+    await Promise.race([
+      supabase.from('users').update({ language: lang }).eq('id', user.id),
+      timeout,
+    ])
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 
