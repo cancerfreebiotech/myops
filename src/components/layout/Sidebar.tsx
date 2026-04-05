@@ -83,16 +83,10 @@ export function Sidebar({ user }: SidebarProps) {
   }
 
   const handleLanguageChange = async (lang: string) => {
-    // 1. Set cookie (fast, no auth needed)
-    await fetch('/api/locale', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locale: lang }),
-    })
-    // 2. Save to DB (fire-and-forget)
+    document.cookie = `MYOPS_LOCALE=${lang};path=/;max-age=31536000`
+    // Save to DB (fire-and-forget)
     const supabase = createClient()
     supabase.from('users').update({ language: lang }).eq('id', user.id).then()
-    // 3. Full reload to pick up new locale in root layout
     window.location.reload()
   }
 

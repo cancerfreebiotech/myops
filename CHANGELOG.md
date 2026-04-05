@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.16] - 2026-04-05
+
+### Fixed
+- 語言切換改用 `document.cookie` 直接設定（跟 EDC 完全一樣），不經 API route，不受 middleware 影響
+
 ## [0.2.15] - 2026-04-05
 
 ### Fixed

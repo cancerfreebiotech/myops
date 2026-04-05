@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { toast } from 'sonner'
+
 
 const PRIMARY_ITEMS = [
   { href: '/', label: '首頁', icon: LayoutDashboard },
@@ -45,12 +45,8 @@ export function BottomNav({ userId }: BottomNavProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  const handleLanguageChange = async (lang: string) => {
-    await fetch('/api/locale', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ locale: lang }),
-    })
+  const handleLanguageChange = (lang: string) => {
+    document.cookie = `MYOPS_LOCALE=${lang};path=/;max-age=31536000`
     window.location.reload()
   }
 
