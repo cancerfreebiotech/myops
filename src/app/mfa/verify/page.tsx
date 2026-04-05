@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 export default function MFAVerifyPage() {
+  const t = useTranslations('mfa.verify')
   const router = useRouter()
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
@@ -14,7 +16,7 @@ export default function MFAVerifyPage() {
 
   const handleVerify = async () => {
     if (!code || code.length !== 6) {
-      setError('請輸入 6 位數驗證碼')
+      setError(t('codeError'))
       return
     }
     setLoading(true)
@@ -42,7 +44,7 @@ export default function MFAVerifyPage() {
     })
 
     if (verifyError) {
-      setError('驗證碼錯誤，請重試')
+      setError(t('verifyError'))
       setLoading(false)
       return
     }
@@ -55,8 +57,8 @@ export default function MFAVerifyPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10 w-full max-w-sm flex flex-col gap-6">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">輸入驗證碼</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">請輸入 Authenticator App 上的 6 位數驗證碼</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{t('title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('description')}</p>
         </div>
 
         <div className="flex flex-col gap-2">
@@ -72,7 +74,7 @@ export default function MFAVerifyPage() {
         </div>
 
         <Button onClick={handleVerify} disabled={loading || code.length !== 6}>
-          {loading ? '驗證中...' : '驗證'}
+          {loading ? t('verifying') : t('submit')}
         </Button>
       </div>
     </div>

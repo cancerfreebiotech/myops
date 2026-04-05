@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ProjectDetail } from './ProjectDetail'
 
@@ -63,11 +64,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     project.owner_id === currentUser?.id ||
     project.members?.some((m: any) => m.user_id === currentUser?.id && m.role === 'lead')
 
+  const t = await getTranslations('projects')
+
   return (
     <div>
       <PageHeader
         title={project.name}
-        description={project.description ?? '專案詳情'}
+        description={project.description ?? t('detail')}
       />
       <ProjectDetail
         project={project}

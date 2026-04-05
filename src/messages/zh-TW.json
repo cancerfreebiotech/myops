@@ -48,10 +48,15 @@
   },
   "mfa": {
     "setup": {
-      "title": "設定雙因素驗證（2FA）",
-      "description": "為保護帳號安全，請使用 Authenticator App 掃描 QR Code",
+      "title": "設定雙因素驗證",
+      "description": "使用 Authenticator App 掃描 QR Code",
       "scanQR": "掃描 QR Code",
+      "manualKey": "手動輸入密鑰：",
       "enterCode": "輸入驗證碼",
+      "enterCodePlaceholder": "輸入 6 位數驗證碼",
+      "codeError": "請輸入 6 位數驗證碼",
+      "verifyError": "驗證碼錯誤，請重試",
+      "verifying": "驗證中...",
       "verify": "驗證並啟用",
       "success": "2FA 設定成功"
     },
@@ -59,6 +64,9 @@
       "title": "輸入驗證碼",
       "description": "請輸入 Authenticator App 上的 6 位數驗證碼",
       "code": "驗證碼",
+      "codeError": "請輸入 6 位數驗證碼",
+      "verifyError": "驗證碼錯誤，請重試",
+      "verifying": "驗證中...",
       "submit": "驗證"
     }
   },
@@ -156,6 +164,32 @@
     "gpsSuccess": "GPS 取得成功",
     "gpsFailed": "GPS 取得失敗",
     "noRecords": "尚無打卡紀錄",
+    "noRecordsShort": "無紀錄",
+    "clockInLabel": "上班",
+    "clockOutLabel": "下班",
+    "auto": "自動",
+    "gpsNoLocation": "無法取得 GPS 位置，打卡將不含座標",
+    "clockInSuccess": "上班打卡成功",
+    "clockOutSuccess": "下班打卡成功",
+    "myRecords": "我的紀錄",
+    "teamOverview": "團隊總覽",
+    "allDepartments": "所有部門",
+    "employee": "員工",
+    "date": "日期",
+    "workHours": "工時",
+    "monthSuffix": "月",
+    "makeupRequest": "補打卡申請",
+    "makeup": {
+      "title": "補打卡申請",
+      "date": "補打日期",
+      "type": "補打類型",
+      "time": "補打時間",
+      "reason": "補打原因",
+      "reasonPlaceholder": "請說明補打原因...",
+      "submit": "送出申請",
+      "success": "補打卡申請已送出",
+      "requiredFields": "請填寫所有必填欄位"
+    },
     "admin": {
       "title": "全公司打卡紀錄",
       "description": "查看及管理所有員工出勤紀錄"
@@ -176,7 +210,29 @@
     "remaining": "剩餘額度",
     "cancelLeave": "取消請假",
     "cancelConfirm": "確認取消請假申請？",
-    "noLeaves": "尚無請假紀錄"
+    "noLeaves": "尚無請假紀錄",
+    "calendarView": {
+      "weekDays": ["日", "一", "二", "三", "四", "五", "六"],
+      "allDepartments": "全部部門",
+      "myDeptOnly": "只顯示我的部門",
+      "clearDateFilter": "清除日期篩選",
+      "department": "部門",
+      "legend": "圖例：",
+      "leaveList": "請假名單",
+      "clickToFilter": "（點擊日曆格可篩選）",
+      "noRecordDay": "此日沒有請假記錄",
+      "noRecordMonth": "本月目前沒有請假記錄",
+      "onlyApprovedPending": "僅顯示已核准或待審核的請假申請",
+      "name": "姓名",
+      "leaveType": "假別",
+      "period": "期間",
+      "days": "天數",
+      "status": "狀態",
+      "peopleOnLeave": "人請假",
+      "dayUnit": "天",
+      "prevMonth": "上個月",
+      "nextMonth": "下個月"
+    }
   },
   "overtime": {
     "title": "加班",
@@ -235,11 +291,22 @@
   "settings": {
     "title": "個人設定",
     "description": "管理個人偏好設定",
+    "profile": "基本資料",
+    "displayName": "顯示名稱",
+    "displayNameRequired": "請輸入顯示名稱",
+    "role": "角色：",
+    "employmentType": "身份：",
+    "saveChanges": "儲存變更",
+    "saved": "已儲存",
     "language": "語言",
     "theme": "主題",
-    "themeLight": "淺色",
-    "themeDark": "深色",
-    "mfaReset": "重設 MFA"
+    "themeLight": "淺色模式",
+    "themeDark": "深色模式",
+    "mfa": "雙重驗證 (MFA)",
+    "mfaResetDescription": "重置 MFA 後，下次登入時需重新掃描 QR Code 設定 Authenticator。",
+    "mfaReset": "重置 MFA",
+    "mfaNotSet": "尚未設定 MFA",
+    "mfaResetSuccess": "MFA 已重置，下次登入時需重新設定"
   },
   "feedback": {
     "title": "意見回饋",

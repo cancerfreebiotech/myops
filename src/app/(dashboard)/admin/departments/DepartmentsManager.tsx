@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Plus, Pencil } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 const schema = z.object({
   name: z.string().min(1, '必填'),
@@ -21,6 +22,7 @@ type FormValues = z.infer<typeof schema>
 
 export function DepartmentsManager({ departments }: { departments: any[] }) {
   const router = useRouter()
+  const tc = useTranslations('common')
   const [editDept, setEditDept] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
 
@@ -114,9 +116,9 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
                 </FormItem>
               )} />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>取消</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc('cancel')}</Button>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? '儲存中...' : '儲存'}
+                  {form.formState.isSubmitting ? tc('saving') : tc('save')}
                 </Button>
               </div>
             </form>

@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.19] - 2026-04-05
+
+### Added
+- 全站 i18n 接入：39 個 component 全部接上 useTranslations()/getTranslations()
+  - Sidebar、BottomNav、Dashboard、Login、MFA setup/verify
+  - Settings（主題/語言/MFA）
+  - Attendance（打卡/補打卡/團隊總覽）、Leave calendar
+  - Announcements（分類標籤/確認狀態）、Contracts、Documents
+  - Overtime、Payroll（含 anomalies）、Projects、Feedback
+  - StatusBadge（通用狀態標籤）
+  - 所有 Admin 頁面（users/departments/companies/leave-types/leave-balances/overtime-rates/insurance-brackets/bonuses/feedback/audit/attendance/settings）
+- 三語 JSON 完全同步（zh-TW/en/ja 共 367 key，0 缺漏）
+
 ## [0.2.18] - 2026-04-05
 
 ### Fixed

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { OvertimeClient } from './OvertimeClient'
 
@@ -39,9 +40,11 @@ export default async function OvertimePage() {
     .order('created_at', { ascending: false })
   pendingApprovals = pending ?? []
 
+  const t = await getTranslations('overtime')
+
   return (
     <div>
-      <PageHeader title="加班管理" description="加班申請與審核" />
+      <PageHeader title={t('title')} description={t('description')} />
       <OvertimeClient
         currentUser={currentUser}
         projects={projects ?? []}

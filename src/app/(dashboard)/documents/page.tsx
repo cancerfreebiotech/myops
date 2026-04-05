@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DocumentsClient } from './DocumentsClient'
 
@@ -9,9 +10,11 @@ export default async function DocumentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: currentUser } = await supabase.from('users').select('role, granted_features, department_id').eq('id', user!.id).single()
 
+  const t = await getTranslations('documents')
+
   return (
     <div>
-      <PageHeader title="文件管理" description="合約、公告、規章、內部文件" />
+      <PageHeader title={t('title')} description={t('description')} />
       <DocumentsClient
         departments={departments ?? []}
         companies={companies ?? []}

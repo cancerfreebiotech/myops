@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnnouncementsClient } from './AnnouncementsClient'
 
@@ -37,9 +38,11 @@ export default async function AnnouncementsPage() {
     reportData = data ?? []
   }
 
+  const t = await getTranslations('announcements')
+
   return (
     <div>
-      <PageHeader title="公告管理" description="公告發佈、確認狀況追蹤" />
+      <PageHeader title={t('title')} description={t('description')} />
       <AnnouncementsClient
         currentUser={currentUser}
         canPublish={canPublish}

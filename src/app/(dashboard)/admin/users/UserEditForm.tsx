@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { FEATURE_KEYS } from '@/lib/features'
+import { useTranslations } from 'next-intl'
 
 const schema = z.object({
   department_id: z.string().nullable(),
@@ -32,6 +33,8 @@ interface UserEditFormProps {
 
 export function UserEditForm({ user, departments, allUsers, onClose }: UserEditFormProps) {
   const router = useRouter()
+  const t = useTranslations('admin.users')
+  const tc = useTranslations('common')
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -85,9 +88,9 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="department_id" render={({ field }) => (
             <FormItem>
-              <FormLabel>部門</FormLabel>
+              <FormLabel>{t('department')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder="選擇部門" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><SelectValue placeholder={t('department')} /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -98,7 +101,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="role" render={({ field }) => (
             <FormItem>
-              <FormLabel>角色</FormLabel>
+              <FormLabel>{t('role')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
@@ -111,7 +114,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="employment_type" render={({ field }) => (
             <FormItem>
-              <FormLabel>員工類型</FormLabel>
+              <FormLabel>{t('employmentType')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
@@ -124,7 +127,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="work_region" render={({ field }) => (
             <FormItem>
-              <FormLabel>工作地區</FormLabel>
+              <FormLabel>{t('workRegion')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
@@ -139,9 +142,9 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="manager_id" render={({ field }) => (
             <FormItem>
-              <FormLabel>直屬主管</FormLabel>
+              <FormLabel>{t('manager')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder="選擇主管" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><SelectValue placeholder={t('manager')} /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
@@ -152,9 +155,9 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="deputy_approver_id" render={({ field }) => (
             <FormItem>
-              <FormLabel>代理審核人</FormLabel>
+              <FormLabel>{t('deputyApprover')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder="選擇代理審核人" /></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><SelectValue placeholder={t('deputyApprover')} /></SelectTrigger></FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
@@ -165,7 +168,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
           <FormField control={form.control} name="is_active" render={({ field }) => (
             <FormItem>
-              <FormLabel>帳號狀態</FormLabel>
+              <FormLabel>{t('status')}</FormLabel>
               <Select value={field.value ? 'true' : 'false'} onValueChange={v => field.onChange(v === 'true')}>
                 <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
@@ -179,7 +182,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
 
         {/* Granted Features */}
         <div>
-          <FormLabel className="text-sm">特殊權限</FormLabel>
+          <FormLabel className="text-sm">{t('grantedFeatures')}</FormLabel>
           <div className="mt-2 flex flex-wrap gap-2">
             {FEATURE_KEYS.map(({ key, label }) => (
               <button
@@ -199,9 +202,9 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
         </div>
 
         <div className="flex justify-end gap-2 pt-2">
-          <Button type="button" variant="outline" onClick={onClose}>取消</Button>
+          <Button type="button" variant="outline" onClick={onClose}>{tc('cancel')}</Button>
           <Button type="submit" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? '儲存中...' : '儲存'}
+            {form.formState.isSubmitting ? tc('saving') : tc('save')}
           </Button>
         </div>
       </form>

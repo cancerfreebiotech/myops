@@ -48,10 +48,15 @@
   },
   "mfa": {
     "setup": {
-      "title": "Set Up Two-Factor Authentication (2FA)",
-      "description": "To protect your account, please scan the QR Code with your Authenticator App",
+      "title": "Set Up Two-Factor Authentication",
+      "description": "Scan the QR Code with your Authenticator App",
       "scanQR": "Scan QR Code",
+      "manualKey": "Manual key: ",
       "enterCode": "Enter verification code",
+      "enterCodePlaceholder": "Enter 6-digit code",
+      "codeError": "Please enter a 6-digit code",
+      "verifyError": "Invalid code, please try again",
+      "verifying": "Verifying...",
       "verify": "Verify & Enable",
       "success": "2FA setup successful"
     },
@@ -59,6 +64,9 @@
       "title": "Enter Verification Code",
       "description": "Please enter the 6-digit code from your Authenticator App",
       "code": "Verification Code",
+      "codeError": "Please enter a 6-digit code",
+      "verifyError": "Invalid code, please try again",
+      "verifying": "Verifying...",
       "submit": "Verify"
     }
   },
@@ -156,6 +164,32 @@
     "gpsSuccess": "GPS obtained",
     "gpsFailed": "GPS failed",
     "noRecords": "No attendance records",
+    "noRecordsShort": "No records",
+    "clockInLabel": "In",
+    "clockOutLabel": "Out",
+    "auto": "Auto",
+    "gpsNoLocation": "Unable to obtain GPS location. Clock will be recorded without coordinates.",
+    "clockInSuccess": "Clocked in at",
+    "clockOutSuccess": "Clocked out at",
+    "myRecords": "My Records",
+    "teamOverview": "Team Overview",
+    "allDepartments": "All Departments",
+    "employee": "Employee",
+    "date": "Date",
+    "workHours": "Hours",
+    "monthSuffix": "",
+    "makeupRequest": "Makeup Clock Request",
+    "makeup": {
+      "title": "Makeup Clock Request",
+      "date": "Date",
+      "type": "Type",
+      "time": "Time",
+      "reason": "Reason",
+      "reasonPlaceholder": "Please explain the reason...",
+      "submit": "Submit Request",
+      "success": "Makeup clock request submitted",
+      "requiredFields": "Please fill in all required fields"
+    },
     "admin": {
       "title": "Company Attendance Records",
       "description": "View and manage all employee attendance records"
@@ -176,7 +210,29 @@
     "remaining": "Remaining Balance",
     "cancelLeave": "Cancel Leave",
     "cancelConfirm": "Confirm cancellation of this leave request?",
-    "noLeaves": "No leave records"
+    "noLeaves": "No leave records",
+    "calendarView": {
+      "weekDays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+      "allDepartments": "All Departments",
+      "myDeptOnly": "My department only",
+      "clearDateFilter": "Clear date filter",
+      "department": "Department",
+      "legend": "Legend:",
+      "leaveList": "Leave List",
+      "clickToFilter": "(Click a calendar cell to filter)",
+      "noRecordDay": "No leave records on this day",
+      "noRecordMonth": "No leave records this month",
+      "onlyApprovedPending": "Only approved or pending leave requests are shown",
+      "name": "Name",
+      "leaveType": "Leave Type",
+      "period": "Period",
+      "days": "Days",
+      "status": "Status",
+      "peopleOnLeave": "on leave",
+      "dayUnit": "day",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month"
+    }
   },
   "overtime": {
     "title": "Overtime",
@@ -235,11 +291,22 @@
   "settings": {
     "title": "Settings",
     "description": "Manage personal preferences",
+    "profile": "Profile",
+    "displayName": "Display Name",
+    "displayNameRequired": "Please enter a display name",
+    "role": "Role: ",
+    "employmentType": "Type: ",
+    "saveChanges": "Save Changes",
+    "saved": "Saved",
     "language": "Language",
     "theme": "Theme",
-    "themeLight": "Light",
-    "themeDark": "Dark",
-    "mfaReset": "Reset MFA"
+    "themeLight": "Light Mode",
+    "themeDark": "Dark Mode",
+    "mfa": "Two-Factor Authentication (MFA)",
+    "mfaResetDescription": "After resetting MFA, you will need to re-scan the QR Code with Authenticator on your next login.",
+    "mfaReset": "Reset MFA",
+    "mfaNotSet": "MFA is not set up yet",
+    "mfaResetSuccess": "MFA has been reset. You will need to set it up again on next login."
   },
   "feedback": {
     "title": "Feedback",

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function AttendanceClient({ currentUser, departments, isHR }: Props) {
+  const t = useTranslations('attendance')
+  const tc = useTranslations('common')
   const [todayRecord, setTodayRecord] = useState<any>(null)
   const [records, setRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -78,7 +81,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
     const { data, error } = await res.json()
     setClocking(false)
     if (error) { toast.error(error); return }
-    toast.success(action === 'in' ? `上班打卡成功 ${format(parseISO(data.time), 'HH:mm')}` : `下班打卡成功 ${format(parseISO(data.time), 'HH:mm')}`)
+    toast.success(`${action === 'in' ? t('clockInSuccess') : t('clockOutSuccess')} ${format(parseISO(data.time), 'HH:mm')}`)
     fetchTodayRecord()
   }
 
@@ -100,20 +103,20 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          { key: 'clock', label: '打卡' },
-          { key: 'records', label: '我的紀錄' },
-          ...(isHR ? [{ key: 'team', label: '團隊總覽' }] : []),
-        ].map((t: any) => (
+          { key: 'clock', label: t('title') },
+          { key: 'records', label: t('myRecords') },
+          ...(isHR ? [{ key: 'team', label: t('teamOverview') }] : []),
+        ].map((item: any) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={item.key}
+            onClick={() => setTab(item.key)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t.key
+              tab === item.key
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
@@ -129,17 +132,17 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-3">
-                <p className="text-xs text-slate-400 mb-0.5">上班</p>
+                <p className="text-xs text-slate-400 mb-0.5">{t('clockInLabel')}</p>
                 <p className={`font-medium ${todayRecord?.clock_in ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}`}>
                   {todayRecord?.clock_in ? format(parseISO(todayRecord.clock_in), 'HH:mm') : '—'}
-                  {todayRecord?.is_auto_in && <span className="ml-1 text-xs text-amber-500">(自動)</span>}
+                  {todayRecord?.is_auto_in && <span className="ml-1 text-xs text-amber-500">({t('auto')})</span>}
                 </p>
               </div>
               <div className="rounded-lg bg-slate-50 dark:bg-slate-700/50 p-3">
-                <p className="text-xs text-slate-400 mb-0.5">下班</p>
+                <p className="text-xs text-slate-400 mb-0.5">{t('clockOutLabel')}</p>
                 <p className={`font-medium ${todayRecord?.clock_out ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
                   {todayRecord?.clock_out ? format(parseISO(todayRecord.clock_out), 'HH:mm') : '—'}
-                  {todayRecord?.is_auto_out && <span className="ml-1 text-xs text-amber-500">(自動)</span>}
+                  {todayRecord?.is_auto_out && <span className="ml-1 text-xs text-amber-500">({t('auto')})</span>}
                 </p>
               </div>
             </div>
@@ -149,7 +152,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
           {gpsStatus === 'denied' && (
             <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
               <AlertTriangle size={15} />
-              <span>無法取得 GPS 位置，打卡將不含座標</span>
+              <span>{t('gpsNoLocation')}</span>
             </div>
           )}
           {gpsStatus === 'ok' && coords && (
@@ -167,7 +170,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
               onClick={() => handleClock('in')}
             >
               <LogIn size={18} className="mr-2" />
-              上班打卡
+              {t('clockIn')}
             </Button>
             <Button
               size="lg"
@@ -177,7 +180,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
               onClick={() => handleClock('out')}
             >
               <LogOut size={18} className="mr-2" />
-              下班打卡
+              {t('clockOut')}
             </Button>
           </div>
 
@@ -187,7 +190,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
               onClick={() => setMakeupOpen(true)}
               className="text-sm text-slate-400 hover:text-blue-600 transition-colors"
             >
-              補打卡申請
+              {t('makeupRequest')}
             </button>
           </div>
         </div>
@@ -203,7 +206,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
             </Select>
             <Select value={filterMonth} onValueChange={v => setFilterMonth(v ?? filterMonth)}>
               <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
-              <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} 月</SelectItem>)}</SelectContent>
+              <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <RecordsTable records={records} loading={loading} showUser={false} />
@@ -220,12 +223,12 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
             </Select>
             <Select value={filterMonth} onValueChange={v => setFilterMonth(v ?? filterMonth)}>
               <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
-              <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} 月</SelectItem>)}</SelectContent>
+              <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={filterDept} onValueChange={v => setFilterDept(v ?? '')}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="所有部門" /></SelectTrigger>
+              <SelectTrigger className="w-36"><SelectValue placeholder={t('allDepartments')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">所有部門</SelectItem>
+                <SelectItem value="">{t('allDepartments')}</SelectItem>
                 {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -240,6 +243,8 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
 }
 
 function RecordsTable({ records, loading, showUser }: { records: any[], loading: boolean, showUser: boolean }) {
+  const t = useTranslations('attendance')
+  const tc = useTranslations('common')
   const workHours = (r: any) => {
     if (!r.clock_in || !r.clock_out) return null
     const diff = (new Date(r.clock_out).getTime() - new Date(r.clock_in).getTime()) / 3600000
@@ -251,18 +256,18 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
       <table className="w-full text-sm">
         <thead className="bg-slate-50 dark:bg-slate-800">
           <tr>
-            {showUser && <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">員工</th>}
-            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">日期</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">上班</th>
-            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">下班</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">工時</th>
+            {showUser && <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>}
+            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('date')}</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('clockInLabel')}</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('clockOutLabel')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('workHours')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {loading ? (
-            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">載入中...</td></tr>
+            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
           ) : records.length === 0 ? (
-            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">無紀錄</td></tr>
+            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{t('noRecordsShort')}</td></tr>
           ) : records.map((r: any) => (
             <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
               {showUser && (
@@ -274,7 +279,7 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
                   <span className={r.is_auto_in ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}>
                     {r.clock_in ? format(parseISO(r.clock_in), 'HH:mm') : <span className="text-slate-400">—</span>}
                   </span>
-                  {r.is_auto_in && <Badge variant="outline" className="text-xs py-0 px-1 border-amber-300 text-amber-600">自動</Badge>}
+                  {r.is_auto_in && <Badge variant="outline" className="text-xs py-0 px-1 border-amber-300 text-amber-600">{t('auto')}</Badge>}
                 </div>
               </td>
               <td className="px-4 py-3">
@@ -282,7 +287,7 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
                   <span className={r.is_auto_out ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-300'}>
                     {r.clock_out ? format(parseISO(r.clock_out), 'HH:mm') : <span className="text-slate-400">—</span>}
                   </span>
-                  {r.is_auto_out && <Badge variant="outline" className="text-xs py-0 px-1 border-amber-300 text-amber-600">自動</Badge>}
+                  {r.is_auto_out && <Badge variant="outline" className="text-xs py-0 px-1 border-amber-300 text-amber-600">{t('auto')}</Badge>}
                 </div>
               </td>
               <td className="px-4 py-3 text-right">

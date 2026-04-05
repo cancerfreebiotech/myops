@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Plus, Pencil, Search } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 const schema = z.object({
   name: z.string().min(1, '必填'),
@@ -22,6 +23,7 @@ type FormValues = z.infer<typeof schema>
 
 export function CompaniesManager({ companies }: { companies: any[] }) {
   const router = useRouter()
+  const tc = useTranslations('common')
   const [editCompany, setEditCompany] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
@@ -73,7 +75,7 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
       <div className="flex items-center justify-between mb-4">
         <div className="relative max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input placeholder="搜尋公司名稱或別名..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder={`${tc('search')}...`} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Button onClick={openCreate} className="min-h-[44px]">
           <Plus size={16} className="mr-1" /> 新增公司
@@ -91,7 +93,7 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={3} className="text-center text-slate-400 py-8">無資料</TableCell></TableRow>
+              <TableRow><TableCell colSpan={3} className="text-center text-slate-400 py-8">{tc('noData')}</TableCell></TableRow>
             ) : filtered.map(company => (
               <TableRow key={company.id}>
                 <TableCell className="font-medium">{company.name}</TableCell>
@@ -135,9 +137,9 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
                 </FormItem>
               )} />
               <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>取消</Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>{tc('cancel')}</Button>
                 <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? '儲存中...' : '儲存'}
+                  {form.formState.isSubmitting ? tc('saving') : tc('save')}
                 </Button>
               </div>
             </form>

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { FeedbackAdmin } from './FeedbackAdmin'
 
@@ -17,9 +18,11 @@ export default async function FeedbackAdminPage() {
     .select(`*, user:users!feedback_submitted_by_fkey(id, display_name)`)
     .order('created_at', { ascending: false })
 
+  const t = await getTranslations('admin.feedback')
+
   return (
     <div>
-      <PageHeader title="回饋管理" description="使用者回報的功能需求與 Bug" />
+      <PageHeader title={t('title')} description={t('description')} />
       <FeedbackAdmin feedbacks={feedbacks ?? []} />
     </div>
   )

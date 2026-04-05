@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LeaveBalancesManager } from './LeaveBalancesManager'
 
@@ -33,9 +34,11 @@ export default async function LeaveBalancesPage() {
     .select('*')
     .eq('year', currentYear)
 
+  const t = await getTranslations('nav')
+
   return (
     <div>
-      <PageHeader title="假別額度管理" description={`${currentYear} 年度員工假別額度`} />
+      <PageHeader title={t('adminLeaveBalances')} description={`${currentYear} 年度員工假別額度`} />
       <LeaveBalancesManager
         users={users ?? []}
         leaveTypes={leaveTypes ?? []}

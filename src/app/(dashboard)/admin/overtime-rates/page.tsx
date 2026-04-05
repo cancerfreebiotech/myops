@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { OvertimeRatesManager } from './OvertimeRatesManager'
 
@@ -14,9 +15,11 @@ export default async function OvertimeRatesPage() {
 
   const { data: rates } = await service.from('overtime_rates').select('*').order('ot_type')
 
+  const t = await getTranslations('nav')
+
   return (
     <div>
-      <PageHeader title="加班費率管理" description="各類加班費率設定" />
+      <PageHeader title={t('adminOvertimeRates')} description="各類加班費率設定" />
       <OvertimeRatesManager rates={rates ?? []} />
     </div>
   )

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnnualPayrollClient } from './AnnualPayrollClient'
 
@@ -56,11 +57,13 @@ export default async function AnnualPayrollPage({ searchParams }: PageProps) {
     allAnnualRecords = allRecordsData ?? []
   }
 
+  const t = await getTranslations('payroll')
+
   return (
     <div>
       <PageHeader
-        title="全年薪資總覽"
-        description="查看全年每月薪資明細與統計"
+        title={t('annual')}
+        description={t('description')}
       />
       <AnnualPayrollClient
         currentUser={currentUser}

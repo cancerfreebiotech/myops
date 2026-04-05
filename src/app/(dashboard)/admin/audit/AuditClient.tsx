@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ const ACTION_COLORS: Record<string, string> = {
 }
 
 export function AuditClient() {
+  const tc = useTranslations('common')
   const [logs, setLogs] = useState<any[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -84,9 +86,9 @@ export function AuditClient() {
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             {loading ? (
-              <tr><td colSpan={5} className="text-center py-8 text-slate-400">載入中...</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
             ) : logs.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-8 text-slate-400">無紀錄</td></tr>
+              <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('noData')}</td></tr>
             ) : logs.map((log: any) => (
               <tr key={log.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <td className="px-4 py-3 text-slate-500 whitespace-nowrap">

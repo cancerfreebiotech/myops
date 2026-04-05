@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnomaliesClient } from './AnomaliesClient'
 
@@ -65,9 +66,11 @@ export default async function AttendanceAnomaliesPage() {
   }
   const internAnomalies = Object.values(internMap).filter(({ missed }) => missed > 3)
 
+  const t = await getTranslations('nav')
+
   return (
     <div>
-      <PageHeader title="打卡異常 Dashboard" description="連續自動補打、實習生漏打統計" />
+      <PageHeader title={t('adminAttendanceAnomalies')} description="連續自動補打、實習生漏打統計" />
       <AnomaliesClient anomalies={anomalies} internAnomalies={internAnomalies} />
     </div>
   )

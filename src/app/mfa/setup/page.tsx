@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 export default function MFASetupPage() {
+  const t = useTranslations('mfa.setup')
   const router = useRouter()
   const [qrCode, setQrCode] = useState<string>('')
   const [secret, setSecret] = useState<string>('')
@@ -30,7 +32,7 @@ export default function MFASetupPage() {
 
   const handleVerify = async () => {
     if (!code || code.length !== 6) {
-      setError('請輸入 6 位數驗證碼')
+      setError(t('codeError'))
       return
     }
     setLoading(true)
@@ -48,7 +50,7 @@ export default function MFASetupPage() {
       code,
     })
     if (verifyError) {
-      setError('驗證碼錯誤，請重試')
+      setError(t('verifyError'))
       setLoading(false)
       return
     }
@@ -60,8 +62,8 @@ export default function MFASetupPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-10 w-full max-w-sm flex flex-col gap-6">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">設定雙因素驗證</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">使用 Authenticator App 掃描 QR Code</p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{t('title')}</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('description')}</p>
         </div>
 
         {qrCode && (
@@ -70,14 +72,14 @@ export default function MFASetupPage() {
               <Image src={qrCode} alt="MFA QR Code" width={180} height={180} unoptimized />
             </div>
             <p className="text-xs text-slate-400 text-center break-all">
-              手動輸入密鑰：<span className="font-mono text-slate-600 dark:text-slate-300">{secret}</span>
+              {t('manualKey')}<span className="font-mono text-slate-600 dark:text-slate-300">{secret}</span>
             </p>
           </div>
         )}
 
         <div className="flex flex-col gap-2">
           <Input
-            placeholder="輸入 6 位數驗證碼"
+            placeholder={t('enterCodePlaceholder')}
             value={code}
             onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             inputMode="numeric"
@@ -87,7 +89,7 @@ export default function MFASetupPage() {
         </div>
 
         <Button onClick={handleVerify} disabled={loading || code.length !== 6}>
-          {loading ? '驗證中...' : '驗證並啟用'}
+          {loading ? t('verifying') : t('verify')}
         </Button>
       </div>
     </div>

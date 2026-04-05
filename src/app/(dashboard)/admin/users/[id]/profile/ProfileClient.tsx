@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   targetUser: any
@@ -15,6 +16,8 @@ interface Props {
 
 export function ProfileClient({ targetUser, initialProfile }: Props) {
   const router = useRouter()
+  const t = useTranslations('admin.profile')
+  const tc = useTranslations('common')
   const [saving, setSaving] = useState(false)
   const [showId, setShowId] = useState(false)
   const [showBank, setShowBank] = useState(false)
@@ -64,7 +67,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
         href="/admin/users"
         className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
       >
-        <ArrowLeft size={14} /> 返回使用者管理
+        <ArrowLeft size={14} /> {tc('back')}
       </Link>
 
       {/* User info summary */}
@@ -80,66 +83,66 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
         </div>
       </div>
 
-      {/* Section: 基本資訊 */}
+      {/* Section: basicInfo */}
       <section>
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">基本資訊</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('basicInfo')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="hire_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">到職日</label>
+            <label htmlFor="hire_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('hireDate')}</label>
             <Input id="hire_date" type="date" value={form.hire_date} onChange={e => update('hire_date', e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label htmlFor="termination_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">離職日</label>
+            <label htmlFor="termination_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('terminationDate')}</label>
             <Input id="termination_date" type="date" value={form.termination_date} onChange={e => update('termination_date', e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label htmlFor="birth_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">出生日期</label>
+            <label htmlFor="birth_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('birthDate')}</label>
             <Input id="birth_date" type="date" value={form.birth_date} onChange={e => update('birth_date', e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">電話</label>
+            <label htmlFor="phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('phone')}</label>
             <Input id="phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} className="mt-1" />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="address" className="text-sm font-medium text-slate-700 dark:text-slate-300">地址</label>
+            <label htmlFor="address" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('address')}</label>
             <Input id="address" value={form.address} onChange={e => update('address', e.target.value)} className="mt-1" />
           </div>
         </div>
       </section>
 
-      {/* Section: 緊急聯絡人 */}
+      {/* Section: emergencyContact */}
       <section>
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">緊急聯絡人</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('emergencyContact')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="emergency_contact" className="text-sm font-medium text-slate-700 dark:text-slate-300">姓名</label>
+            <label htmlFor="emergency_contact" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('emergencyContact')}</label>
             <Input id="emergency_contact" value={form.emergency_contact} onChange={e => update('emergency_contact', e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label htmlFor="emergency_phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">電話</label>
+            <label htmlFor="emergency_phone" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('emergencyPhone')}</label>
             <Input id="emergency_phone" type="tel" value={form.emergency_phone} onChange={e => update('emergency_phone', e.target.value)} className="mt-1" />
           </div>
         </div>
       </section>
 
-      {/* Section: 薪資設定 */}
+      {/* Section: salarySettings */}
       <section>
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">薪資設定</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('salarySettings')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {targetUser.employment_type === 'full_time' ? (
             <div>
-              <label htmlFor="monthly_salary" className="text-sm font-medium text-slate-700 dark:text-slate-300">月薪 (NT$)</label>
+              <label htmlFor="monthly_salary" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('monthlySalary')} (NT$)</label>
               <Input id="monthly_salary" type="number" min={0} value={form.monthly_salary} onChange={e => update('monthly_salary', e.target.value)} className="mt-1" />
             </div>
           ) : (
             <div>
-              <label htmlFor="hourly_rate" className="text-sm font-medium text-slate-700 dark:text-slate-300">時薪 (NT$)</label>
+              <label htmlFor="hourly_rate" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('hourlyRate')} (NT$)</label>
               <Input id="hourly_rate" type="number" min={0} value={form.hourly_rate} onChange={e => update('hourly_rate', e.target.value)} className="mt-1" />
             </div>
           )}
           <div>
             <label htmlFor="labor_pension_self" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              勞退自提比例 (%)
+              {t('laborPensionSelf')} (%)
             </label>
             <Input
               id="labor_pension_self"
@@ -151,22 +154,22 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
               onChange={e => update('labor_pension_self', e.target.value)}
               className="mt-1"
             />
-            <p className="text-xs text-slate-400 mt-1">0–6%，由員工自行決定</p>
+            <p className="text-xs text-slate-400 mt-1">{t('laborPensionNote')}</p>
           </div>
         </div>
       </section>
 
-      {/* Section: 銀行資料 */}
+      {/* Section: bankInfo */}
       <section>
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">銀行資料</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('bankInfo')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="bank_code" className="text-sm font-medium text-slate-700 dark:text-slate-300">銀行代碼</label>
+            <label htmlFor="bank_code" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('bankCode')}</label>
             <Input id="bank_code" value={form.bank_code} onChange={e => update('bank_code', e.target.value)} className="mt-1" />
           </div>
           <div>
             <label htmlFor="bank_account" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              銀行帳號
+              {t('bankAccount')}
             </label>
             <div className="flex items-center gap-2 mt-1">
               <Input
@@ -179,7 +182,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
               <button
                 type="button"
                 onClick={() => setShowBank(!showBank)}
-                aria-label={showBank ? '隱藏帳號' : '顯示帳號'}
+                aria-label={showBank ? t('hide') : t('show')}
                 className="p-2 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 {showBank ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -189,14 +192,14 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
         </div>
       </section>
 
-      {/* Section: 身分資訊 */}
+      {/* Section: identityInfo */}
       <section>
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">身分資訊</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('identityInfo')}</h3>
         <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3 mb-3">
-          <p className="text-xs text-orange-700 dark:text-orange-400">敏感資訊，請小心處理。</p>
+          <p className="text-xs text-orange-700 dark:text-orange-400">{t('sensitiveWarning')}</p>
         </div>
         <div className="max-w-sm">
-          <label htmlFor="id_number" className="text-sm font-medium text-slate-700 dark:text-slate-300">身分證字號</label>
+          <label htmlFor="id_number" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('idNumber')}</label>
           <div className="flex items-center gap-2 mt-1">
             <Input
               id="id_number"
@@ -208,7 +211,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
             <button
               type="button"
               onClick={() => setShowId(!showId)}
-              aria-label={showId ? '隱藏身分證號' : '顯示身分證號'}
+              aria-label={showId ? t('hide') : t('show')}
               className="p-2 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               {showId ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -221,9 +224,9 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
       <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
         <Button onClick={handleSave} disabled={saving} className="min-h-[44px]">
           {saving ? (
-            <><Loader2 size={15} className="mr-1.5 animate-spin" /> 儲存中...</>
+            <><Loader2 size={15} className="mr-1.5 animate-spin" /> {tc('saving')}</>
           ) : (
-            <><Save size={15} className="mr-1.5" /> 儲存</>
+            <><Save size={15} className="mr-1.5" /> {tc('save')}</>
           )}
         </Button>
       </div>

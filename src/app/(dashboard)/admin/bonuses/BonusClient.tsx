@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -9,13 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Plus, Trash2, Gift } from 'lucide-react'
-
-const BONUS_TYPES: Record<string, string> = {
-  year_end: '年終獎金',
-  performance: '績效獎金',
-  project: '專案獎金',
-  other: '其他',
-}
 
 interface Props {
   initialBonuses: any[]
@@ -25,6 +19,15 @@ interface Props {
 
 export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
   const router = useRouter()
+  const t = useTranslations('admin.bonuses')
+  const tc = useTranslations('common')
+
+  const BONUS_TYPES: Record<string, string> = {
+    year_end: t('types.year_end'),
+    performance: t('types.performance'),
+    project: t('types.project'),
+    other: t('types.other'),
+  }
   const [bonuses, setBonuses] = useState(initialBonuses)
   const [year, setYear] = useState(currentYear)
   const [loading, setLoading] = useState(false)
@@ -103,7 +106,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <label htmlFor="bonus-year" className="text-sm font-medium text-slate-600 dark:text-slate-400">年度</label>
+          <label htmlFor="bonus-year" className="text-sm font-medium text-slate-600 dark:text-slate-400">{tc('year')}</label>
           <select
             id="bonus-year"
             value={year}
@@ -116,7 +119,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
           </select>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700">
-          <Plus size={15} className="mr-1.5" /> 新增獎金
+          <Plus size={15} className="mr-1.5" /> {t('addBonus')}
         </Button>
       </div>
 
@@ -125,11 +128,11 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">員工</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">月份</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">類型</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">金額</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">說明</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tc('month')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('type')}</th>
+                <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('amount')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('description2')}</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -138,7 +141,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                 <tr>
                   <td colSpan={6} className="text-center py-12">
                     <Gift size={36} className="mx-auto text-slate-200 dark:text-slate-600 mb-3" />
-                    <p className="text-sm text-slate-400">{year} 年尚無獎金紀錄</p>
+                    <p className="text-sm text-slate-400">{year} {t('noData')}</p>
                   </td>
                 </tr>
               ) : (
@@ -176,7 +179,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                   })}
                   <tr className="bg-slate-50 dark:bg-slate-800/80">
                     <td colSpan={3} className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-300">
-                      合計
+                      {tc('total')}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
                       {formatCurrency(total)}
@@ -193,11 +196,11 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>新增獎金紀錄</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t('addBonus')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                員工 <span className="text-red-500">*</span>
+                {t('employee')} <span className="text-red-500">*</span>
               </label>
               <Select value={selUser} onValueChange={v => setSelUser(v ?? '')}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder="選擇員工" /></SelectTrigger>
@@ -211,7 +214,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  類型 <span className="text-red-500">*</span>
+                  {t('type')} <span className="text-red-500">*</span>
                 </label>
                 <Select value={bonusType} onValueChange={v => setBonusType(v ?? '')}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="選擇類型" /></SelectTrigger>
@@ -223,7 +226,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">月份</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{tc('month')}</label>
                 <Input
                   type="number"
                   min={1}
@@ -236,7 +239,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  金額 (NT$) <span className="text-red-500">*</span>
+                  {t('amount')} (NT$) <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="number"
@@ -248,7 +251,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">說明</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('description2')}</label>
               <Textarea
                 rows={2}
                 value={description}
@@ -258,9 +261,9 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>取消</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{tc('cancel')}</Button>
             <Button onClick={handleCreate} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
-              {loading ? '建立中...' : '建立'}
+              {loading ? tc('creating') : tc('create')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -269,11 +272,11 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
       {/* Delete dialog */}
       <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>確認刪除</DialogTitle></DialogHeader>
-          <p className="text-sm text-slate-600 dark:text-slate-400">確定要刪除此筆獎金紀錄？此操作無法復原。</p>
+          <DialogHeader><DialogTitle>{tc('confirm')}{tc('delete')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{t('deleteConfirm')}</p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>取消</Button>
-            <Button variant="destructive" onClick={handleDelete}>刪除</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)}>{tc('cancel')}</Button>
+            <Button variant="destructive" onClick={handleDelete}>{tc('delete')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

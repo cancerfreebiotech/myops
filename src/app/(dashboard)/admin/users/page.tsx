@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { UsersTable } from './UsersTable'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminUsersPage() {
   const supabase = await createClient()
@@ -26,9 +27,11 @@ export default async function AdminUsersPage() {
     .is('deleted_at', null)
     .order('code')
 
+  const t = await getTranslations('admin.users')
+
   return (
     <div>
-      <PageHeader title="使用者管理" description="管理員工帳號、角色與權限" />
+      <PageHeader title={t('title')} description={t('description')} />
       <UsersTable users={users ?? []} departments={departments ?? []} />
     </div>
   )

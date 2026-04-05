@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ProjectsClient } from './ProjectsClient'
 
@@ -34,9 +35,11 @@ export default async function ProjectsPage() {
     .is('deleted_at', null)
     .order('display_name')
 
+  const t = await getTranslations('projects')
+
   return (
     <div>
-      <PageHeader title="專案管理" description="建立專案、管理成員" />
+      <PageHeader title={t('title')} description={t('description')} />
       <ProjectsClient
         projects={projects ?? []}
         allUsers={allUsers ?? []}

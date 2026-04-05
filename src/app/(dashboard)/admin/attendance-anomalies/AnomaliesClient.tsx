@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { AlertTriangle, UserX } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
+  const tc = useTranslations('common')
   return (
     <div className="space-y-6">
       {/* Full-time auto-clock anomalies */}
@@ -26,7 +28,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
         </div>
         {anomalies.length === 0 ? (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 text-sm">
-            無異常紀錄
+            {tc('noData')}
           </div>
         ) : (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -73,7 +75,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
         </div>
         {internAnomalies.length === 0 ? (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 text-sm">
-            無異常紀錄
+            {tc('noData')}
           </div>
         ) : (
           <div className="rounded-lg border border-red-200 dark:border-red-900 overflow-hidden">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -23,6 +24,8 @@ interface Props {
 
 export function ContractsClient({ companies, currentUser, canApprove }: Props) {
   const router = useRouter()
+  const t = useTranslations('contracts')
+  const tc = useTranslations('common')
   const [contracts, setContracts] = useState<any[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -66,7 +69,7 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <Input placeholder="搜尋合約名稱..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
+          <Input placeholder={`${tc('search')}...`} value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
         <Select value={filterType} onValueChange={v => { setFilterType(v ?? ''); setPage(1) }}>
           <SelectTrigger className="w-36"><SelectValue placeholder="所有類型" /></SelectTrigger>
@@ -76,20 +79,20 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="所有狀態" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder={tc('filter')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有狀態</SelectItem>
-            <SelectItem value="pending">待審核</SelectItem>
-            <SelectItem value="approved">已核准</SelectItem>
-            <SelectItem value="rejected">已退回</SelectItem>
+            <SelectItem value="">{tc('filter')}</SelectItem>
+            <SelectItem value="pending">{tc('pending')}</SelectItem>
+            <SelectItem value="approved">{tc('approved')}</SelectItem>
+            <SelectItem value="rejected">{tc('rejected')}</SelectItem>
             <SelectItem value="archived">已封存</SelectItem>
             <SelectItem value="expired">已到期</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterCompany} onValueChange={v => { setFilterCompany(v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-40"><SelectValue placeholder="所有公司" /></SelectTrigger>
+          <SelectTrigger className="w-40"><SelectValue placeholder={t('company')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有公司</SelectItem>
+            <SelectItem value="">{t('company')}</SelectItem>
             {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -99,19 +102,19 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
-              <TableHead>合約名稱</TableHead>
+              <TableHead>{t('title')}</TableHead>
               <TableHead>類型</TableHead>
-              <TableHead>公司</TableHead>
+              <TableHead>{t('company')}</TableHead>
               <TableHead>狀態</TableHead>
-              <TableHead>到期日</TableHead>
-              <TableHead>上傳者</TableHead>
+              <TableHead>{t('expiresAt')}</TableHead>
+              <TableHead>{t('owner')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-400">載入中...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</TableCell></TableRow>
             ) : contracts.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-400">無資料</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-400">{t('noContracts')}</TableCell></TableRow>
             ) : contracts.map(doc => {
               const warn = expiryWarning(doc.expires_at)
               return (
@@ -149,7 +152,7 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
-          <span>共 {count} 筆</span>
+          <span>{tc('total')} {count}</span>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="min-h-[36px]">上一頁</Button>
             <span>{page} / {totalPages}</span>

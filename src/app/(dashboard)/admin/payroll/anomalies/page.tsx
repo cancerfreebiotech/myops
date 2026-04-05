@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnomaliesClient } from './AnomaliesClient'
 
@@ -19,9 +20,11 @@ export default async function PayrollAnomaliesPage() {
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
   if (!isAdmin && !isHR && !isFinance) redirect('/')
 
+  const t = await getTranslations('payroll.anomalies')
+
   return (
     <div>
-      <PageHeader title="薪資異常檢查" description="檢查薪資紀錄中的異常項目" />
+      <PageHeader title={t('title')} description={t('description')} />
       <AnomaliesClient />
     </div>
   )

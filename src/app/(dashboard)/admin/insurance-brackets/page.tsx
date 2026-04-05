@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { InsuranceBracketsClient } from './InsuranceBracketsClient'
 
@@ -31,9 +32,11 @@ export default async function InsuranceBracketsPage() {
     .order('effective_year', { ascending: false })
     .order('grade', { ascending: true })
 
+  const t = await getTranslations('admin.insuranceBrackets')
+
   return (
     <div>
-      <PageHeader title="勞健保級距表" description="上傳及管理年度勞保、健保費率級距表" />
+      <PageHeader title={t('title')} description={t('description')} />
       <InsuranceBracketsClient
         initialLaborBrackets={laborBrackets ?? []}
         initialHealthBrackets={healthBrackets ?? []}

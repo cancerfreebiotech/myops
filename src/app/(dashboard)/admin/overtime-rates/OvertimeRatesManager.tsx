@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -14,6 +15,7 @@ const OT_TYPE_LABELS: Record<string, string> = {
 
 export function OvertimeRatesManager({ rates }: { rates: any[] }) {
   const router = useRouter()
+  const t = useTranslations('common')
   const [edits, setEdits] = useState<Record<string, { multiplier: string; is_active: boolean }>>({})
   const [saving, setSaving] = useState<string | null>(null)
 
@@ -88,7 +90,7 @@ export function OvertimeRatesManager({ rates }: { rates: any[] }) {
                   <td className="px-4 py-3">
                     {changed && (
                       <Button size="sm" className="h-8 min-h-0" onClick={() => handleSave(rate.id)} disabled={saving === rate.id}>
-                        <Save size={13} className="mr-1" />{saving === rate.id ? '...' : '儲存'}
+                        <Save size={13} className="mr-1" />{saving === rate.id ? '...' : t('save')}
                       </Button>
                     )}
                   </td>

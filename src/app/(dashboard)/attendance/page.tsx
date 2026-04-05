@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AttendanceClient } from './AttendanceClient'
 
 export default async function AttendancePage() {
+  const t = await getTranslations('attendance')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -24,7 +26,7 @@ export default async function AttendancePage() {
 
   return (
     <div>
-      <PageHeader title="出勤管理" description="打卡紀錄與出勤狀況" />
+      <PageHeader title={t('title')} description={t('description')} />
       <AttendanceClient
         currentUser={currentUser}
         departments={departments ?? []}

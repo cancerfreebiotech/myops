@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LeaveTypesManager } from './LeaveTypesManager'
 
@@ -18,9 +19,11 @@ export default async function LeaveTypesPage() {
     .is('deleted_at', null)
     .order('name')
 
+  const t = await getTranslations('nav')
+
   return (
     <div>
-      <PageHeader title="假別管理" description="設定可用假別與規則" />
+      <PageHeader title={t('adminLeaveTypes')} description="設定可用假別與規則" />
       <LeaveTypesManager leaveTypes={leaveTypes ?? []} />
     </div>
   )

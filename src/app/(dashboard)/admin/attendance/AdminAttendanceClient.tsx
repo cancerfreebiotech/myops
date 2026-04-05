@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Users, CalendarDays, Bot, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 const PAGE_SIZE = 20
@@ -68,6 +69,8 @@ export function AdminAttendanceClient({
   autoMakeupCount,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('attendance')
+  const tc = useTranslations('common')
   const [month, setMonth] = useState(initialMonth)
   const [userId, setUserId] = useState(initialUserId)
   const [employmentType, setEmploymentType] = useState(initialEmploymentType || 'all')
@@ -211,11 +214,11 @@ export function AdminAttendanceClient({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-700 dark:bg-slate-900">
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">員工</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">日期</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">上班時間</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">下班時間</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">是否自動</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employee')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('date')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockInLabel')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockOutLabel')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('autoClocked')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">備註</th>
               </tr>
             </thead>
@@ -225,7 +228,7 @@ export function AdminAttendanceClient({
                   <td colSpan={6}>
                     <div className="flex flex-col items-center justify-center py-14 text-center">
                       <Clock size={40} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
-                      <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">此月份無打卡紀錄</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('noRecords')}</p>
                       <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
                         請確認篩選條件或選擇其他月份
                       </p>

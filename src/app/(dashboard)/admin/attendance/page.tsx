@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AdminAttendanceClient } from './AdminAttendanceClient'
 
@@ -90,11 +91,13 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
     ? Math.round(Object.values(userDaysMap).reduce((a, b) => a + b, 0) / userCount * 10) / 10
     : 0
 
+  const t = await getTranslations('attendance.admin')
+
   return (
     <div>
       <PageHeader
-        title="出勤管理"
-        description="檢視全員打卡紀錄、異常偵測與出勤統計"
+        title={t('title')}
+        description={t('description')}
       />
       <AdminAttendanceClient
         attendanceRecords={(attendanceRecords ?? []) as any[]}

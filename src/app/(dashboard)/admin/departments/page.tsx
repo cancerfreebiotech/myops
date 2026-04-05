@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DepartmentsManager } from './DepartmentsManager'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminDepartmentsPage() {
   const supabase = await createClient()
@@ -17,9 +18,11 @@ export default async function AdminDepartmentsPage() {
     .is('deleted_at', null)
     .order('code')
 
+  const t = await getTranslations('admin.departments')
+
   return (
     <div>
-      <PageHeader title="部門管理" description="管理公司部門與代號" />
+      <PageHeader title={t('title')} description={t('description')} />
       <DepartmentsManager departments={departments ?? []} />
     </div>
   )

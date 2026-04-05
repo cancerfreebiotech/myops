@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +16,9 @@ interface Props {
 }
 
 export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
+  const t = useTranslations('attendance.makeup')
+  const ta = useTranslations('attendance')
+  const tc = useTranslations('common')
   const [date, setDate] = useState('')
   const [clockType, setClockType] = useState<'in' | 'out'>('in')
   const [time, setTime] = useState('')
@@ -23,7 +27,7 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
 
   const handleSubmit = async () => {
     if (!date || !time || !reason.trim()) {
-      toast.error('請填寫所有必填欄位')
+      toast.error(t('requiredFields'))
       return
     }
     setLoading(true)
@@ -35,7 +39,7 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
-    toast.success('補打卡申請已送出')
+    toast.success(t('success'))
     onOpenChange(false)
     setDate(''); setTime(''); setReason('')
     onSuccess()
@@ -44,34 +48,34 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogHeader><DialogTitle>補打卡申請</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t('title')}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-2">
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">補打日期</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('date')}</label>
             <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">補打類型</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('type')}</label>
             <Select value={clockType} onValueChange={v => setClockType((v ?? 'in') as 'in' | 'out')}>
               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="in">上班打卡</SelectItem>
-                <SelectItem value="out">下班打卡</SelectItem>
+                <SelectItem value="in">{ta('clockIn')}</SelectItem>
+                <SelectItem value="out">{ta('clockOut')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">補打時間</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('time')}</label>
             <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="mt-1" />
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">補打原因</label>
-            <Textarea rows={3} value={reason} onChange={e => setReason(e.target.value)} className="mt-1" placeholder="請說明補打原因..." />
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('reason')}</label>
+            <Textarea rows={3} value={reason} onChange={e => setReason(e.target.value)} className="mt-1" placeholder={t('reasonPlaceholder')} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
-          <Button onClick={handleSubmit} disabled={loading}>{loading ? '送出中...' : '送出申請'}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{tc('cancel')}</Button>
+          <Button onClick={handleSubmit} disabled={loading}>{loading ? tc('submitting') : t('submit')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

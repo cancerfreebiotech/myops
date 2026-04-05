@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { BonusClient } from './BonusClient'
 
@@ -33,9 +34,11 @@ export default async function AdminBonusesPage() {
     .eq('is_active', true)
     .order('display_name')
 
+  const t = await getTranslations('admin.bonuses')
+
   return (
     <div>
-      <PageHeader title="獎金管理" description="管理年終、績效、專案及其他獎金" />
+      <PageHeader title={t('title')} description={t('description')} />
       <BonusClient
         initialBonuses={bonuses ?? []}
         allUsers={allUsers ?? []}

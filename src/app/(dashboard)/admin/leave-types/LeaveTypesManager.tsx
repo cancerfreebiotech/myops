@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -24,6 +25,7 @@ const EMPTY_FORM = {
 
 export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
   const router = useRouter()
+  const t = useTranslations('common')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -102,7 +104,7 @@ export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
                 <td className="px-4 py-3 text-slate-500">{lt.advance_days_required} 天</td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={lt.is_active ? 'border-green-300 text-green-700' : 'border-slate-300 text-slate-500'}>
-                    {lt.is_active ? '啟用' : '停用'}
+                    {lt.is_active ? t('active') : t('inactive')}
                   </Badge>
                 </td>
                 <td className="px-4 py-3">
@@ -166,8 +168,8 @@ export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>取消</Button>
-            <Button onClick={handleSave} disabled={loading}>{loading ? '儲存中...' : '儲存'}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{t('cancel')}</Button>
+            <Button onClick={handleSave} disabled={loading}>{loading ? t('saving') : t('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

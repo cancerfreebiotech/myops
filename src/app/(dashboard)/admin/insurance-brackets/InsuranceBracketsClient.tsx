@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react'
@@ -85,6 +86,7 @@ interface UploadPanelProps {
 }
 
 function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
+  const t = useTranslations('admin.insuranceBrackets')
   const fileRef = useRef<HTMLInputElement>(null)
   const [year, setYear] = useState<number>(new Date().getFullYear())
   const [preview, setPreview] = useState<(LaborRow | HealthRow)[] | null>(null)
@@ -209,7 +211,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
       {/* Panel header */}
       <div className="bg-slate-700 px-5 py-3.5 flex items-center gap-2">
         <FileSpreadsheet size={18} className="text-slate-200" aria-hidden="true" />
-        <h2 className="text-sm font-semibold text-white font-[Lexend]">{label}費率表上傳</h2>
+        <h2 className="text-sm font-semibold text-white font-[Lexend]">{label} — {t('uploadLabel')}</h2>
       </div>
 
       <div className="p-5 space-y-4">
@@ -217,7 +219,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor={`year-${type}`} className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              適用年度 <span className="text-red-500">*</span>
+              {t('year')} <span className="text-red-500">*</span>
             </label>
             <input
               id={`year-${type}`}
@@ -289,7 +291,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
             <div className="flex items-center gap-2">
               <CheckCircle size={16} className="text-green-600 dark:text-green-400" aria-hidden="true" />
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                解析完成，共 <span className="tabular-nums font-semibold">{preview.length}</span> 筆資料
+                {t('parseComplete')}，共 <span className="tabular-nums font-semibold">{preview.length}</span> 筆資料
               </p>
               <button
                 onClick={handleReset}
@@ -305,13 +307,13 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="bg-slate-100 dark:bg-slate-700/50">
-                    <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">等級</th>
-                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">投保薪資</th>
-                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">個人負擔</th>
+                    <th className="text-left px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('grade')}</th>
+                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('insuredSalary')}</th>
+                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('employeeShare')}</th>
                     {!isLabor && (
-                      <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">眷屬負擔</th>
+                      <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('dependents')}</th>
                     )}
-                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">雇主負擔</th>
+                    <th className="text-right px-3 py-2 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('employerShare')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -363,7 +365,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
               ) : (
                 <>
                   <Upload size={16} className="mr-2" aria-hidden="true" />
-                  確認上傳 {year} 年{label}費率表
+                  {t('confirmUpload')} {year} 年 {label}
                 </>
               )}
             </Button>
@@ -382,13 +384,14 @@ interface LaborTableProps {
 }
 
 function LaborTable({ brackets, year }: LaborTableProps) {
+  const t = useTranslations('admin.insuranceBrackets')
   const filtered = brackets.filter(b => b.effective_year === year)
 
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileSpreadsheet size={36} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無勞保費率資料</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無{t('labor')}費率資料</p>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">請上傳 Excel 檔案以匯入費率</p>
       </div>
     )
@@ -399,10 +402,10 @@ function LaborTable({ brackets, year }: LaborTableProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-700 dark:bg-slate-900">
-            <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">等級</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">月投保薪資</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">個人負擔</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">雇主負擔</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('grade')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('insuredSalary')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employeeShare')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employerShare')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -432,13 +435,14 @@ interface HealthTableProps {
 }
 
 function HealthTable({ brackets, year }: HealthTableProps) {
+  const t = useTranslations('admin.insuranceBrackets')
   const filtered = brackets.filter(b => b.effective_year === year)
 
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileSpreadsheet size={36} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無健保費率資料</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無{t('health')}費率資料</p>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">請上傳 Excel 檔案以匯入費率</p>
       </div>
     )
@@ -449,11 +453,11 @@ function HealthTable({ brackets, year }: HealthTableProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-slate-700 dark:bg-slate-900">
-            <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">等級</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">月投保薪資</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">個人負擔</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">眷屬負擔</th>
-            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">雇主負擔</th>
+            <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('grade')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('insuredSalary')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employeeShare')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('dependents')}</th>
+            <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employerShare')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -483,6 +487,8 @@ function HealthTable({ brackets, year }: HealthTableProps) {
 // ─── Main Client Component ────────────────────────────────────────────────────
 
 export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets }: Props) {
+  const t = useTranslations('admin.insuranceBrackets')
+  const tc = useTranslations('common')
   const [laborBrackets, setLaborBrackets] = useState<LaborBracket[]>(initialLaborBrackets)
   const [healthBrackets, setHealthBrackets] = useState<HealthBracket[]>(initialHealthBrackets)
   const [viewYear, setViewYear] = useState<number>(new Date().getFullYear())
@@ -517,21 +523,21 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
     <div className="space-y-8">
       {/* Upload panels */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UploadPanel type="labor" label="勞保" onSuccess={refreshData} />
-        <UploadPanel type="health" label="健保" onSuccess={refreshData} />
+        <UploadPanel type="labor" label={t('labor')} onSuccess={refreshData} />
+        <UploadPanel type="health" label={t('health')} onSuccess={refreshData} />
       </div>
 
       {/* View existing brackets */}
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-base font-semibold text-slate-700 dark:text-slate-300 font-[Lexend]">
-            現有費率資料
+            {t('existingData')}
           </h2>
 
           {/* Year selector */}
           <div className="flex items-center gap-2">
             <label htmlFor="view-year" className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              年度
+              {t('year')}
             </label>
             <select
               id="view-year"
@@ -552,14 +558,14 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
             className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-600 rounded px-2 py-1 transition-colors"
           >
             <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
-            重新整理
+            {tc('refresh')}
           </button>
         </div>
 
         {/* Labor brackets table */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">勞保費率表 — {viewYear} 年</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('labor')}費率表 — {viewYear} 年</h3>
           </div>
           <LaborTable brackets={laborBrackets} year={viewYear} />
         </div>
@@ -567,7 +573,7 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
         {/* Health brackets table */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">健保費率表 — {viewYear} 年</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('health')}費率表 — {viewYear} 年</h3>
           </div>
           <HealthTable brackets={healthBrackets} year={viewYear} />
         </div>

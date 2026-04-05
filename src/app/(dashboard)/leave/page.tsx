@@ -1,9 +1,11 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LeaveClient } from './LeaveClient'
 
 export default async function LeavePage() {
+  const t = await getTranslations('leave')
   const supabase = await createClient()
   const service = await createServiceClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,7 +61,7 @@ export default async function LeavePage() {
 
   return (
     <div>
-      <PageHeader title="請假管理" description="請假申請與紀錄" />
+      <PageHeader title={t('title')} description={t('description')} />
       <LeaveClient
         currentUser={currentUser}
         leaveTypes={leaveTypes ?? []}

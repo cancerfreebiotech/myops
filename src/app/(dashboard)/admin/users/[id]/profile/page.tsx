@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ProfileClient } from './ProfileClient'
+import { getTranslations } from 'next-intl/server'
 
 export default async function UserProfilePage({
   params,
@@ -37,10 +38,12 @@ export default async function UserProfilePage({
     .eq('user_id', id)
     .single()
 
+  const t = await getTranslations('admin.profile')
+
   return (
     <div>
       <PageHeader
-        title={`${targetUser.display_name ?? targetUser.email} 的人事資料`}
+        title={`${targetUser.display_name ?? targetUser.email} — ${t('title')}`}
         description="編輯員工人事基本資料、薪資設定與銀行資訊"
       />
       <ProfileClient

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SettingsClient } from './SettingsClient'
 
@@ -17,9 +18,11 @@ export default async function SettingsPage() {
     .select('key, value')
     .order('key')
 
+  const t = await getTranslations('admin.settings')
+
   return (
     <div>
-      <PageHeader title="系統設定" description="全域參數與 API 金鑰管理" />
+      <PageHeader title={t('title')} description={t('description')} />
       <SettingsClient settings={settings ?? []} />
     </div>
   )

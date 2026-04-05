@@ -1,11 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { AlertTriangle, Search, Loader2 } from 'lucide-react'
 
 export function AnomaliesClient() {
+  const t = useTranslations('payroll.anomalies')
+  const tc = useTranslations('common')
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1
 
@@ -59,7 +62,7 @@ export function AnomaliesClient() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label htmlFor="anom-year" className="text-xs font-medium text-slate-500 dark:text-slate-400">年度</label>
+          <label htmlFor="anom-year" className="text-xs font-medium text-slate-500 dark:text-slate-400">{tc('year')}</label>
           <select
             id="anom-year"
             value={year}
@@ -72,7 +75,7 @@ export function AnomaliesClient() {
           </select>
         </div>
         <div>
-          <label htmlFor="anom-month" className="text-xs font-medium text-slate-500 dark:text-slate-400">月份</label>
+          <label htmlFor="anom-month" className="text-xs font-medium text-slate-500 dark:text-slate-400">{tc('month')}</label>
           <select
             id="anom-month"
             value={month}
@@ -90,21 +93,21 @@ export function AnomaliesClient() {
           className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700"
         >
           {scanning ? (
-            <><Loader2 size={15} className="mr-1.5 animate-spin" /> 掃描中...</>
+            <><Loader2 size={15} className="mr-1.5 animate-spin" /> {t('scanning')}</>
           ) : (
-            <><Search size={15} className="mr-1.5" /> 執行異常掃描</>
+            <><Search size={15} className="mr-1.5" /> {t('scan')}</>
           )}
         </Button>
         <Button variant="outline" onClick={handleFetch} className="min-h-[44px]">
-          查看已標記異常
+          {t('viewFlagged')}
         </Button>
       </div>
 
       {stats && (
         <div className="flex gap-4 text-sm">
-          <span className="text-slate-500">已掃描：<strong className="tabular-nums">{stats.scanned}</strong> 筆</span>
+          <span className="text-slate-500">{t('scanned')}：<strong className="tabular-nums">{stats.scanned}</strong> 筆</span>
           <span className={stats.flagged > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-            異常：<strong className="tabular-nums">{stats.flagged}</strong> 筆
+            {t('flagged')}：<strong className="tabular-nums">{stats.flagged}</strong> 筆
           </span>
         </div>
       )}
@@ -130,7 +133,7 @@ export function AnomaliesClient() {
               ) : anomalies.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="text-center py-12">
-                    <p className="text-sm text-green-600 font-medium">無異常紀錄</p>
+                    <p className="text-sm text-green-600 font-medium">{t('noAnomalies')}</p>
                   </td>
                 </tr>
               ) : anomalies.map((a: any) => (

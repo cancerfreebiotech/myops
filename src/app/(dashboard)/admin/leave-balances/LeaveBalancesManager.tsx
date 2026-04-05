@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,6 +17,7 @@ interface Props {
 
 export function LeaveBalancesManager({ users, leaveTypes, balances, year }: Props) {
   const router = useRouter()
+  const t = useTranslations('common')
   const [filterUser, setFilterUser] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
   const [edits, setEdits] = useState<Record<string, number>>({})
@@ -41,7 +43,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year }: Prop
     const { error } = await res.json()
     setSaving(null)
     if (error) { toast.error(error); return }
-    toast.success('已儲存')
+    toast.success(t('success'))
     const { [key]: _, ...rest } = edits
     setEdits(rest)
     router.refresh()

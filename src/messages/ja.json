@@ -48,10 +48,15 @@
   },
   "mfa": {
     "setup": {
-      "title": "二要素認証（2FA）の設定",
-      "description": "アカウントを保護するため、AuthenticatorアプリでQRコードをスキャンしてください",
+      "title": "二要素認証の設定",
+      "description": "AuthenticatorアプリでQRコードをスキャン",
       "scanQR": "QRコードをスキャン",
+      "manualKey": "手動入力キー：",
       "enterCode": "確認コードを入力",
+      "enterCodePlaceholder": "6桁コードを入力",
+      "codeError": "6桁コードを入力してください",
+      "verifyError": "コードが正しくありません。再試行してください",
+      "verifying": "確認中...",
       "verify": "確認して有効化",
       "success": "2FAの設定が完了しました"
     },
@@ -59,6 +64,9 @@
       "title": "確認コードを入力",
       "description": "Authenticatorアプリの6桁コードを入力してください",
       "code": "確認コード",
+      "codeError": "6桁コードを入力してください",
+      "verifyError": "コードが正しくありません。再試行してください",
+      "verifying": "確認中...",
       "submit": "確認"
     }
   },
@@ -156,6 +164,32 @@
     "gpsSuccess": "GPS取得成功",
     "gpsFailed": "GPS取得失敗",
     "noRecords": "出退勤記録はありません",
+    "noRecordsShort": "記録なし",
+    "clockInLabel": "出勤",
+    "clockOutLabel": "退勤",
+    "auto": "自動",
+    "gpsNoLocation": "GPS位置を取得できません。座標なしで打刻されます。",
+    "clockInSuccess": "出勤打刻完了",
+    "clockOutSuccess": "退勤打刻完了",
+    "myRecords": "自分の記録",
+    "teamOverview": "チーム一覧",
+    "allDepartments": "全部門",
+    "employee": "従業員",
+    "date": "日付",
+    "workHours": "勤務時間",
+    "monthSuffix": "月",
+    "makeupRequest": "打刻修正申請",
+    "makeup": {
+      "title": "打刻修正申請",
+      "date": "修正日",
+      "type": "修正種別",
+      "time": "修正時刻",
+      "reason": "修正理由",
+      "reasonPlaceholder": "修正理由を入力してください...",
+      "submit": "申請を送信",
+      "success": "打刻修正申請を送信しました",
+      "requiredFields": "すべての必須項目を入力してください"
+    },
     "admin": {
       "title": "全社出退勤記録",
       "description": "全従業員の出退勤記録を表示・管理"
@@ -176,7 +210,29 @@
     "remaining": "残日数",
     "cancelLeave": "休暇をキャンセル",
     "cancelConfirm": "この休暇申請をキャンセルしますか？",
-    "noLeaves": "休暇記録はありません"
+    "noLeaves": "休暇記録はありません",
+    "calendarView": {
+      "weekDays": ["日", "月", "火", "水", "木", "金", "土"],
+      "allDepartments": "全部門",
+      "myDeptOnly": "自分の部門のみ",
+      "clearDateFilter": "日付フィルターをクリア",
+      "department": "部門",
+      "legend": "凡例：",
+      "leaveList": "休暇一覧",
+      "clickToFilter": "（カレンダーをクリックしてフィルター）",
+      "noRecordDay": "この日の休暇記録はありません",
+      "noRecordMonth": "今月の休暇記録はありません",
+      "onlyApprovedPending": "承認済みまたは審査中の休暇申請のみ表示",
+      "name": "氏名",
+      "leaveType": "休暇種別",
+      "period": "期間",
+      "days": "日数",
+      "status": "ステータス",
+      "peopleOnLeave": "名休暇",
+      "dayUnit": "日",
+      "prevMonth": "前月",
+      "nextMonth": "翌月"
+    }
   },
   "overtime": {
     "title": "残業",
@@ -235,11 +291,22 @@
   "settings": {
     "title": "設定",
     "description": "個人設定の管理",
+    "profile": "基本情報",
+    "displayName": "表示名",
+    "displayNameRequired": "表示名を入力してください",
+    "role": "役割：",
+    "employmentType": "雇用形態：",
+    "saveChanges": "変更を保存",
+    "saved": "保存しました",
     "language": "言語",
     "theme": "テーマ",
-    "themeLight": "ライト",
-    "themeDark": "ダーク",
-    "mfaReset": "MFAをリセット"
+    "themeLight": "ライトモード",
+    "themeDark": "ダークモード",
+    "mfa": "二要素認証（MFA）",
+    "mfaResetDescription": "MFAをリセットすると、次回ログイン時にQRコードを再スキャンする必要があります。",
+    "mfaReset": "MFAをリセット",
+    "mfaNotSet": "MFAはまだ設定されていません",
+    "mfaResetSuccess": "MFAがリセットされました。次回ログイン時に再設定が必要です。"
   },
   "feedback": {
     "title": "フィードバック",

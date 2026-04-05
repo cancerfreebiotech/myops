@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   format,
   startOfMonth,
@@ -59,7 +60,7 @@ interface Props {
 
 // ─── Week header labels ───────────────────────────────────────────────────────
 
-const WEEK_LABELS = ['日', '一', '二', '三', '四', '五', '六']
+// WEEK_LABELS moved to translation: leave.calendarView.weekDays
 
 // ─── Status dot colour ────────────────────────────────────────────────────────
 
@@ -71,13 +72,7 @@ function statusDotClass(status: string) {
 
 // ─── Duration helper ──────────────────────────────────────────────────────────
 
-function leaveDuration(start: string, end: string): string {
-  const s = parseISO(start)
-  const e = parseISO(end)
-  const days =
-    Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  return days === 1 ? '1 天' : `${days} 天`
-}
+// leaveDuration is now inside the component to access translations
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -89,6 +84,17 @@ export function CalendarClient({
   initialYear,
   initialMonth,
 }: Props) {
+  const t = useTranslations('leave.calendarView')
+  const tc = useTranslations('common')
+
+  const WEEK_LABELS: string[] = [t('weekDays.0'), t('weekDays.1'), t('weekDays.2'), t('weekDays.3'), t('weekDays.4'), t('weekDays.5'), t('weekDays.6')]
+
+  function leaveDuration(start: string, end: string): string {
+    const s = parseISO(start)
+    const e = parseISO(end)
+    const days = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    return `${days} ${t('dayUnit')}`
+  }
   const [currentMonth, setCurrentMonth] = useState<Date>(
     initialYear !== undefined && initialMonth !== undefined
       ? new Date(initialYear, initialMonth, 1)
@@ -226,7 +232,7 @@ export function CalendarClient({
               htmlFor="dept-filter"
               className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap"
             >
-              部門
+              {t('department')}
             </label>
             <select
               id="dept-filter"
@@ -240,7 +246,7 @@ export function CalendarClient({
                 'transition-colors duration-150'
               )}
             >
-              <option value="all">全部部門</option>
+              <option value="all">{t('allDepartments')}</option>
               {departments.map((dept) => (
                 <option key={dept.id} value={dept.id}>
                   {dept.name}
@@ -260,10 +266,10 @@ export function CalendarClient({
               'accent-violet-600',
               'focus-visible:ring-2 focus-visible:ring-violet-600'
             )}
-            aria-label="只顯示我的部門"
+            aria-label={t('myDeptOnly')}
           />
           <span className="text-sm text-slate-700 dark:text-slate-300 select-none">
-            只顯示我的部門
+            {t('myDeptOnly')}
           </span>
         </label>
 
@@ -280,7 +286,7 @@ export function CalendarClient({
               'focus-visible:ring-2 focus-visible:ring-violet-600'
             )}
           >
-            清除日期篩選
+            {t('clearDateFilter')}
           </button>
         )}
       </div>
@@ -292,7 +298,7 @@ export function CalendarClient({
           <button
             type="button"
             onClick={prevMonth}
-            aria-label="上個月"
+            aria-label={t('prevMonth')}
             className={cn(
               'min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg cursor-pointer',
               'text-slate-500 dark:text-slate-400',
@@ -311,7 +317,7 @@ export function CalendarClient({
           <button
             type="button"
             onClick={nextMonth}
-            aria-label="下個月"
+            aria-label={t('nextMonth')}
             className={cn(
               'min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg cursor-pointer',
               'text-slate-500 dark:text-slate-400',
@@ -355,7 +361,7 @@ export function CalendarClient({
                 key={idx}
                 type="button"
                 onClick={() => isCurrentMonth && hasLeaves && handleDayClick(day)}
-                aria-label={`${format(day, 'yyyy-MM-dd')}${hasLeaves ? `，${dayLeaves.length} 人請假` : ''}`}
+                aria-label={`${format(day, 'yyyy-MM-dd')}${hasLeaves ? ` - ${dayLeaves.length} ${t('peopleOnLeave')}` : ''}`}
                 className={cn(
                   'relative min-h-[64px] p-1.5 border-b border-r border-slate-100 dark:border-slate-700/50',
                   'flex flex-col items-start gap-1',
@@ -421,14 +427,14 @@ export function CalendarClient({
 
         {/* Legend */}
         <div className="flex items-center gap-4 px-4 py-2.5 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
-          <span className="text-xs text-slate-500 dark:text-slate-400">圖例：</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('legend')}</span>
           <span className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500 shrink-0" aria-hidden="true" />
-            已核准
+            {tc('approved')}
           </span>
           <span className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 shrink-0" aria-hidden="true" />
-            待審核
+            {tc('pending')}
           </span>
         </div>
       </div>
@@ -439,12 +445,12 @@ export function CalendarClient({
           <CalendarDays className="w-5 h-5 text-violet-600" aria-hidden="true" />
           <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 font-[Lexend]">
             {selectedDay
-              ? `${format(selectedDay, 'M 月 d 日')} 請假名單`
-              : `${format(currentMonth, 'M 月')} 請假名單`}
+              ? `${format(selectedDay, 'M/d')} ${t('leaveList')}`
+              : `${format(currentMonth, 'M')}${tc('month')} ${t('leaveList')}`}
           </h3>
           {selectedDay && (
             <span className="text-sm text-slate-400 dark:text-slate-500">
-              （點擊日曆格可篩選）
+              {t('clickToFilter')}
             </span>
           )}
         </div>
@@ -454,11 +460,11 @@ export function CalendarClient({
             <CalendarDays className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-3" aria-hidden="true" />
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
               {selectedDay
-                ? '此日沒有請假記錄'
-                : '本月目前沒有請假記錄'}
+                ? t('noRecordDay')
+                : t('noRecordMonth')}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-              僅顯示已核准或待審核的請假申請
+              {t('onlyApprovedPending')}
             </p>
           </div>
         ) : (
@@ -478,7 +484,7 @@ export function CalendarClient({
                     （{WEEK_LABELS[getDay(day)]}）
                   </span>
                   <span className="ml-auto text-xs text-slate-500 dark:text-slate-400">
-                    {leaves.length} 人請假
+                    {leaves.length} {t('peopleOnLeave')}
                   </span>
                 </div>
 
@@ -488,19 +494,19 @@ export function CalendarClient({
                     <thead>
                       <tr className="border-b border-slate-100 dark:border-slate-700">
                         <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5">
-                          姓名
+                          {t('name')}
                         </th>
                         <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5">
-                          假別
+                          {t('leaveType')}
                         </th>
                         <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5">
-                          期間
+                          {t('period')}
                         </th>
                         <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5">
-                          天數
+                          {t('days')}
                         </th>
                         <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5">
-                          狀態
+                          {t('status')}
                         </th>
                       </tr>
                     </thead>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,10 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBadge } from '@/components/StatusBadge'
 import { Search, Users, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
-
-const CATEGORY_LABELS: Record<string, string> = {
-  hr: '人事公告', admin: '行政公告', regulation: '法規/規章', urgent: '緊急通知',
-}
 
 interface Props {
   currentUser: any
@@ -23,6 +20,12 @@ interface Props {
 
 export function AnnouncementsClient({ currentUser, canPublish, reportData, userId }: Props) {
   const router = useRouter()
+  const t = useTranslations('announcements')
+  const tc = useTranslations('common')
+
+  const CATEGORY_LABELS: Record<string, string> = {
+    hr: t('categories.hr'), admin: t('categories.admin'), regulation: t('categories.regulation'), urgent: t('categories.urgent'),
+  }
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [myPending, setMyPending] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,8 +59,8 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          { key: 'my', label: '待我確認', badge: myPending.length },
-          { key: 'all', label: '全部公告' },
+          { key: 'my', label: t('unconfirmed'), badge: myPending.length },
+          { key: 'all', label: t('title') },
           ...(canPublish ? [{ key: 'report', label: '發佈報表' }] : []),
         ].map((t: any) => (
           <button
@@ -81,11 +84,11 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
       {tab === 'my' && (
         <div className="space-y-3">
           {loading ? (
-            <p className="text-center py-8 text-slate-400 text-sm">載入中...</p>
+            <p className="text-center py-8 text-slate-400 text-sm">{tc('loading')}</p>
           ) : myPending.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle size={32} className="text-green-400 mx-auto mb-2" />
-              <p className="text-slate-500">沒有待確認的公告</p>
+              <p className="text-slate-500">{t('noAnnouncements')}</p>
             </div>
           ) : myPending.map((item: any) => (
             <div
@@ -106,7 +109,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
                 <p className="text-sm text-slate-500 mt-2 line-clamp-2">{item.document.content_zh}</p>
               )}
               <div className="flex items-center gap-2 mt-3">
-                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">待確認閱讀</span>
+                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{t('confirmRead')}</span>
               </div>
             </div>
           ))}
@@ -119,21 +122,21 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <Input placeholder="搜尋公告..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder={`${tc('search')}...`} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <Select value={filterCategory} onValueChange={v => setFilterCategory(v ?? '')}>
-              <SelectTrigger className="w-36"><SelectValue placeholder="所有分類" /></SelectTrigger>
+              <SelectTrigger className="w-36"><SelectValue placeholder={t('category')} /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">所有分類</SelectItem>
+                <SelectItem value="">{t('category')}</SelectItem>
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-3">
             {loading ? (
-              <p className="text-center py-8 text-slate-400 text-sm">載入中...</p>
+              <p className="text-center py-8 text-slate-400 text-sm">{tc('loading')}</p>
             ) : filtered.length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-sm">無公告</p>
+              <p className="text-center py-8 text-slate-400 text-sm">{t('noAnnouncements')}</p>
             ) : filtered.map((doc: any) => (
               <div
                 key={doc.id}
@@ -168,7 +171,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">已發佈公告確認狀況</h3>
           {reportData.length === 0 ? (
-            <p className="text-center py-8 text-slate-400 text-sm">無資料</p>
+            <p className="text-center py-8 text-slate-400 text-sm">{tc('noData')}</p>
           ) : (
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
               <table className="w-full text-sm">

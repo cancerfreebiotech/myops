@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CompaniesManager } from './CompaniesManager'
+import { getTranslations } from 'next-intl/server'
 
 export default async function AdminCompaniesPage() {
   const supabase = await createClient()
@@ -17,9 +18,11 @@ export default async function AdminCompaniesPage() {
     .is('deleted_at', null)
     .order('name')
 
+  const t = await getTranslations('admin.companies')
+
   return (
     <div>
-      <PageHeader title="公司主檔" description="管理外部合約的往來公司" />
+      <PageHeader title={t('title')} description={t('description')} />
       <CompaniesManager companies={companies ?? []} />
     </div>
   )

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PayrollClient } from './PayrollClient'
 
@@ -53,9 +54,11 @@ export default async function PayrollPage() {
     .is('deleted_at', null)
     .order('display_name') : { data: [] }
 
+  const t = await getTranslations('payroll')
+
   return (
     <div>
-      <PageHeader title="薪資管理" description="薪資審核、發薪流程" />
+      <PageHeader title={t('title')} description={t('description')} />
       <PayrollClient
         currentUser={currentUser}
         payrollRecords={payrollRecords}

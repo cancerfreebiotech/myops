@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import {
   CheckCircle,
@@ -18,33 +19,29 @@ import { toast } from 'sonner'
 
 // ─── Category config ─────────────────────────────────────────────────────────
 
-const CATEGORY_CONFIG: Record<
+const CATEGORY_STYLE: Record<
   string,
-  { label: string; bg: string; text: string; border: string; icon: React.ElementType }
+  { bg: string; text: string; border: string; icon: React.ElementType }
 > = {
   hr: {
-    label: '人事公告',
     bg: 'bg-blue-50 dark:bg-blue-900/20',
     text: 'text-blue-700 dark:text-blue-300',
     border: 'border-blue-200 dark:border-blue-700',
     icon: User,
   },
   admin: {
-    label: '行政公告',
     bg: 'bg-slate-100 dark:bg-slate-700/40',
     text: 'text-slate-700 dark:text-slate-300',
     border: 'border-slate-200 dark:border-slate-600',
     icon: FileText,
   },
   regulation: {
-    label: '法規/規章',
     bg: 'bg-purple-50 dark:bg-purple-900/20',
     text: 'text-purple-700 dark:text-purple-300',
     border: 'border-purple-200 dark:border-purple-700',
     icon: FileText,
   },
   urgent: {
-    label: '緊急通知',
     bg: 'bg-orange-50 dark:bg-orange-900/20',
     text: 'text-orange-800 dark:text-orange-300',
     border: 'border-orange-200 dark:border-orange-700',
@@ -122,13 +119,20 @@ export function AnnouncementDetail({
   userLang,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('announcements')
+  const tc = useTranslations('common')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(alreadyConfirmed)
   const [localConfirmedAt, setLocalConfirmedAt] = useState<string | null>(confirmedAt)
 
+  const CATEGORY_LABELS: Record<string, string> = {
+    hr: t('categories.hr'), admin: t('categories.admin'), regulation: t('categories.regulation'), urgent: t('categories.urgent'),
+  }
+
   const category = doc.announcement_category as string | undefined
-  const catConfig = category ? CATEGORY_CONFIG[category] : undefined
+  const catStyle = category ? CATEGORY_STYLE[category] : undefined
+  const catLabel = category ? (CATEGORY_LABELS[category] ?? category) : undefined
   const isUrgent = category === 'urgent'
 
   const { content, lang, isFallback } = resolveContent(doc, userLang)
@@ -167,9 +171,9 @@ export function AnnouncementDetail({
       setConfirmed(true)
       setLocalConfirmedAt(now)
       setConfirmDialogOpen(false)
-      toast.success('已確認已讀')
+      toast.success(t('confirmed'))
     } catch {
-      toast.error('操作失敗，請重試')
+      toast.error(tc('error'))
     } finally {
       setLoading(false)
     }
@@ -185,10 +189,10 @@ export function AnnouncementDetail({
         <button
           onClick={() => router.push('/announcements')}
           className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors duration-150 cursor-pointer"
-          aria-label="返回公告列表"
+          aria-label={tc('back')}
         >
           <ChevronLeft size={16} />
-          返回公告列表
+          {tc('back')}
         </button>
 
         {/* Header card */}
@@ -203,13 +207,13 @@ export function AnnouncementDetail({
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border ${
-                catConfig
-                  ? `${catConfig.bg} ${catConfig.text} ${catConfig.border}`
+                catStyle
+                  ? `${catStyle.bg} ${catStyle.text} ${catStyle.border}`
                   : 'bg-slate-100 text-slate-600 border-slate-200'
               }`}
             >
-              {catConfig && <catConfig.icon size={11} aria-hidden />}
-              {catConfig?.label ?? category ?? '公告'}
+              {catStyle && <catStyle.icon size={11} aria-hidden />}
+              {catLabel ?? category ?? t('title')}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
               {DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}
@@ -315,7 +319,7 @@ export function AnnouncementDetail({
                   aria-hidden
                 />
                 <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                  已確認已讀
+                  {t('confirmed')}
                 </p>
                 {localConfirmedAt && (
                   <p className="text-xs text-slate-400">
@@ -334,7 +338,7 @@ export function AnnouncementDetail({
                   aria-label="確認已讀此公告（需雙重驗證）"
                 >
                   <CheckCircle size={16} className="mr-1.5" aria-hidden />
-                  確認已讀
+                  {t('confirmRead')}
                 </Button>
               </div>
             )}
@@ -422,7 +426,7 @@ export function AnnouncementDetail({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-[Lexend]">
               <CheckCircle size={20} className="text-violet-600" aria-hidden />
-              確認已讀
+              {t('confirmRead')}
             </DialogTitle>
           </DialogHeader>
 
@@ -434,12 +438,12 @@ export function AnnouncementDetail({
               <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
                 {doc.title}
               </p>
-              {catConfig && (
+              {catStyle && (
                 <span
-                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border mt-1.5 ${catConfig.bg} ${catConfig.text} ${catConfig.border}`}
+                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border mt-1.5 ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
                 >
-                  <catConfig.icon size={10} aria-hidden />
-                  {catConfig.label}
+                  <catStyle.icon size={10} aria-hidden />
+                  {catLabel}
                 </span>
               )}
             </div>
@@ -455,7 +459,7 @@ export function AnnouncementDetail({
               disabled={loading}
               className="min-h-[44px] transition-colors duration-150 cursor-pointer"
             >
-              取消
+              {tc('cancel')}
             </Button>
             <Button
               onClick={handleConfirmRead}
@@ -485,12 +489,12 @@ export function AnnouncementDetail({
                       d="M4 12a8 8 0 018-8v8H4z"
                     />
                   </svg>
-                  驗證中...
+                  {tc('loading')}
                 </span>
               ) : (
                 <>
                   <CheckCircle size={16} className="mr-1.5" aria-hidden />
-                  確認已讀
+                  {t('confirmRead')}
                 </>
               )}
             </Button>

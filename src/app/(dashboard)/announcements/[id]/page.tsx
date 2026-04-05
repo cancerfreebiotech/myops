@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnnouncementDetail } from './AnnouncementDetail'
 
@@ -65,12 +66,13 @@ export default async function AnnouncementDetailPage({
   // Determine content language based on user preference, fallback chain:
   // user.language → source lang (content_zh always present as source)
   const userLang = currentUser?.language ?? 'zh'
+  const t = await getTranslations('announcements')
 
   return (
     <div>
       <PageHeader
         title={doc.title}
-        description={`${doc.doc_type === 'REG' ? '規章' : '公告'} · ${doc.announcement_category ?? ''}`}
+        description={`${t('detail')} · ${doc.announcement_category ?? ''}`}
       />
       <AnnouncementDetail
         doc={doc}

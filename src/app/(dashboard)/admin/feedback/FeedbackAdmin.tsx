@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/StatusBadge'
@@ -16,6 +17,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
   const router = useRouter()
+  const tc = useTranslations('common')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -85,7 +87,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
               <div className="flex flex-col items-end gap-2 shrink-0">
                 <StatusBadge status={f.status} />
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSelectedId(f.id)}>查看</Button>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setSelectedId(f.id)}>{tc('view')}</Button>
                   <Select value={f.status} onValueChange={v => v && handleStatus(f.id, v)}>
                     <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>

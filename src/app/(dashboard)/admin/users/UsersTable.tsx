@@ -10,6 +10,7 @@ import { UserEditForm } from './UserEditForm'
 import { Search, Pencil, FileUser, UserX, AlertTriangle, Loader2 } from 'lucide-react'
 import { DialogFooter } from '@/components/ui/dialog'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 interface UsersTableProps {
   users: any[]
@@ -17,6 +18,8 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, departments }: UsersTableProps) {
+  const t = useTranslations('admin.users')
+  const tc = useTranslations('common')
   const [search, setSearch] = useState('')
   const [editUser, setEditUser] = useState<any>(null)
   const [offboardUser, setOffboardUser] = useState<any>(null)
@@ -48,7 +51,7 @@ export function UsersTable({ users, departments }: UsersTableProps) {
         <div className="relative flex-1 max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
-            placeholder="搜尋姓名、Email、部門..."
+            placeholder={`${tc('search')}...`}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="pl-9"
@@ -62,17 +65,17 @@ export function UsersTable({ users, departments }: UsersTableProps) {
             <TableRow className="bg-slate-50 dark:bg-slate-800">
               <TableHead>姓名</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>部門</TableHead>
-              <TableHead>角色</TableHead>
-              <TableHead>類型</TableHead>
-              <TableHead>狀態</TableHead>
+              <TableHead>{t('department')}</TableHead>
+              <TableHead>{t('role')}</TableHead>
+              <TableHead>{t('employmentType')}</TableHead>
+              <TableHead>{t('status')}</TableHead>
               <TableHead className="w-16"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-slate-400 py-8">無資料</TableCell>
+                <TableCell colSpan={7} className="text-center text-slate-400 py-8">{tc('noData')}</TableCell>
               </TableRow>
             ) : filtered.map(user => (
               <TableRow key={user.id}>
@@ -96,16 +99,16 @@ export function UsersTable({ users, departments }: UsersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setEditUser(user)} className="min-w-[44px] min-h-[44px]" aria-label="編輯">
+                    <Button variant="ghost" size="icon" onClick={() => setEditUser(user)} className="min-w-[44px] min-h-[44px]" aria-label={tc('edit')}>
                       <Pencil size={15} />
                     </Button>
                     <Link href={`/admin/users/${user.id}/profile`}>
-                      <Button variant="ghost" size="icon" className="min-w-[44px] min-h-[44px]" aria-label="人事資料">
+                      <Button variant="ghost" size="icon" className="min-w-[44px] min-h-[44px]" aria-label={t('profile')}>
                         <FileUser size={15} />
                       </Button>
                     </Link>
                     {user.is_active && (
-                      <Button variant="ghost" size="icon" onClick={() => handleOffboard(user)} className="min-w-[44px] min-h-[44px] text-red-500 hover:text-red-700" aria-label="離職交接">
+                      <Button variant="ghost" size="icon" onClick={() => handleOffboard(user)} className="min-w-[44px] min-h-[44px] text-red-500 hover:text-red-700" aria-label={t('offboarding')}>
                         <UserX size={15} />
                       </Button>
                     )}
@@ -120,7 +123,7 @@ export function UsersTable({ users, departments }: UsersTableProps) {
       <Dialog open={!!editUser} onOpenChange={open => !open && setEditUser(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>編輯使用者</DialogTitle>
+            <DialogTitle>{t('editUser')}</DialogTitle>
           </DialogHeader>
           {editUser && (
             <UserEditForm
@@ -139,7 +142,7 @@ export function UsersTable({ users, departments }: UsersTableProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle size={18} className="text-red-500" />
-              離職交接檢查 — {offboardUser?.display_name}
+              {t('offboarding')} — {offboardUser?.display_name}
             </DialogTitle>
           </DialogHeader>
           {offboardLoading ? (
@@ -148,25 +151,25 @@ export function UsersTable({ users, departments }: UsersTableProps) {
             </div>
           ) : offboardData ? (
             <div className="space-y-3 text-sm">
-              <OffboardSection label="名下合約" items={offboardData.contracts} renderItem={(c: any) => `${c.title} (${c.status})`} />
-              <OffboardSection label="負責專案" items={offboardData.projects} renderItem={(p: any) => p.name} />
-              <OffboardSection label="待審請假" items={offboardData.pendingLeaves} renderItem={(l: any) => `${l.start_date} ~ ${l.end_date}`} />
-              <OffboardSection label="待審加班" items={offboardData.pendingOT} renderItem={(o: any) => `${o.ot_date} ${o.hours}h`} />
-              <OffboardSection label="未發薪資" items={offboardData.unpaidPayroll} renderItem={(p: any) => `${p.year}/${p.month} (${p.status})`} />
+              <OffboardSection label={t('ownedContracts')} items={offboardData.contracts} renderItem={(c: any) => `${c.title} (${c.status})`} />
+              <OffboardSection label={t('activeProjects')} items={offboardData.projects} renderItem={(p: any) => p.name} />
+              <OffboardSection label={t('pendingLeaves')} items={offboardData.pendingLeaves} renderItem={(l: any) => `${l.start_date} ~ ${l.end_date}`} />
+              <OffboardSection label={t('pendingOT')} items={offboardData.pendingOT} renderItem={(o: any) => `${o.ot_date} ${o.hours}h`} />
+              <OffboardSection label={t('unpaidPayroll')} items={offboardData.unpaidPayroll} renderItem={(p: any) => `${p.year}/${p.month} (${p.status})`} />
 
               {(offboardData.contracts.length + offboardData.projects.length + offboardData.pendingLeaves.length + offboardData.pendingOT.length + offboardData.unpaidPayroll.length) > 0 ? (
                 <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-3">
                   <p className="text-xs text-orange-700 dark:text-orange-400">
-                    確認後將停用帳號，以上項目請先完成交接。
+                    {t('offboardingWarning')}
                   </p>
                 </div>
               ) : (
-                <p className="text-green-600 text-sm font-medium">此員工無待處理項目，可安全停用帳號。</p>
+                <p className="text-green-600 text-sm font-medium">{t('noActiveItems')}</p>
               )}
             </div>
           ) : null}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setOffboardUser(null); setOffboardData(null) }}>關閉</Button>
+            <Button variant="outline" onClick={() => { setOffboardUser(null); setOffboardData(null) }}>{tc('close')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
