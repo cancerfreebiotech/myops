@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.14] - 2026-04-04
+
+### Fixed
+- **語言切換根本原因修復**：`/api/locale` 被 proxy.ts middleware 攔截 → 307 redirect to /login，cookie 從未設上。已加入 publicRoutes bypass。
+
 ## [0.2.13] - 2026-04-04
 
 ### Fixed
