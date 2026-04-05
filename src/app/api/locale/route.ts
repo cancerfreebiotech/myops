@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
     path: '/',
     maxAge: 60 * 60 * 24 * 365,
     sameSite: 'lax',
+    secure: true,
   })
 
   return response

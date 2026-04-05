@@ -9,11 +9,12 @@ import {
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight,
   Users, Building2, BookOpen, AlertCircle, ClipboardList,
-  SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut,
+  SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { LANGUAGES } from '@/i18n/config'
 import type { User } from '@/types'
 
 interface SidebarProps {
@@ -21,12 +22,6 @@ interface SidebarProps {
 }
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
-
-const LANGUAGES = [
-  { code: 'zh-TW', label: '中文' },
-  { code: 'en', label: 'EN' },
-  { code: 'ja', label: '日本語' },
-] as const
 
 function SectionHeader({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="my-2 mx-3 border-t border-slate-200 dark:border-slate-700" />
@@ -162,6 +157,7 @@ export function Sidebar({ user }: SidebarProps) {
         <SectionHeader label={t('other')} collapsed={collapsed} />
         <NavLink href="/settings"     label={t('settings')}  icon={Settings}          collapsed={collapsed} active={isActive('/settings')} />
         <NavLink href="/feedback/new" label={t('feedback')}  icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />
+        <NavLink href="/help"         label={t('help')}      icon={HelpCircle}        collapsed={collapsed} active={isActive('/help')} />
 
         {adminItems.length > 0 && (
           <>

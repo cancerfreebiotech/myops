@@ -5,9 +5,7 @@ import { useTheme } from 'next-themes'
 import Link from 'next/link'
 import { Sun, Moon, Globe, ChevronLeft, Smartphone, QrCode, KeyRound, CheckCircle2, Monitor, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const LANGUAGES = ['zh-TW', 'en', 'ja'] as const
-type Locale = typeof LANGUAGES[number]
+import { LOCALE_COOKIE, LANGUAGES as LANG_LIST, type Locale } from '@/i18n/config'
 
 const LANG_LABELS: Record<Locale, string> = {
   'zh-TW': '中文',
@@ -212,9 +210,9 @@ const BADGE_COLOR: Record<string, string> = {
 
 function getCookieLocale(): Locale {
   if (typeof document === 'undefined') return 'zh-TW'
-  const match = document.cookie.match(/MYOPS_LOCALE=([^;]+)/)
+  const match = document.cookie.match(new RegExp(`${LOCALE_COOKIE}=([^;]+)`))
   const val = match?.[1]
-  return (LANGUAGES as readonly string[]).includes(val ?? '') ? (val as Locale) : 'zh-TW'
+  return (LANG_LIST.map(l => l.code) as string[]).includes(val ?? '') ? (val as Locale) : 'zh-TW'
 }
 
 export default function QuickStartPage() {
@@ -230,7 +228,7 @@ export default function QuickStartPage() {
   const content = CONTENT[locale]
 
   const handleLanguageChange = (lang: Locale) => {
-    document.cookie = `MYOPS_LOCALE=${lang}; path=/; max-age=31536000; SameSite=Lax`
+    document.cookie = `${LOCALE_COOKIE}=${lang}; path=/; max-age=31536000; SameSite=Lax`
     setLocale(lang)
   }
 
@@ -243,18 +241,18 @@ export default function QuickStartPage() {
           <div className="flex items-center gap-2">
             <Globe size={14} className="text-slate-400" aria-hidden />
             <div className="flex items-center gap-0.5">
-              {LANGUAGES.map(lang => (
+              {LANG_LIST.map(({ code }) => (
                 <button
-                  key={lang}
-                  onClick={() => handleLanguageChange(lang)}
+                  key={code}
+                  onClick={() => handleLanguageChange(code)}
                   className={cn(
                     'px-2 py-1 rounded text-xs font-medium transition-colors',
-                    locale === lang
+                    locale === code
                       ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
                       : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                   )}
                 >
-                  {LANG_LABELS[lang]}
+                  {LANG_LABELS[code]}
                 </button>
               ))}
             </div>

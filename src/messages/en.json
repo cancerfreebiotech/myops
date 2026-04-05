@@ -116,7 +116,8 @@
     "collapse": "Collapse menu",
     "more": "More",
     "themeLight": "Light Mode",
-    "themeDark": "Dark Mode"
+    "themeDark": "Dark Mode",
+    "help": "Help"
   },
   "dashboard": {
     "welcome": "Welcome back",

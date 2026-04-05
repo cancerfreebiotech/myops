@@ -116,7 +116,8 @@
     "collapse": "メニューを折りたたむ",
     "more": "その他",
     "themeLight": "ライトモード",
-    "themeDark": "ダークモード"
+    "themeDark": "ダークモード",
+    "help": "ヘルプ"
   },
   "dashboard": {
     "welcome": "おかえりなさい",

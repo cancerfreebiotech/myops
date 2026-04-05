@@ -6,17 +6,12 @@ import { useTheme } from 'next-themes'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
-  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut,
+  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-const LANGUAGES = [
-  { code: 'zh-TW', label: '中文' },
-  { code: 'en', label: 'EN' },
-  { code: 'ja', label: '日本語' },
-] as const
+import { LANGUAGES } from '@/i18n/config'
 
 interface BottomNavProps {
   userId?: string
@@ -44,9 +39,14 @@ export function BottomNav({ userId }: BottomNavProps) {
     { href: '/announcements', label: t('announcements'), icon: Megaphone },
     { href: '/contracts', label: t('contracts'), icon: FileSignature },
     { href: '/payroll', label: t('payroll'), icon: DollarSign },
+    { href: '/help', label: t('help'), icon: HelpCircle },
   ]
 
   const handleLanguageChange = (lang: string) => {
+    if (userId) {
+      const supabase = createClient()
+      supabase.from('users').update({ language: lang }).eq('id', userId).then()
+    }
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 

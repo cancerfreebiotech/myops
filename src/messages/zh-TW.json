@@ -116,7 +116,8 @@
     "collapse": "收合選單",
     "more": "更多",
     "themeLight": "淺色模式",
-    "themeDark": "深色模式"
+    "themeDark": "深色模式",
+    "help": "說明文件"
   },
   "dashboard": {
     "welcome": "歡迎回來",

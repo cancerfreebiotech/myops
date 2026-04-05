@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.25] - 2026-04-05
+
+### Added
+- 新增說明文件頁面 `/help`（登入後可存取，三語言完整內容）
+  - 11 個功能模組說明：儀表板、文件、公告、合約、出勤、請假、加班、薪資、專案、回饋、設定
+  - 每個模組包含功能說明、主要功能列表、存取權限說明
+  - 點擊模組標題可直接跳轉至對應功能
+- Sidebar「其他」區塊新增「說明文件」連結
+- 手機版 BottomNav「更多」面板新增「說明文件」
+
+### Fixed
+- BottomNav 語言切換補上 DB 同步（與 Sidebar 行為一致）
+- Cookie 補上 `secure: true`（`/api/locale` 與 `/api/auth/callback`）
+- `LANGUAGES` 常數統一定義於 `src/i18n/config.ts`，Sidebar / BottomNav / LoginControls / Quick-Start 全部 import
+- Quick-Start 頁面：`LOCALE_COOKIE` 改 import from config，不再 hardcode
+
 ## [0.2.24] - 2026-04-05
 
 ### Added

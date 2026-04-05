@@ -6,12 +6,7 @@ import { usePathname } from 'next/navigation'
 import { Sun, Moon, Globe } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-
-const LANGUAGES = [
-  { code: 'zh-TW', label: '中文' },
-  { code: 'en', label: 'EN' },
-  { code: 'ja', label: '日本語' },
-] as const
+import { LANGUAGES } from '@/i18n/config'
 
 export function LoginControls() {
   const { theme, setTheme } = useTheme()
