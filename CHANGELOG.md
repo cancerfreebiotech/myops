@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.21] - 2026-04-05
+
+### Fixed
+- Projects 頁面補上 i18n：ProjectsClient、ProjectDetail 全部接上 useTranslations()
+- 新增 projects 翻譯 key（41 個），三語同步（721 key 總計）
+
 ## [0.2.20] - 2026-04-05
 
 ### Added

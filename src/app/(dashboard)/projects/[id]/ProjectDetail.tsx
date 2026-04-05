@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -43,12 +44,14 @@ interface Props {
 
 export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser, canManageMembers }: Props) {
   const router = useRouter()
+  const t = useTranslations('projects')
+  const tc = useTranslations('common')
   const [addMemberOpen, setAddMemberOpen] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleAddMember = async () => {
-    if (!selectedUserId) { toast.error('請選擇成員'); return }
+    if (!selectedUserId) { toast.error(t('errorSelectMember')); return }
     setLoading(true)
     const res = await fetch(`/api/projects/${project.id}/members`, {
       method: 'POST',
@@ -58,7 +61,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
-    toast.success('成員已加入')
+    toast.success(t('memberAdded'))
     setAddMemberOpen(false)
     setSelectedUserId('')
     router.refresh()
@@ -96,7 +99,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <CalendarRange size={14} className="text-orange-500 shrink-0" aria-hidden />
               <span>
-                {project.start_date ?? '—'} ～ {project.end_date ?? '進行中'}
+                {project.start_date ?? '—'} ～ {project.end_date ?? t('ongoing')}
               </span>
             </div>
           )}
@@ -104,7 +107,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
           {/* Project lead */}
           <div className="flex items-center gap-2 text-sm">
             <Clock size={14} className="text-slate-400 shrink-0" aria-hidden />
-            <span className="text-slate-400">負責人</span>
+            <span className="text-slate-400">{t('ownerLabel')}</span>
             <span className="text-slate-700 dark:text-slate-300 font-medium">
               {project.owner?.display_name ?? '—'}
             </span>
@@ -116,28 +119,28 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <ClipboardList size={15} className="text-orange-500" aria-hidden />
-              加班記錄
+              {t('overtimeRecords')}
             </h3>
             <Badge variant="outline" className="text-xs text-slate-500">
-              共 {overtimeRequests.length} 筆
+              {t('totalRecords', { count: overtimeRequests.length })}
             </Badge>
           </div>
 
           {overtimeRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <ClipboardList size={32} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden />
-              <p className="text-sm text-slate-400">此專案尚無加班紀錄</p>
+              <p className="text-sm text-slate-400">{t('noOvertimeRecords')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700">
-                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">日期</th>
-                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">申請人</th>
-                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">時段</th>
-                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">時數</th>
-                    <th className="text-left text-slate-400 font-medium text-xs pb-2 whitespace-nowrap">狀態</th>
+                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">{t('thDate')}</th>
+                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">{t('thApplicant')}</th>
+                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">{t('thTimeRange')}</th>
+                    <th className="text-left text-slate-400 font-medium text-xs pb-2 pr-4 whitespace-nowrap">{t('thHours')}</th>
+                    <th className="text-left text-slate-400 font-medium text-xs pb-2 whitespace-nowrap">{t('thStatus')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
@@ -175,7 +178,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
               <Users size={14} aria-hidden />
-              成員（{memberList.length}）
+              {t('membersWithCount', { count: memberList.length })}
             </h3>
             {canManageMembers && (
               <Button
@@ -183,20 +186,20 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
                 size="sm"
                 className="min-h-[36px] text-orange-600 border-orange-200 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors duration-150"
                 onClick={() => setAddMemberOpen(true)}
-                aria-label="新增成員"
+                aria-label={t('addMemberAriaLabel')}
               >
                 <UserPlus size={14} className="mr-1" aria-hidden />
-                新增
+                {t('addMember')}
               </Button>
             )}
           </div>
 
           {memberList.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-4">尚無成員</p>
+            <p className="text-xs text-slate-400 text-center py-4">{t('noMembers')}</p>
           ) : (
             <div className="space-y-2">
               {memberList.map((m: any) => {
-                const name = m.user?.display_name ?? '未知'
+                const name = m.user?.display_name ?? t('unknown')
                 const color = avatarColor(name)
                 return (
                   <div key={m.user_id} className="flex items-center gap-2.5">
@@ -217,7 +220,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
                           : 'border-slate-200 text-slate-500'
                       }`}
                     >
-                      {m.role === 'lead' ? '負責人' : '成員'}
+                      {m.role === 'lead' ? t('roleLead') : t('roleMember')}
                     </Badge>
                   </div>
                 )
@@ -231,16 +234,16 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
       <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新增專案成員</DialogTitle>
+            <DialogTitle>{t('addMemberTitle')}</DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-3">
             <div>
               <label htmlFor="add-member-select" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                選擇人員 <span className="text-red-500" aria-hidden>*</span>
+                {t('selectPersonLabel')} <span className="text-red-500" aria-hidden>*</span>
               </label>
               <Select value={selectedUserId} onValueChange={(v) => setSelectedUserId(v ?? '')}>
                 <SelectTrigger id="add-member-select" className="mt-1">
-                  <SelectValue placeholder="請選擇成員" />
+                  <SelectValue placeholder={t('selectMemberPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {allUsers
@@ -256,14 +259,14 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddMemberOpen(false)} disabled={loading}>
-              取消
+              {tc('cancel')}
             </Button>
             <Button
               className="min-h-[44px] bg-orange-600 hover:bg-orange-700 text-white transition-colors duration-150"
               onClick={handleAddMember}
               disabled={loading}
             >
-              {loading ? '新增中...' : '確認新增'}
+              {loading ? t('adding') : t('confirmAdd')}
             </Button>
           </DialogFooter>
         </DialogContent>
