@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   LayoutDashboard, Clock, CalendarDays, Timer, DollarSign,
   FolderKanban, FileText, Megaphone, FileSignature,
-  MessageSquarePlus, Settings, ExternalLink,
+  MessageSquarePlus, Settings, ExternalLink, ShieldCheck,
 } from 'lucide-react'
 
 type Module = {
@@ -17,8 +17,19 @@ type Module = {
   access?: string
 }
 
+type MatrixRow = { feature: string; employee: boolean | string; manager: boolean | string; hr: boolean | string; admin: boolean | string; note?: string }
+type MatrixSection = { name: string; rows: MatrixRow[] }
 type Category = { name: string; modules: Module[] }
-type PageContent = { title: string; subtitle: string; categories: Category[] }
+type PageContent = {
+  title: string
+  subtitle: string
+  categories: Category[]
+  matrixTitle: string
+  matrixSubtitle: string
+  matrixLegend: string
+  matrixRoles: { employee: string; manager: string; hr: string; admin: string }
+  matrixSections: MatrixSection[]
+}
 
 const CONTENT: Record<string, PageContent> = {
   'zh-TW': {
@@ -180,6 +191,64 @@ const CONTENT: Record<string, PageContent> = {
               '管理雙因素驗證（MFA）',
             ],
           },
+        ],
+      },
+    ],
+    matrixTitle: '使用者功能矩陣',
+    matrixSubtitle: '各角色的功能存取權限',
+    matrixLegend: '✓ 有權限　— 無權限　△ 需特定授權',
+    matrixRoles: { employee: '員工', manager: '主管', hr: 'HR', admin: 'Admin' },
+    matrixSections: [
+      {
+        name: '出勤管理',
+        rows: [
+          { feature: '打卡（上/下班）', employee: true, manager: true, hr: true, admin: true },
+          { feature: '補打卡申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '查看全員出勤', employee: false, manager: false, hr: true, admin: true },
+        ],
+      },
+      {
+        name: '請假 / 加班',
+        rows: [
+          { feature: '請假申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '請假審核', employee: false, manager: true, hr: true, admin: true },
+          { feature: '加班申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '加班審核', employee: false, manager: true, hr: true, admin: true },
+        ],
+      },
+      {
+        name: '薪資',
+        rows: [
+          { feature: '查看本人薪資', employee: true, manager: true, hr: true, admin: true },
+          { feature: '查看全員薪資', employee: false, manager: false, hr: true, admin: true, note: '需 view_payroll 授權' },
+          { feature: '薪資確認 / 核准', employee: false, manager: false, hr: false, admin: '△', note: '需 confirm/approve_payroll 授權' },
+        ],
+      },
+      {
+        name: '文件管理',
+        rows: [
+          { feature: '文件上傳', employee: true, manager: true, hr: true, admin: true },
+          { feature: '文件審核', employee: false, manager: false, hr: '△', admin: true, note: '需 approve_contract 授權' },
+          { feature: '文件發佈', employee: false, manager: false, hr: '△', admin: true, note: '需 publish_announcement 授權' },
+        ],
+      },
+      {
+        name: '公告 / 合約',
+        rows: [
+          { feature: '查看公告', employee: true, manager: true, hr: true, admin: true },
+          { feature: '發佈公告', employee: false, manager: false, hr: '△', admin: true, note: '需 publish_announcement 授權' },
+          { feature: '查看合約', employee: false, manager: '△', hr: '△', admin: true, note: '需 approve_contract 授權' },
+          { feature: '合約審核', employee: false, manager: false, hr: false, admin: '△', note: '需 approve_contract 授權' },
+        ],
+      },
+      {
+        name: '專案 / 其他',
+        rows: [
+          { feature: '建立專案', employee: true, manager: true, hr: true, admin: true },
+          { feature: '專案成員管理', employee: false, manager: '△', hr: '△', admin: true, note: '專案負責人可管理' },
+          { feature: '意見回饋（匿名）', employee: true, manager: true, hr: true, admin: true },
+          { feature: '查看回饋', employee: false, manager: false, hr: false, admin: true },
+          { feature: 'Admin 管理面板', employee: false, manager: false, hr: false, admin: true },
         ],
       },
     ],
@@ -347,6 +416,64 @@ const CONTENT: Record<string, PageContent> = {
         ],
       },
     ],
+    matrixTitle: 'Feature Access Matrix',
+    matrixSubtitle: 'Access permissions by role',
+    matrixLegend: '✓ Allowed　— Not allowed　△ Requires specific permission',
+    matrixRoles: { employee: 'Employee', manager: 'Manager', hr: 'HR', admin: 'Admin' },
+    matrixSections: [
+      {
+        name: 'Attendance',
+        rows: [
+          { feature: 'Clock in / out', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Apply missed clock', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'View all staff attendance', employee: false, manager: false, hr: true, admin: true },
+        ],
+      },
+      {
+        name: 'Leave / Overtime',
+        rows: [
+          { feature: 'Apply leave', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Approve leave', employee: false, manager: true, hr: true, admin: true },
+          { feature: 'Apply overtime', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Approve overtime', employee: false, manager: true, hr: true, admin: true },
+        ],
+      },
+      {
+        name: 'Payroll',
+        rows: [
+          { feature: 'View own payroll', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'View all payroll', employee: false, manager: false, hr: true, admin: true, note: 'Requires view_payroll permission' },
+          { feature: 'Confirm / approve payroll', employee: false, manager: false, hr: false, admin: '△', note: 'Requires confirm/approve_payroll permission' },
+        ],
+      },
+      {
+        name: 'Documents',
+        rows: [
+          { feature: 'Upload documents', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Approve documents', employee: false, manager: false, hr: '△', admin: true, note: 'Requires approve_contract permission' },
+          { feature: 'Publish documents', employee: false, manager: false, hr: '△', admin: true, note: 'Requires publish_announcement permission' },
+        ],
+      },
+      {
+        name: 'Announcements / Contracts',
+        rows: [
+          { feature: 'View announcements', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Publish announcements', employee: false, manager: false, hr: '△', admin: true, note: 'Requires publish_announcement permission' },
+          { feature: 'View contracts', employee: false, manager: '△', hr: '△', admin: true, note: 'Requires approve_contract permission' },
+          { feature: 'Approve contracts', employee: false, manager: false, hr: false, admin: '△', note: 'Requires approve_contract permission' },
+        ],
+      },
+      {
+        name: 'Projects / Other',
+        rows: [
+          { feature: 'Create projects', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Manage project members', employee: false, manager: '△', hr: '△', admin: true, note: 'Project lead can manage' },
+          { feature: 'Submit feedback (anonymous)', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'View feedback', employee: false, manager: false, hr: false, admin: true },
+          { feature: 'Admin panel', employee: false, manager: false, hr: false, admin: true },
+        ],
+      },
+    ],
   },
 
   'ja': {
@@ -511,6 +638,64 @@ const CONTENT: Record<string, PageContent> = {
         ],
       },
     ],
+    matrixTitle: '機能アクセスマトリックス',
+    matrixSubtitle: '役割別の機能アクセス権限',
+    matrixLegend: '✓ 利用可　— 利用不可　△ 特定の権限が必要',
+    matrixRoles: { employee: '一般', manager: '上司', hr: 'HR', admin: 'Admin' },
+    matrixSections: [
+      {
+        name: '勤怠管理',
+        rows: [
+          { feature: '出退勤打刻', employee: true, manager: true, hr: true, admin: true },
+          { feature: '打刻漏れ申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '全従業員の勤怠確認', employee: false, manager: false, hr: true, admin: true },
+        ],
+      },
+      {
+        name: '休暇 / 残業',
+        rows: [
+          { feature: '休暇申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '休暇承認', employee: false, manager: true, hr: true, admin: true },
+          { feature: '残業申請', employee: true, manager: true, hr: true, admin: true },
+          { feature: '残業承認', employee: false, manager: true, hr: true, admin: true },
+        ],
+      },
+      {
+        name: '給与',
+        rows: [
+          { feature: '本人の給与確認', employee: true, manager: true, hr: true, admin: true },
+          { feature: '全従業員の給与確認', employee: false, manager: false, hr: true, admin: true, note: 'view_payroll 権限が必要' },
+          { feature: '給与確認 / 承認', employee: false, manager: false, hr: false, admin: '△', note: 'confirm/approve_payroll 権限が必要' },
+        ],
+      },
+      {
+        name: '文書管理',
+        rows: [
+          { feature: '文書アップロード', employee: true, manager: true, hr: true, admin: true },
+          { feature: '文書承認', employee: false, manager: false, hr: '△', admin: true, note: 'approve_contract 権限が必要' },
+          { feature: '文書公開', employee: false, manager: false, hr: '△', admin: true, note: 'publish_announcement 権限が必要' },
+        ],
+      },
+      {
+        name: 'お知らせ / 契約',
+        rows: [
+          { feature: 'お知らせ閲覧', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'お知らせ投稿', employee: false, manager: false, hr: '△', admin: true, note: 'publish_announcement 権限が必要' },
+          { feature: '契約閲覧', employee: false, manager: '△', hr: '△', admin: true, note: 'approve_contract 権限が必要' },
+          { feature: '契約承認', employee: false, manager: false, hr: false, admin: '△', note: 'approve_contract 権限が必要' },
+        ],
+      },
+      {
+        name: 'プロジェクト / その他',
+        rows: [
+          { feature: 'プロジェクト作成', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'メンバー管理', employee: false, manager: '△', hr: '△', admin: true, note: 'プロジェクトリーダーも可' },
+          { feature: 'フィードバック送信（匿名）', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'フィードバック閲覧', employee: false, manager: false, hr: false, admin: true },
+          { feature: '管理者パネル', employee: false, manager: false, hr: false, admin: true },
+        ],
+      },
+    ],
   },
 }
 
@@ -527,6 +712,61 @@ export default function HelpPage() {
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">{content.subtitle}</p>
       </div>
+
+      {/* Feature Matrix */}
+      <section className="mb-10">
+        <div className="flex items-center gap-2 mb-1">
+          <ShieldCheck size={16} className="text-blue-500" aria-hidden />
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{content.matrixTitle}</h2>
+        </div>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{content.matrixSubtitle}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">{content.matrixLegend}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left px-4 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 w-48"></th>
+                  {(['employee', 'manager', 'hr', 'admin'] as const).map(r => (
+                    <th key={r} className="text-center px-3 py-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {content.matrixRoles[r]}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {content.matrixSections.map((section) => (
+                  <>
+                    <tr key={section.name} className="bg-slate-50/60 dark:bg-slate-800/60">
+                      <td colSpan={5} className="px-4 py-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        {section.name}
+                      </td>
+                    </tr>
+                    {section.rows.map((row, i) => (
+                      <tr key={i} className="border-t border-slate-100 dark:border-slate-700/60 hover:bg-slate-50 dark:hover:bg-slate-700/20">
+                        <td className="px-4 py-2.5 text-slate-700 dark:text-slate-300">
+                          <span>{row.feature}</span>
+                          {row.note && <span className="ml-1.5 text-xs text-slate-400">({row.note})</span>}
+                        </td>
+                        {([row.employee, row.manager, row.hr, row.admin] as (boolean | string)[]).map((val, j) => (
+                          <td key={j} className="px-3 py-2.5 text-center">
+                            {val === true
+                              ? <span className="text-green-500 font-bold">✓</span>
+                              : val === false
+                              ? <span className="text-slate-300 dark:text-slate-600">—</span>
+                              : <span className="text-amber-500 font-medium">△</span>
+                            }
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
       {/* Categories */}
       <div className="space-y-8">
