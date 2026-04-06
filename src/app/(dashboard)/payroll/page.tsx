@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PayrollClient } from './PayrollClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function PayrollPage() {
   const supabase = await createClient()
@@ -15,6 +16,9 @@ export default async function PayrollPage() {
     .select('id, role, granted_features, display_name')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'payroll')) redirect('/')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
   const canViewPayroll = isHR || currentUser?.granted_features?.includes('view_payroll')

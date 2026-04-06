@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AttendanceClient } from './AttendanceClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function AttendancePage() {
   const t = await getTranslations('attendance')
@@ -21,6 +22,9 @@ export default async function AttendancePage() {
     .select('id, name')
     .is('deleted_at', null)
     .order('code')
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'attendance')) redirect('/')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

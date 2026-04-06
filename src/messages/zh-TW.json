@@ -791,6 +791,10 @@
       "groupNotification": "通知設定",
       "groupSystem": "系統參數",
       "groupOther": "其他",
+      "groupFeatures": "功能開關",
+      "groupFeaturesDesc": "管理員可手動啟用或停用各功能模組",
+      "featureEnable": "啟用",
+      "featureDisable": "停用",
       "inputPlaceholder": "輸入 {label}"
     },
     "audit": {

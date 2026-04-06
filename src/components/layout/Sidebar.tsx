@@ -16,9 +16,11 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
 import type { User } from '@/types'
+import type { FeatureFlags } from '@/lib/feature-flags'
 
 interface SidebarProps {
   user: User
+  features: FeatureFlags
 }
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
@@ -49,7 +51,7 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
   )
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, features }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
@@ -88,19 +90,21 @@ export function Sidebar({ user }: SidebarProps) {
     window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
   }
 
+  const show = (key: keyof typeof features) => isAdmin || features[key]
+
   const dmsItems: NavItem[] = [
-    { href: '/documents',    label: t('documents'),     icon: FileText },
-    { href: '/announcements',label: t('announcements'),  icon: Megaphone },
-    { href: '/contracts',    label: t('contracts'),      icon: FileSignature },
-  ]
+    show('documents')     && { href: '/documents',     label: t('documents'),     icon: FileText },
+    show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
+    show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
+  ].filter(Boolean) as NavItem[]
 
   const hrItems: NavItem[] = [
-    { href: '/attendance', label: t('attendance'), icon: Clock },
-    { href: '/leave',      label: t('leave'),      icon: CalendarDays },
-    { href: '/overtime',   label: t('overtime'),   icon: Timer },
-    { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
-    { href: '/projects',   label: t('projects'),   icon: FolderKanban },
-  ]
+    show('attendance') && { href: '/attendance', label: t('attendance'), icon: Clock },
+    show('leave')      && { href: '/leave',      label: t('leave'),      icon: CalendarDays },
+    show('overtime')   && { href: '/overtime',   label: t('overtime'),   icon: Timer },
+    show('payroll')    && { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
+    show('projects')   && { href: '/projects',   label: t('projects'),   icon: FolderKanban },
+  ].filter(Boolean) as NavItem[]
 
   const adminItems: NavItem[] = isAdmin ? [
     { href: '/admin/users',                 label: t('adminUsers'),               icon: Users },
@@ -159,9 +163,9 @@ export function Sidebar({ user }: SidebarProps) {
         ))}
 
         <SectionHeader label={t('other')} collapsed={collapsed} />
-        <NavLink href="/settings"     label={t('settings')}  icon={Settings}          collapsed={collapsed} active={isActive('/settings')} />
-        <NavLink href="/feedback/new" label={t('feedback')}  icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />
-        <NavLink href="/help"         label={t('help')}      icon={HelpCircle}        collapsed={collapsed} active={isActive('/help')} />
+        <NavLink href="/settings" label={t('settings')} icon={Settings} collapsed={collapsed} active={isActive('/settings')} />
+        {show('feedback') && <NavLink href="/feedback/new" label={t('feedback')} icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />}
+        <NavLink href="/help" label={t('help')} icon={HelpCircle} collapsed={collapsed} active={isActive('/help')} />
 
         {adminItems.length > 0 && (
           <>

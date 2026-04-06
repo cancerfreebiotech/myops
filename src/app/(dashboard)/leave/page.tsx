@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LeaveClient } from './LeaveClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function LeavePage() {
   const t = await getTranslations('leave')
@@ -16,6 +17,9 @@ export default async function LeavePage() {
     .select('id, role, employment_type, department_id, manager_id, display_name')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'leave')) redirect('/')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

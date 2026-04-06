@@ -6,18 +6,21 @@ import { useTheme } from 'next-themes'
 import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
-  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle,
+  Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
+import type { FeatureFlags } from '@/lib/feature-flags'
 
 interface BottomNavProps {
   userId?: string
+  isAdmin?: boolean
+  features?: FeatureFlags
 }
 
-export function BottomNav({ userId }: BottomNavProps) {
+export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
@@ -27,20 +30,24 @@ export function BottomNav({ userId }: BottomNavProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
+  const show = (key: keyof NonNullable<typeof features>) =>
+    isAdmin || (features ? features[key] : false)
+
   const PRIMARY_ITEMS = [
     { href: '/', label: t('dashboard'), icon: LayoutDashboard },
-    { href: '/attendance', label: t('attendance'), icon: Clock },
-    { href: '/leave', label: t('leave'), icon: CalendarDays },
-    { href: '/documents', label: t('documents'), icon: FileText },
-  ]
+    show('attendance') && { href: '/attendance', label: t('attendance'), icon: Clock },
+    show('leave')      && { href: '/leave',      label: t('leave'),      icon: CalendarDays },
+    show('documents')  && { href: '/documents',  label: t('documents'),  icon: FileText },
+  ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
   const MORE_ITEMS = [
-    { href: '/overtime', label: t('overtime'), icon: Timer },
-    { href: '/announcements', label: t('announcements'), icon: Megaphone },
-    { href: '/contracts', label: t('contracts'), icon: FileSignature },
-    { href: '/payroll', label: t('payroll'), icon: DollarSign },
+    show('overtime')      && { href: '/overtime',      label: t('overtime'),      icon: Timer },
+    show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
+    show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
+    show('payroll')   && { href: '/payroll',       label: t('payroll'),  icon: DollarSign },
+    show('feedback')  && { href: '/feedback/new', label: t('feedback'), icon: MessageSquarePlus },
     { href: '/help', label: t('help'), icon: HelpCircle },
-  ]
+  ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
   const handleLanguageChange = async (lang: string) => {
     if (userId) {

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ProjectsClient } from './ProjectsClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function ProjectsPage() {
   const supabase = await createClient()
@@ -15,6 +16,9 @@ export default async function ProjectsPage() {
     .select('id, role, display_name')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'projects')) redirect('/')
 
   const isAdmin = currentUser?.role === 'admin'
 

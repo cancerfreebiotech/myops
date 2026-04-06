@@ -45,7 +45,20 @@
       "Skill(codex:rescue)",
       "Bash(git fetch:*)",
       "Bash(xargs grep:*)",
-      "Bash(redirect=/ 2>&1)"
+      "Bash(redirect=/ 2>&1)",
+      "Bash(git rebase:*)",
+      "Bash(GIT_EDITOR=true git rebase:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(chmod +x /tmp/rebase_continue.sh)",
+      "Bash(/tmp/rebase_continue.sh)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git reset:*)",
+      "Bash(chmod +x /tmp/scan_chinese.sh)",
+      "Bash(/tmp/scan_chinese.sh)",
+      "Bash(chmod +x /tmp/detailed_scan.sh)",
+      "Bash(/tmp/detailed_scan.sh)",
+      "mcp__plugin_supabase_supabase__execute_sql"
     ]
   },
   "enabledPlugins": {

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { OvertimeClient } from './OvertimeClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function OvertimePage() {
   const supabase = await createClient()
@@ -15,6 +16,9 @@ export default async function OvertimePage() {
     .select('id, role, department_id')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'overtime')) redirect('/')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

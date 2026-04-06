@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.30] - 2026-04-06
+
+### Added
+- 功能開關系統（Feature Flags）
+  - Admin 系統設定頁新增「功能開關」區塊，支援 toggle 開啟/關閉各功能模組
+  - 9 個可控功能：出勤、請假、加班、薪資、文件、公告、合約、專案、意見回饋
+  - 預設：意見回饋開放，其餘關閉（待測試後由管理員手動開啟）
+  - Admin 不受開關限制，永遠可存取所有功能
+- Sidebar / BottomNav 自動隱藏已關閉的功能連結
+- 各功能頁 route 層保護：非 admin 直接打 URL 也會 redirect 回首頁
+
 ## [0.2.29] - 2026-04-06
 
 ### Added

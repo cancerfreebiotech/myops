@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AnnouncementsClient } from './AnnouncementsClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function AnnouncementsPage() {
   const supabase = await createClient()
@@ -16,6 +17,9 @@ export default async function AnnouncementsPage() {
     .select('id, role, granted_features, display_name')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'announcements')) redirect('/')
 
   const canPublish = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('publish_announcement')

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ContractsClient } from './ContractsClient'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function ContractsPage() {
   const supabase = await createClient()
@@ -20,6 +21,9 @@ export default async function ContractsPage() {
     .select('id, role, granted_features')
     .eq('id', user.id)
     .single()
+
+  const featureFlags = await getFeatureFlags()
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'contracts')) redirect('/')
 
   const canApprove = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('approve_contract')

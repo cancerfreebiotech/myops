@@ -791,6 +791,10 @@
       "groupNotification": "通知設定",
       "groupSystem": "システムパラメータ",
       "groupOther": "その他",
+      "groupFeatures": "機能フラグ",
+      "groupFeaturesDesc": "各機能モジュールを個別に有効化・無効化できます",
+      "featureEnable": "有効化",
+      "featureDisable": "無効化",
       "inputPlaceholder": "{label}を入力"
     },
     "audit": {

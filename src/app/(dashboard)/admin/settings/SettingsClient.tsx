@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Eye, EyeOff, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flags'
 
 const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret']
 
@@ -34,15 +35,23 @@ const SETTING_I18N_KEY: Record<string, string> = {
 
 interface Setting { key: string; value: string; description?: string }
 
-export function SettingsClient({ settings }: { settings: Setting[] }) {
+interface Props {
+  settings: Setting[]
+  featureFlags: Record<string, boolean>
+}
+
+export function SettingsClient({ settings, featureFlags }: Props) {
   const router = useRouter()
   const t = useTranslations('admin.settings')
+  const tn = useTranslations('nav')
   const tc = useTranslations('common')
   const [values, setValues] = useState<Record<string, string>>(
     Object.fromEntries(settings.map(s => [s.key, s.value ?? '']))
   )
+  const [flags, setFlags] = useState<Record<string, boolean>>(featureFlags)
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState<string | null>(null)
+  const [togglingFeature, setTogglingFeature] = useState<string | null>(null)
 
   const handleSave = async (key: string) => {
     setSaving(key)
@@ -56,6 +65,34 @@ export function SettingsClient({ settings }: { settings: Setting[] }) {
     if (error) { toast.error(error); return }
     toast.success(tc('saved'))
     router.refresh()
+  }
+
+  const handleToggleFeature = async (feature: FeatureFlagKey) => {
+    const newVal = !flags[feature]
+    setTogglingFeature(feature)
+    const res = await fetch('/api/admin/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: `feature.${feature}`, value: String(newVal) }),
+    })
+    const { error } = await res.json()
+    setTogglingFeature(null)
+    if (error) { toast.error(error); return }
+    setFlags(f => ({ ...f, [feature]: newVal }))
+    toast.success(tc('saved'))
+    router.refresh()
+  }
+
+  const FEATURE_NAV_KEY: Record<FeatureFlagKey, string> = {
+    attendance: 'attendance',
+    leave: 'leave',
+    overtime: 'overtime',
+    payroll: 'payroll',
+    documents: 'documents',
+    announcements: 'announcements',
+    contracts: 'contracts',
+    projects: 'projects',
+    feedback: 'feedback',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [
@@ -72,12 +109,55 @@ export function SettingsClient({ settings }: { settings: Setting[] }) {
       return false
     })
   }
-  // Catch-all for any settings not in a group
   const ungrouped = settings.filter(s => !grouped.has(s.key))
   if (ungrouped.length > 0) groups[t('groupOther')] = ungrouped
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {/* Feature flags section */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+        <div className="px-5 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('groupFeatures')}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{t('groupFeaturesDesc')}</p>
+        </div>
+        <div className="divide-y divide-slate-100 dark:divide-slate-700">
+          {FEATURE_KEYS.map(feature => {
+            const enabled = flags[feature] ?? false
+            const isToggling = togglingFeature === feature
+            return (
+              <div key={feature} className="px-5 py-3 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {tn(FEATURE_NAV_KEY[feature])}
+                  </p>
+                  <p className="text-xs text-slate-400">/{feature}</p>
+                </div>
+                <button
+                  onClick={() => handleToggleFeature(feature)}
+                  disabled={isToggling}
+                  className={[
+                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none shrink-0',
+                    enabled
+                      ? 'bg-blue-600 dark:bg-blue-500'
+                      : 'bg-slate-200 dark:bg-slate-600',
+                    isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                  ].join(' ')}
+                  aria-label={enabled ? t('featureDisable') : t('featureEnable')}
+                >
+                  <span
+                    className={[
+                      'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
+                      enabled ? 'translate-x-6' : 'translate-x-1',
+                    ].join(' ')}
+                  />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Regular settings groups */}
       {Object.entries(groups).map(([groupName, groupSettings]) => {
         if (groupSettings.length === 0) return null
         return (

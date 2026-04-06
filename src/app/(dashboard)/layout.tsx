@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { LocaleSync } from '@/components/LocaleSync'
 import { LOCALE_COOKIE } from '@/i18n/config'
+import { getFeatureFlags } from '@/lib/feature-flags'
 import type { User } from '@/types'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -25,18 +26,20 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const currentLocale = cookieStore.get(LOCALE_COOKIE)?.value
   const needsSync = !!(dbUser.language && dbUser.language !== currentLocale)
 
+  const featureFlags = await getFeatureFlags()
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900">
       {needsSync && <LocaleSync locale={dbUser.language} />}
       <div className="hidden lg:flex lg:flex-col">
-        <Sidebar user={dbUser as User} />
+        <Sidebar user={dbUser as User} features={featureFlags} />
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">
           {children}
         </main>
       </div>
-      <BottomNav userId={dbUser.id} />
+      <BottomNav userId={dbUser.id} isAdmin={dbUser.role === 'admin'} features={featureFlags} />
     </div>
   )
 }

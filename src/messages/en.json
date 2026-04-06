@@ -791,6 +791,10 @@
       "groupNotification": "Notification Settings",
       "groupSystem": "System Parameters",
       "groupOther": "Other",
+      "groupFeatures": "Feature Flags",
+      "groupFeaturesDesc": "Enable or disable individual feature modules",
+      "featureEnable": "Enable",
+      "featureDisable": "Disable",
       "inputPlaceholder": "Enter {label}"
     },
     "audit": {
