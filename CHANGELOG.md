@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.31] - 2026-04-06
+
+### Fixed
+- Sidebar / BottomNav 語言切換：`supabase.update().catch()` 改用 `Promise.resolve(...).catch()`，修正 PostgREST builder 不實作 `.catch()` 導致的 runtime 錯誤
+
 ## [0.2.30] - 2026-04-06
 
 ### Added
