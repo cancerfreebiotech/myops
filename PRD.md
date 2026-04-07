@@ -120,7 +120,20 @@ src/
 
 ```typescript
 type Role = 'member' | 'admin'
+```
 
+**三層存取控制：**
+
+| 層級 | 機制 | 說明 |
+|------|------|------|
+| 後台存取 | `role = 'admin'` | 可進入所有 `/admin/*` 頁面（使用者管理、系統設定等） |
+| 進階操作 | `granted_features[]` | 可執行特定業務操作（審核、結算、發布等）+ 擁有對應設定頁 |
+| 功能模組 | `feature flags` | Admin 手動開關各功能模組（出勤、請假、薪資等） |
+
+`admin` 不受 feature flags 限制，永遠可存取所有功能。
+
+```typescript
+// 判斷是否可執行特定操作
 export function hasFeature(
   role: string,
   grantedFeatures: string[],
@@ -131,20 +144,26 @@ export function hasFeature(
 }
 ```
 
-`admin` = 最高權限，一般使用者透過 `granted_features` 陣列授予特定功能。
-
 ### 3.3 granted_features 完整清單
 
-| Key | 說明 | 適用模組 |
-|-----|------|---------|
-| `publish_announcement` | 可發布公告/規章 | DMS |
-| `approve_contract` | 可審核合約（限本部門或代理審核） | DMS |
-| `export_signatures` | 可匯出簽署清單（.xlsx） | DMS |
-| `view_internal_dept` | 可查看特定部門內部文件 | DMS |
-| `hr_manager` | HR 主管：審核一級主管請假、管理假別、管理薪資設定 | HR |
-| `finance_payroll` | 財務：查看已核准加班紀錄、結算薪資、上傳勞健保級距表 | HR |
-| `coo_notify` | 營運長：接收合約入庫通知、專案加班超額通知 | ORG |
-| `manage_projects` | 可建立專案活動、指定專案負責人 | HR |
+| Key | 說明 | 適用模組 | 設定頁 |
+|-----|------|---------|--------|
+| `publish_announcement` | 可發布公告/規章 | DMS | — |
+| `approve_contract` | 可審核合約（限本部門或代理審核） | DMS | — |
+| `export_signatures` | 可匯出簽署清單（.xlsx） | DMS | — |
+| `view_internal_dept` | 可查看特定部門內部文件 | DMS | — |
+| `hr_manager` | HR 主管：審核一級主管請假、管理假別、薪資設定 | HR | `/admin/hr-settings` |
+| `finance_payroll` | 財務：結算薪資、上傳勞健保級距表、管理薪資參數 | HR | `/admin/finance-settings` |
+| `coo_notify` | 營運長：接收合約/加班通知、管理專案與合約設定 | ORG | `/admin/coo-settings` |
+| `manage_projects` | 可建立專案活動、指定專案負責人 | HR | — |
+
+**設定頁可見範圍：**
+
+| 設定頁 | 本區（可編輯）| 其他區（唯讀）|
+|--------|------------|-------------|
+| `/admin/hr-settings` | HR 設定 | Finance、COO |
+| `/admin/finance-settings` | Finance 設定 | HR、COO |
+| `/admin/coo-settings` | COO 設定 | HR、Finance |
 
 ### 3.4 MFA 強制流程
 
@@ -559,22 +578,39 @@ CREATE TABLE system_settings (
 );
 
 INSERT INTO system_settings (key, value) VALUES
+  -- 系統（僅 Admin 可編輯）
   ('maintenance_mode', 'false'),
   ('mfa_approval_session_minutes', '10'),
-  ('contract_reminder_days_first', '90'),
-  ('contract_reminder_days_second', '30'),
+  ('daily_digest_time', '08:30'),
+  ('gemini_api_key', ''),
+  -- HR 設定（hr_manager 可編輯）
   ('default_clock_in_time', '09:00'),
   ('default_clock_out_time', '18:00'),
   ('auto_clock_check_delay_minutes', '30'),
   ('intern_missed_clock_alert_threshold', '3'),
   ('fulltime_auto_clock_alert_days', '3'),
   ('overtime_min_advance_hours', '8'),
-  ('project_ot_coo_threshold_hours', '8'),
+  -- Finance 設定（finance_payroll 可編輯）
   ('payroll_pay_day', '5'),
   ('payroll_auto_generate_day', '1'),
-  ('daily_digest_time', '08:30'),
-  -- AI 翻譯（若 GEMINI_API_KEY 環境變數已設定則優先使用，此欄位作為 fallback）
-  ('gemini_api_key', '');
+  -- COO 設定（coo_notify 可編輯）
+  ('project_ot_coo_threshold_hours', '8'),
+  ('contract_reminder_days_first', '90'),
+  ('contract_reminder_days_second', '30');
+
+-- 功能模組開關（key 格式：feature.{module}，預設 false，feedback 預設 true）
+-- Admin 透過 /admin/settings 管理；不受 granted_features 影響
+INSERT INTO system_settings (key, value) VALUES
+  ('feature.attendance', 'false'),
+  ('feature.leave', 'false'),
+  ('feature.overtime', 'false'),
+  ('feature.payroll', 'false'),
+  ('feature.documents', 'false'),
+  ('feature.announcements', 'false'),
+  ('feature.contracts', 'false'),
+  ('feature.projects', 'false'),
+  ('feature.feedback', 'true')
+ON CONFLICT (key) DO NOTHING;
 ```
 
 ---
@@ -638,6 +674,15 @@ echo NEXT_PUBLIC_DEPLOY_TIME=$(date -u +"%Y-%m-%d %H:%M") >> .env.production && 
 
 閒置 30 分鐘自動登出（Supabase Session 設定）。
 
+**停用帳號處理：**
+```
+使用者登入（Azure AD）
+  → Dashboard layout 檢查 users.is_active
+      is_active = false → redirect /suspended
+      is_active = true  → 正常進入
+```
+`/suspended` 頁面：顯示「帳號已停用，請聯絡管理員」+ 登出按鈕，不顯示任何系統功能。
+
 ### 6.2 主題系統（Dark / Light Mode）
 
 > 視覺規則完整定義於 `design-system/myops/MASTER.md`。
@@ -696,8 +741,10 @@ echo NEXT_PUBLIC_DEPLOY_TIME=$(date -u +"%Y-%m-%d %H:%M") >> .env.production && 
 - Admin 可新增/修改部門，代號不可重複
 
 **使用者管理（`/admin/users`）：**
+- 帳號來源：Microsoft Azure AD（不支援在系統內刪除帳號）
 - 設定部門、角色、granted_features、manager_id、deputy_approver_id、employment_type、work_region
-- 停用帳號（`is_active = false`）時自動列出名下：合約、未結案專案、待審項目 → 提醒交接
+- **停用帳號流程：** 點擊離職按鈕 → offboarding checklist（列出名下合約、未結案專案、待審項目）→ 確認後執行 `is_active = false`
+- **停用後行為：** 使用者下次進入任何 dashboard 頁面，自動導向 `/suspended`（「帳號已停用，請聯絡管理員」），無法使用任何功能，可選擇登出
 
 **員工人事資料（`user_profiles`）：**
 - HR + Admin 可編輯，員工僅可查看自己的
