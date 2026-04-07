@@ -18,8 +18,7 @@ export default async function AdminUsersPage() {
     .from('users')
     .select(`
       *,
-      department:departments(id, name, code),
-      manager:users!users_manager_id_fkey!left(id, display_name, email)
+      department:departments(id, name, code)
     `)
     .order('created_at', { ascending: false })
 
