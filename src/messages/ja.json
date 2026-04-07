@@ -792,14 +792,14 @@
     },
     "hrSettings": {
       "title": "HR管理設定",
-      "description": "HRは人事関連設定を編集できます。他部門は閲覧のみ",
+      "description": "人事関連のシステム設定を管理します",
       "hrSection": "HR設定",
       "financeSection": "財務設定（閲覧のみ）",
       "cooSection": "営業設定（閲覧のみ）"
     },
     "financeSettings": {
       "title": "財務管理設定",
-      "description": "財務は給与関連設定を編集できます。他部門は閲覧のみ",
+      "description": "給与・レート関連のシステム設定を管理します",
       "financeSection": "財務設定",
       "managementSection": "レート管理",
       "overtimeRatesLink": "残業代レート管理",
@@ -809,7 +809,7 @@
     },
     "cooSettings": {
       "title": "営業管理設定",
-      "description": "COOはプロジェクト・契約関連設定を編集できます。他部門は閲覧のみ",
+      "description": "プロジェクト・契約関連のシステム設定を管理します",
       "cooSection": "営業設定",
       "hrSection": "HR設定（閲覧のみ）",
       "financeSection": "財務設定（閲覧のみ）"

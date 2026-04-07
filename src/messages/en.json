@@ -792,14 +792,14 @@
     },
     "hrSettings": {
       "title": "HR Settings",
-      "description": "HR can edit HR-related settings; other departments are read-only",
+      "description": "Manage HR-related system settings",
       "hrSection": "HR Settings",
       "financeSection": "Finance Settings (Read-only)",
       "cooSection": "Operations Settings (Read-only)"
     },
     "financeSettings": {
       "title": "Finance Settings",
-      "description": "Finance can edit payroll-related settings; other departments are read-only",
+      "description": "Manage payroll and rate-related system settings",
       "financeSection": "Finance Settings",
       "managementSection": "Rate Management",
       "overtimeRatesLink": "Overtime Rate Management",
@@ -809,7 +809,7 @@
     },
     "cooSettings": {
       "title": "Operations Settings",
-      "description": "COO can edit project and contract settings; other departments are read-only",
+      "description": "Manage project and contract-related system settings",
       "cooSection": "Operations Settings",
       "hrSection": "HR Settings (Read-only)",
       "financeSection": "Finance Settings (Read-only)"

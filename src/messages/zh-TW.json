@@ -792,14 +792,14 @@
     },
     "hrSettings": {
       "title": "HR 管理設定",
-      "description": "HR 可編輯人資相關設定，其他部門設定僅供參考",
+      "description": "管理人資相關系統設定",
       "hrSection": "人資設定",
       "financeSection": "財務設定（唯讀）",
       "cooSection": "營運設定（唯讀）"
     },
     "financeSettings": {
       "title": "財務管理設定",
-      "description": "財務可編輯薪資相關設定，其他部門設定僅供參考",
+      "description": "管理薪資與費率相關系統設定",
       "financeSection": "財務設定",
       "managementSection": "費率管理",
       "overtimeRatesLink": "加班費率管理",
@@ -809,7 +809,7 @@
     },
     "cooSettings": {
       "title": "營運管理設定",
-      "description": "營運長可編輯專案與合約相關設定，其他部門設定僅供參考",
+      "description": "管理專案與合約相關系統設定",
       "cooSection": "營運設定",
       "hrSection": "人資設定（唯讀）",
       "financeSection": "財務設定（唯讀）"
