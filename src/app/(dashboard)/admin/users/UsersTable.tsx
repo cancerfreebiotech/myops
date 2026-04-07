@@ -84,12 +84,12 @@ export function UsersTable({ users, departments }: UsersTableProps) {
                 <TableCell>{user.department?.name ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                    {user.role === 'admin' ? 'Admin' : '一般'}
+                    {user.role === 'admin' ? '管理員' : '一般員工'}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {user.employment_type === 'full_time' ? '正職' : '實習'}
+                    {user.employment_type === 'full_time' ? '正職' : '實習生'}
                   </Badge>
                 </TableCell>
                 <TableCell>

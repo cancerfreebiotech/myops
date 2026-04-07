@@ -11,8 +11,6 @@ import { useRouter } from 'next/navigation'
 import { FEATURE_KEYS } from '@/lib/features'
 import { useTranslations } from 'next-intl'
 
-
-
 const schema = z.object({
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
@@ -31,6 +29,23 @@ interface UserEditFormProps {
   departments: any[]
   allUsers: any[]
   onClose: () => void
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  admin: '管理員',
+  member: '一般員工',
+}
+
+const EMPLOYMENT_LABELS: Record<string, string> = {
+  full_time: '正職',
+  intern: '實習生',
+}
+
+const REGION_LABELS: Record<string, string> = {
+  TW: '台灣',
+  JP: '日本',
+  US: '美國',
+  OTHER: '其他',
 }
 
 export function UserEditForm({ user, departments, allUsers, onClose }: UserEditFormProps) {
@@ -89,11 +104,20 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          {/* 部門 */}
           <FormField control={form.control} name="department_id" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('department')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder={t('department')} /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="truncate text-sm">
+                      {field.value
+                        ? (departments.find(d => d.id === field.value)?.name ?? field.value)
+                        : <span className="text-slate-400">無</span>}
+                    </span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
@@ -102,52 +126,77 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
             </FormItem>
           )} />
 
+          {/* 角色 */}
           <FormField control={form.control} name="role" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('role')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="text-sm">{ROLE_LABELS[field.value] ?? field.value}</span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                  <SelectItem value="member">一般成員</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {Object.entries(ROLE_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormItem>
           )} />
 
+          {/* 僱用類型 */}
           <FormField control={form.control} name="employment_type" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('employmentType')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="text-sm">{EMPLOYMENT_LABELS[field.value] ?? field.value}</span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                  <SelectItem value="full_time">正職</SelectItem>
-                  <SelectItem value="intern">實習生</SelectItem>
+                  {Object.entries(EMPLOYMENT_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormItem>
           )} />
 
+          {/* 工作地區 */}
           <FormField control={form.control} name="work_region" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('workRegion')}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="text-sm">{REGION_LABELS[field.value] ?? field.value}</span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                  <SelectItem value="TW">台灣</SelectItem>
-                  <SelectItem value="JP">日本</SelectItem>
-                  <SelectItem value="US">美國</SelectItem>
-                  <SelectItem value="OTHER">其他</SelectItem>
+                  {Object.entries(REGION_LABELS).map(([val, label]) => (
+                    <SelectItem key={val} value={val}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </FormItem>
           )} />
 
+          {/* 直屬主管 */}
           <FormField control={form.control} name="manager_id" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('manager')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder={t('manager')} /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="truncate text-sm">
+                      {field.value
+                        ? (() => { const u = otherUsers.find(u => u.id === field.value); return u?.display_name ?? u?.email ?? field.value })()
+                        : <span className="text-slate-400">無</span>}
+                    </span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
@@ -156,11 +205,20 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
             </FormItem>
           )} />
 
+          {/* 代理審核人 */}
           <FormField control={form.control} name="deputy_approver_id" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('deputyApprover')}</FormLabel>
               <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || null)}>
-                <FormControl><SelectTrigger><SelectValue placeholder={t('deputyApprover')} /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="truncate text-sm">
+                      {field.value
+                        ? (() => { const u = otherUsers.find(u => u.id === field.value); return u?.display_name ?? u?.email ?? field.value })()
+                        : <span className="text-slate-400">無</span>}
+                    </span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="">無</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
@@ -169,11 +227,16 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
             </FormItem>
           )} />
 
+          {/* 狀態 */}
           <FormField control={form.control} name="is_active" render={({ field }) => (
             <FormItem>
               <FormLabel>{t('status')}</FormLabel>
               <Select value={field.value ? 'true' : 'false'} onValueChange={v => field.onChange(v === 'true')}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <FormControl>
+                  <SelectTrigger>
+                    <span className="text-sm">{field.value ? '在職' : '離職（停用）'}</span>
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="true">在職</SelectItem>
                   <SelectItem value="false">離職（停用）</SelectItem>
@@ -183,7 +246,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
           )} />
         </div>
 
-        {/* Granted Features */}
+        {/* 授權功能 */}
         <div>
           <FormLabel className="text-sm">{t('grantedFeatures')}</FormLabel>
           <div className="mt-2 flex flex-wrap gap-2">
