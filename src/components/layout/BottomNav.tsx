@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
+  FolderKanban, Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
@@ -44,9 +45,11 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('overtime')      && { href: '/overtime',      label: t('overtime'),      icon: Timer },
     show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
     show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
-    show('payroll')   && { href: '/payroll',       label: t('payroll'),  icon: DollarSign },
-    show('feedback')  && { href: '/feedback/new', label: t('feedback'), icon: MessageSquarePlus },
-    { href: '/help', label: t('help'), icon: HelpCircle },
+    show('payroll')       && { href: '/payroll',       label: t('payroll'),       icon: DollarSign },
+    show('projects')      && { href: '/projects',      label: t('projects'),      icon: FolderKanban },
+    show('feedback')      && { href: '/feedback/new',  label: t('feedback'),      icon: MessageSquarePlus },
+    { href: '/settings', label: t('settings'), icon: Settings },
+    { href: '/help',     label: t('help'),     icon: HelpCircle },
   ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
   const handleLanguageChange = async (lang: string) => {

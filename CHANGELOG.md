@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.32] - 2026-04-07
+
+### Fixed
+- 手機版 BottomNav「更多」面板補上「專案」與「個人設定」連結，與桌面版 Sidebar 功能對齊
+
 ## [0.2.31] - 2026-04-06
 
 ### Fixed
