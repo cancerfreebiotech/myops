@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { UsersTable } from './UsersTable'
@@ -12,7 +12,9 @@ export default async function AdminUsersPage() {
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', authUser.id).single()
   if (currentUser?.role !== 'admin') redirect('/')
 
-  const { data: users } = await supabase
+  const service = await createServiceClient()
+
+  const { data: users } = await service
     .from('users')
     .select(`
       *,
@@ -21,7 +23,7 @@ export default async function AdminUsersPage() {
     `)
     .order('created_at', { ascending: false })
 
-  const { data: departments } = await supabase
+  const { data: departments } = await service
     .from('departments')
     .select('id, name, code')
     .is('deleted_at', null)
