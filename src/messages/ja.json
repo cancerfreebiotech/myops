@@ -115,6 +115,9 @@
     "adminFeedback": "フィードバック管理",
     "adminAudit": "監査ログ",
     "adminSettings": "システム設定",
+    "hrSettings": "HR管理",
+    "financeSettings": "財務管理",
+    "cooSettings": "営業管理",
     "expand": "メニューを展開",
     "collapse": "メニューを折りたたむ",
     "more": "その他",
@@ -781,6 +784,27 @@
     },
     "attendanceAnomalies": {
       "description": "連続自動打刻・インターン打刻漏れ統計"
+    },
+    "hrSettings": {
+      "title": "HR管理設定",
+      "description": "HRは人事関連設定を編集できます。他部門は閲覧のみ",
+      "hrSection": "HR設定",
+      "financeSection": "財務設定（閲覧のみ）",
+      "cooSection": "営業設定（閲覧のみ）"
+    },
+    "financeSettings": {
+      "title": "財務管理設定",
+      "description": "財務は給与関連設定を編集できます。他部門は閲覧のみ",
+      "financeSection": "財務設定",
+      "hrSection": "HR設定（閲覧のみ）",
+      "cooSection": "営業設定（閲覧のみ）"
+    },
+    "cooSettings": {
+      "title": "営業管理設定",
+      "description": "COOはプロジェクト・契約関連設定を編集できます。他部門は閲覧のみ",
+      "cooSection": "営業設定",
+      "hrSection": "HR設定（閲覧のみ）",
+      "financeSection": "財務設定（閲覧のみ）"
     },
     "settings": {
       "title": "システム設定",

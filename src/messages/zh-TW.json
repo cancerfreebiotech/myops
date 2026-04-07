@@ -115,6 +115,9 @@
     "adminFeedback": "回饋管理",
     "adminAudit": "稽核紀錄",
     "adminSettings": "系統設定",
+    "hrSettings": "HR 管理",
+    "financeSettings": "財務管理",
+    "cooSettings": "營運管理",
     "expand": "展開選單",
     "collapse": "收合選單",
     "more": "更多",
@@ -781,6 +784,27 @@
     },
     "attendanceAnomalies": {
       "description": "連續自動補打、實習生漏打統計"
+    },
+    "hrSettings": {
+      "title": "HR 管理設定",
+      "description": "HR 可編輯人資相關設定，其他部門設定僅供參考",
+      "hrSection": "人資設定",
+      "financeSection": "財務設定（唯讀）",
+      "cooSection": "營運設定（唯讀）"
+    },
+    "financeSettings": {
+      "title": "財務管理設定",
+      "description": "財務可編輯薪資相關設定，其他部門設定僅供參考",
+      "financeSection": "財務設定",
+      "hrSection": "人資設定（唯讀）",
+      "cooSection": "營運設定（唯讀）"
+    },
+    "cooSettings": {
+      "title": "營運管理設定",
+      "description": "營運長可編輯專案與合約相關設定，其他部門設定僅供參考",
+      "cooSection": "營運設定",
+      "hrSection": "人資設定（唯讀）",
+      "financeSection": "財務設定（唯讀）"
     },
     "settings": {
       "title": "系統設定",

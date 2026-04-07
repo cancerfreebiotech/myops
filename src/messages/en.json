@@ -115,6 +115,9 @@
     "adminFeedback": "Feedback Management",
     "adminAudit": "Audit Logs",
     "adminSettings": "System Settings",
+    "hrSettings": "HR Management",
+    "financeSettings": "Finance Management",
+    "cooSettings": "Operations Management",
     "expand": "Expand menu",
     "collapse": "Collapse menu",
     "more": "More",
@@ -781,6 +784,27 @@
     },
     "attendanceAnomalies": {
       "description": "Consecutive auto-clock and intern missed-clock statistics"
+    },
+    "hrSettings": {
+      "title": "HR Settings",
+      "description": "HR can edit HR-related settings; other departments are read-only",
+      "hrSection": "HR Settings",
+      "financeSection": "Finance Settings (Read-only)",
+      "cooSection": "Operations Settings (Read-only)"
+    },
+    "financeSettings": {
+      "title": "Finance Settings",
+      "description": "Finance can edit payroll-related settings; other departments are read-only",
+      "financeSection": "Finance Settings",
+      "hrSection": "HR Settings (Read-only)",
+      "cooSection": "Operations Settings (Read-only)"
+    },
+    "cooSettings": {
+      "title": "Operations Settings",
+      "description": "COO can edit project and contract settings; other departments are read-only",
+      "cooSection": "Operations Settings",
+      "hrSection": "HR Settings (Read-only)",
+      "financeSection": "Finance Settings (Read-only)"
     },
     "settings": {
       "title": "System Settings",

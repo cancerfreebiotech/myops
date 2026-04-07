@@ -61,6 +61,8 @@ export function Sidebar({ user, features }: SidebarProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const isAdmin = user.role === 'admin'
+  const grantedFeatures: string[] = (user as any).granted_features ?? []
+  const hasFeature = (f: string) => isAdmin || grantedFeatures.includes(f)
 
   const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.2'
   const deployTimeRaw = process.env.NEXT_PUBLIC_DEPLOY_TIME ?? ''
@@ -119,6 +121,9 @@ export function Sidebar({ user, features }: SidebarProps) {
     { href: '/admin/attendance-anomalies',  label: t('adminAttendanceAnomalies'), icon: AlertCircle },
     { href: '/admin/feedback',              label: t('adminFeedback'),            icon: MessageCircle },
     { href: '/admin/audit',                 label: t('adminAudit'),               icon: BookOpen },
+    { href: '/admin/hr-settings',           label: t('hrSettings'),               icon: SlidersHorizontal },
+    { href: '/admin/finance-settings',      label: t('financeSettings'),          icon: DollarSign },
+    { href: '/admin/coo-settings',          label: t('cooSettings'),              icon: SlidersHorizontal },
     { href: '/admin/settings',              label: t('adminSettings'),            icon: Settings },
   ] : []
 
@@ -173,6 +178,21 @@ export function Sidebar({ user, features }: SidebarProps) {
             {adminItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
+          </>
+        )}
+
+        {(hasFeature('hr_manager') || hasFeature('finance_payroll') || hasFeature('coo_notify')) && !isAdmin && (
+          <>
+            <SectionHeader label={t('admin')} collapsed={collapsed} />
+            {hasFeature('hr_manager') && (
+              <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
+            )}
+            {hasFeature('finance_payroll') && (
+              <NavLink href="/admin/finance-settings" label={t('financeSettings')} icon={DollarSign} collapsed={collapsed} active={isActive('/admin/finance-settings')} />
+            )}
+            {hasFeature('coo_notify') && (
+              <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
+            )}
           </>
         )}
       </nav>
