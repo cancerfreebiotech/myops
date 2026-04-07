@@ -12,9 +12,9 @@ export default async function COOSettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
+  const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
-  const isCOO = currentUser?.granted_features?.includes('coo_notify')
+  const isCOO = currentUser?.job_role === 'coo'
   if (!isAdmin && !isCOO) redirect('/')
 
   const allKeys = [...COO_SETTINGS_KEYS, ...HR_SETTINGS_KEYS, ...FINANCE_SETTINGS_KEYS]
@@ -31,7 +31,7 @@ export default async function COOSettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader title={t('cooSettings.title')} description={t('cooSettings.description')} />
-      <RoleSettingsSection title={t('cooSettings.cooSection')} settings={pick(COO_SETTINGS_KEYS)} editable={true} />
+      <RoleSettingsSection title={t('cooSettings.cooSection')} settings={pick(COO_SETTINGS_KEYS)} editable={isAdmin || isCOO} />
       <RoleSettingsSection title={t('cooSettings.hrSection')} settings={pick(HR_SETTINGS_KEYS)} editable={false} />
       <RoleSettingsSection title={t('cooSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={false} />
     </div>

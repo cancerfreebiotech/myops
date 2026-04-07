@@ -19,11 +19,11 @@ export const COO_SETTINGS_KEYS = [
   'contract_reminder_days_second',
 ] as const
 
-// Map each key → which granted_feature owns (can edit) it
+// Map each key → which job_role owns (can edit) it
 export const KEY_OWNER: Record<string, string> = {
   ...Object.fromEntries(HR_SETTINGS_KEYS.map(k => [k, 'hr_manager'])),
-  ...Object.fromEntries(FINANCE_SETTINGS_KEYS.map(k => [k, 'finance_payroll'])),
-  ...Object.fromEntries(COO_SETTINGS_KEYS.map(k => [k, 'coo_notify'])),
+  ...Object.fromEntries(FINANCE_SETTINGS_KEYS.map(k => [k, 'finance'])),
+  ...Object.fromEntries(COO_SETTINGS_KEYS.map(k => [k, 'coo'])),
 }
 
 export const ROLE_SETTINGS_KEYS = [

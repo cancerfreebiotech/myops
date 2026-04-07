@@ -1,5 +1,7 @@
 export type Role = 'member' | 'admin'
 
+export type JobRole = 'member' | 'hr_manager' | 'finance' | 'coo'
+
 export type EmploymentType = 'full_time' | 'intern'
 
 export type WorkRegion = 'TW' | 'JP' | 'US' | 'OTHER'
@@ -9,10 +11,14 @@ export type FeatureKey =
   | 'approve_contract'
   | 'export_signatures'
   | 'view_internal_dept'
-  | 'hr_manager'
-  | 'finance_payroll'
-  | 'coo_notify'
   | 'manage_projects'
+  | 'attendance_manage'
+  | 'leave_approve'
+  | 'overtime_approve'
+  | 'payroll_view'
+  | 'bonuses_manage'
+  | 'reports_view'
+  | 'feedback_admin'
 
 export interface User {
   id: string
@@ -20,6 +26,7 @@ export interface User {
   display_name: string | null
   department_id: string | null
   role: Role
+  job_role: JobRole
   granted_features: FeatureKey[]
   employment_type: EmploymentType
   work_region: WorkRegion
@@ -35,6 +42,7 @@ export interface User {
 
 export function hasFeature(
   role: string,
+  jobRole: string,
   grantedFeatures: string[],
   feature: FeatureKey
 ): boolean {

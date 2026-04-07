@@ -12,13 +12,13 @@ export default async function InsuranceBracketsPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role')
     .eq('id', user.id)
     .single()
 
   const isAdmin = currentUser?.role === 'admin'
-  const hasFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !hasFinance) redirect('/')
+  const isFinance = currentUser?.job_role === 'finance'
+  if (!isAdmin && !isFinance) redirect('/')
 
   const { data: laborBrackets } = await service
     .from('labor_insurance_brackets')

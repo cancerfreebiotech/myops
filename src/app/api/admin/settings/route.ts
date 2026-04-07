@@ -11,20 +11,20 @@ export async function POST(request: NextRequest) {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role')
     .eq('id', user.id)
     .single()
 
   const isAdmin = currentUser?.role === 'admin'
-  const grantedFeatures: string[] = currentUser?.granted_features ?? []
+  const jobRole: string = currentUser?.job_role ?? 'member'
 
   const { key, value } = await request.json()
   if (!key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
 
-  // Admin can edit everything; role users can only edit keys they own
+  // Admin can edit everything; job_role users can only edit keys they own
   if (!isAdmin) {
     const owner = KEY_OWNER[key]
-    if (!owner || !grantedFeatures.includes(owner)) {
+    if (!owner || jobRole !== owner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   }

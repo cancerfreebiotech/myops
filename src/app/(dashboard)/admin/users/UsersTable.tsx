@@ -17,9 +17,10 @@ import { useTranslations } from 'next-intl'
 interface UsersTableProps {
   users: any[]
   departments: any[]
+  isAdmin: boolean
 }
 
-export function UsersTable({ users, departments }: UsersTableProps) {
+export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
   const t = useTranslations('admin.users')
   const tc = useTranslations('common')
   const [search, setSearch] = useState('')
@@ -157,6 +158,7 @@ export function UsersTable({ users, departments }: UsersTableProps) {
               user={editUser}
               departments={departments}
               allUsers={users}
+              isAdmin={isAdmin}
               onClose={() => setEditUser(null)}
             />
           )}

@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl'
 const schema = z.object({
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
+  job_role: z.enum(['member', 'hr_manager', 'finance', 'coo']),
   employment_type: z.enum(['full_time', 'intern']),
   work_region: z.enum(['TW', 'JP', 'US', 'OTHER']),
   manager_id: z.string().nullable(),
@@ -28,10 +29,11 @@ interface UserEditFormProps {
   user: any
   departments: any[]
   allUsers: any[]
+  isAdmin: boolean
   onClose: () => void
 }
 
-export function UserEditForm({ user, departments, allUsers, onClose }: UserEditFormProps) {
+export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: UserEditFormProps) {
   const router = useRouter()
   const t = useTranslations('admin.users')
   const tc = useTranslations('common')
@@ -40,6 +42,13 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
   const ROLE_LABELS: Record<string, string> = {
     admin: t('roleAdmin'),
     member: t('roleMember'),
+  }
+
+  const JOB_ROLE_LABELS: Record<string, string> = {
+    member: t('jobRoleMember'),
+    hr_manager: t('jobRoleHR'),
+    finance: t('jobRoleFinance'),
+    coo: t('jobRoleCOO'),
   }
 
   const EMPLOYMENT_LABELS: Record<string, string> = {
@@ -59,6 +68,7 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
     defaultValues: {
       department_id: user.department_id ?? null,
       role: user.role,
+      job_role: user.job_role ?? 'member',
       employment_type: user.employment_type,
       work_region: user.work_region,
       manager_id: user.manager_id ?? null,
@@ -69,16 +79,26 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
   })
 
   const onSubmit = async (values: FormValues) => {
+    // HR managers can only update a restricted set of fields
+    const payload = isAdmin ? values : {
+      department_id: values.department_id,
+      employment_type: values.employment_type,
+      work_region: values.work_region,
+      manager_id: values.manager_id,
+      deputy_approver_id: values.deputy_approver_id,
+      is_active: values.is_active,
+    }
+
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
     })
     if (!res.ok) {
-      toast.error('儲存失敗')
+      toast.error(tc('error'))
       return
     }
-    toast.success('儲存成功')
+    toast.success(tc('saved'))
     router.refresh()
     onClose()
   }
@@ -126,24 +146,47 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
             </FormItem>
           )} />
 
-          {/* 角色 */}
-          <FormField control={form.control} name="role" render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('role')}</FormLabel>
-              <Select value={field.value} onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <span className="text-sm">{ROLE_LABELS[field.value] ?? field.value}</span>
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {Object.entries(ROLE_LABELS).map(([val, label]) => (
-                    <SelectItem key={val} value={val}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )} />
+          {/* 系統角色 — admin only */}
+          {isAdmin && (
+            <FormField control={form.control} name="role" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('role')}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <span className="text-sm">{ROLE_LABELS[field.value] ?? field.value}</span>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(ROLE_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          )}
+
+          {/* 職能角色 — admin only */}
+          {isAdmin && (
+            <FormField control={form.control} name="job_role" render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('jobRole')}</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <span className="text-sm">{JOB_ROLE_LABELS[field.value] ?? field.value}</span>
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {Object.entries(JOB_ROLE_LABELS).map(([val, label]) => (
+                      <SelectItem key={val} value={val}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          )}
 
           {/* 僱用類型 */}
           <FormField control={form.control} name="employment_type" render={({ field }) => (
@@ -246,26 +289,28 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
           )} />
         </div>
 
-        {/* 授權功能 */}
-        <div>
-          <FormLabel className="text-sm">{t('grantedFeatures')}</FormLabel>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {FEATURE_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => toggleFeature(key)}
-                className={`px-3 py-1.5 rounded-full text-xs border transition-colors min-h-[36px] ${
-                  features.includes(key)
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600'
-                }`}
-              >
-                {tFeatures(key)}
-              </button>
-            ))}
+        {/* 個別授權功能 — admin only */}
+        {isAdmin && (
+          <div>
+            <FormLabel className="text-sm">{t('grantedFeatures')}</FormLabel>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {FEATURE_KEYS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleFeature(key)}
+                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors min-h-[36px] ${
+                    features.includes(key)
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600'
+                  }`}
+                >
+                  {tFeatures(key)}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>{tc('cancel')}</Button>

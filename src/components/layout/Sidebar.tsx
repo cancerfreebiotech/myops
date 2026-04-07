@@ -61,8 +61,9 @@ export function Sidebar({ user, features }: SidebarProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const isAdmin = user.role === 'admin'
+  const jobRole: string = (user as any).job_role ?? 'member'
   const grantedFeatures: string[] = (user as any).granted_features ?? []
-  const hasFeature = (f: string) => isAdmin || grantedFeatures.includes(f)
+  const hasJobRole = (r: string) => isAdmin || jobRole === r
 
   const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.2'
   const deployTimeRaw = process.env.NEXT_PUBLIC_DEPLOY_TIME ?? ''
@@ -181,16 +182,19 @@ export function Sidebar({ user, features }: SidebarProps) {
           </>
         )}
 
-        {(hasFeature('hr_manager') || hasFeature('finance_payroll') || hasFeature('coo_notify')) && !isAdmin && (
+        {(hasJobRole('hr_manager') || hasJobRole('finance') || hasJobRole('coo')) && !isAdmin && (
           <>
             <SectionHeader label={t('admin')} collapsed={collapsed} />
-            {hasFeature('hr_manager') && (
-              <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
+            {hasJobRole('hr_manager') && (
+              <>
+                <NavLink href="/admin/users" label={t('adminUsers')} icon={Users} collapsed={collapsed} active={isActive('/admin/users')} />
+                <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
+              </>
             )}
-            {hasFeature('finance_payroll') && (
+            {hasJobRole('finance') && (
               <NavLink href="/admin/finance-settings" label={t('financeSettings')} icon={DollarSign} collapsed={collapsed} active={isActive('/admin/finance-settings')} />
             )}
-            {hasFeature('coo_notify') && (
+            {hasJobRole('coo') && (
               <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
             )}
           </>

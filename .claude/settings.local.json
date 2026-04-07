@@ -48,7 +48,13 @@
       "Bash(redirect=/ 2>&1)",
       "Bash(grep -v \"//.*[\\\\u4e00-\\\\u9fff]\")",
       "Read(//c/Users/PoChen/myops/**)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(python3:*)",
+      "Bash(uniq echo:*)",
+      "Bash(echo \"no docs dir\" ls C:/Users/PoChen/myops/*.md)",
+      "Bash(sort -t T -k2 -n)",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "Bash(npx vercel:*)"
     ]
   },
   "enabledPlugins": {

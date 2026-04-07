@@ -12,9 +12,9 @@ export default async function HRSettingsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
+  const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
-  const isHR = currentUser?.granted_features?.includes('hr_manager')
+  const isHR = currentUser?.job_role === 'hr_manager'
   if (!isAdmin && !isHR) redirect('/')
 
   const allKeys = [...HR_SETTINGS_KEYS, ...FINANCE_SETTINGS_KEYS, ...COO_SETTINGS_KEYS]
@@ -31,7 +31,7 @@ export default async function HRSettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader title={t('hrSettings.title')} description={t('hrSettings.description')} />
-      <RoleSettingsSection title={t('hrSettings.hrSection')} settings={pick(HR_SETTINGS_KEYS)} editable={true} />
+      <RoleSettingsSection title={t('hrSettings.hrSection')} settings={pick(HR_SETTINGS_KEYS)} editable={isAdmin || isHR} />
       <RoleSettingsSection title={t('hrSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={false} />
       <RoleSettingsSection title={t('hrSettings.cooSection')} settings={pick(COO_SETTINGS_KEYS)} editable={false} />
     </div>

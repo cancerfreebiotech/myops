@@ -9,8 +9,10 @@ export default async function AdminUsersPage() {
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect('/login')
 
-  const { data: currentUser } = await supabase.from('users').select('role').eq('id', authUser.id).single()
-  if (currentUser?.role !== 'admin') redirect('/')
+  const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', authUser.id).single()
+  const isAdmin = currentUser?.role === 'admin'
+  const isHR = currentUser?.job_role === 'hr_manager'
+  if (!isAdmin && !isHR) redirect('/')
 
   const service = await createServiceClient()
 
@@ -33,7 +35,7 @@ export default async function AdminUsersPage() {
   return (
     <div>
       <PageHeader title={t('title')} description={t('description')} />
-      <UsersTable users={users ?? []} departments={departments ?? []} />
+      <UsersTable users={users ?? []} departments={departments ?? []} isAdmin={isAdmin} />
     </div>
   )
 }

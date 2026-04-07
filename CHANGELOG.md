@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.44] - 2026-04-08
+
+### Added
+- **職能角色系統（job_role）**：新增 `job_role` 欄位（member / hr_manager / finance / coo）
+  - DB migration：`users.job_role` 欄位，並將舊 `granted_features` 中的角色標記自動遷移
+  - HR 角色：可修改部門/職位/停用帳號，不可更改系統角色
+  - Finance 角色：可存取加班費率管理、勞健保級距管理（原本僅 Admin）
+  - COO 角色：可管理 COO 設定、唯讀 HR/Finance 設定
+- **職能角色預設功能矩陣**（`src/lib/job-role-features.ts`）
+- **財務管理頁**新增費率管理連結（加班費率、勞健保級距）
+- **使用者管理頁**：HR 角色可存取，但僅能修改允許欄位
+
+### Changed
+- `src/lib/features.ts`：移除角色標記（hr_manager / finance_payroll / coo_notify），新增 12 個個別指派功能
+- `src/lib/role-settings.ts`：`KEY_OWNER` 對應值改為 job_role 識別碼
+- 設定頁存取改為檢查 `job_role` 而非 `granted_features`
+- `UserEditForm`：新增職能角色欄位（Admin 才能修改），角色/個別授權僅 Admin 可見
+- Sidebar：非 Admin 的 HR/Finance/COO 顯示對應管理頁連結
+
 ## [0.2.33] - 2026-04-07
 
 ### Fixed
