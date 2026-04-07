@@ -687,7 +687,18 @@
       "manager": "上司",
       "deputyApprover": "代理承認者",
       "grantedFeatures": "付与された権限",
-      "status": "アカウント状態"
+      "status": "アカウント状態",
+      "roleAdmin": "管理者",
+      "roleMember": "一般社員",
+      "employmentFullTime": "正社員",
+      "employmentIntern": "インターン",
+      "regionTW": "台湾",
+      "regionJP": "日本",
+      "regionUS": "アメリカ",
+      "regionOther": "その他",
+      "statusActive": "在職中",
+      "statusInactive": "退職（無効）",
+      "none": "なし"
     },
     "profile": {
       "title": "人事情報",

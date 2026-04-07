@@ -84,17 +84,17 @@ export function UsersTable({ users, departments }: UsersTableProps) {
                 <TableCell>{user.department?.name ?? '—'}</TableCell>
                 <TableCell>
                   <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                    {user.role === 'admin' ? '管理員' : '一般員工'}
+                    {user.role === 'admin' ? t('roleAdmin') : t('roleMember')}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {user.employment_type === 'full_time' ? '正職' : '實習生'}
+                    {user.employment_type === 'full_time' ? t('employmentFullTime') : t('employmentIntern')}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant={user.is_active ? 'default' : 'destructive'} className={user.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : ''}>
-                    {user.is_active ? '在職' : '離職'}
+                    {user.is_active ? t('statusActive') : t('statusInactive')}
                   </Badge>
                 </TableCell>
                 <TableCell>

@@ -687,7 +687,18 @@
       "manager": "直屬主管",
       "deputyApprover": "代理審核人",
       "grantedFeatures": "特殊權限",
-      "status": "帳號狀態"
+      "status": "帳號狀態",
+      "roleAdmin": "管理員",
+      "roleMember": "一般員工",
+      "employmentFullTime": "正職",
+      "employmentIntern": "實習生",
+      "regionTW": "台灣",
+      "regionJP": "日本",
+      "regionUS": "美國",
+      "regionOther": "其他",
+      "statusActive": "在職",
+      "statusInactive": "離職（停用）",
+      "none": "無"
     },
     "profile": {
       "title": "人事資料",

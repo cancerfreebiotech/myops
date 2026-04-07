@@ -31,28 +31,28 @@ interface UserEditFormProps {
   onClose: () => void
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  admin: '管理員',
-  member: '一般員工',
-}
-
-const EMPLOYMENT_LABELS: Record<string, string> = {
-  full_time: '正職',
-  intern: '實習生',
-}
-
-const REGION_LABELS: Record<string, string> = {
-  TW: '台灣',
-  JP: '日本',
-  US: '美國',
-  OTHER: '其他',
-}
-
 export function UserEditForm({ user, departments, allUsers, onClose }: UserEditFormProps) {
   const router = useRouter()
   const t = useTranslations('admin.users')
   const tc = useTranslations('common')
   const tFeatures = useTranslations('features')
+
+  const ROLE_LABELS: Record<string, string> = {
+    admin: t('roleAdmin'),
+    member: t('roleMember'),
+  }
+
+  const EMPLOYMENT_LABELS: Record<string, string> = {
+    full_time: t('employmentFullTime'),
+    intern: t('employmentIntern'),
+  }
+
+  const REGION_LABELS: Record<string, string> = {
+    TW: t('regionTW'),
+    JP: t('regionJP'),
+    US: t('regionUS'),
+    OTHER: t('regionOther'),
+  }
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -114,12 +114,12 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
                     <span className="truncate text-sm">
                       {field.value
                         ? (departments.find(d => d.id === field.value)?.name ?? field.value)
-                        : <span className="text-slate-400">無</span>}
+                        : <span className="text-slate-400">{t('none')}</span>}
                     </span>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">無</SelectItem>
+                  <SelectItem value="">{t('none')}</SelectItem>
                   {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -193,12 +193,12 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
                     <span className="truncate text-sm">
                       {field.value
                         ? (() => { const u = otherUsers.find(u => u.id === field.value); return u?.display_name ?? u?.email ?? field.value })()
-                        : <span className="text-slate-400">無</span>}
+                        : <span className="text-slate-400">{t('none')}</span>}
                     </span>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">無</SelectItem>
+                  <SelectItem value="">{t('none')}</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -215,12 +215,12 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
                     <span className="truncate text-sm">
                       {field.value
                         ? (() => { const u = otherUsers.find(u => u.id === field.value); return u?.display_name ?? u?.email ?? field.value })()
-                        : <span className="text-slate-400">無</span>}
+                        : <span className="text-slate-400">{t('none')}</span>}
                     </span>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">無</SelectItem>
+                  <SelectItem value="">{t('none')}</SelectItem>
                   {otherUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name ?? u.email}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -234,12 +234,12 @@ export function UserEditForm({ user, departments, allUsers, onClose }: UserEditF
               <Select value={field.value ? 'true' : 'false'} onValueChange={v => field.onChange(v === 'true')}>
                 <FormControl>
                   <SelectTrigger>
-                    <span className="text-sm">{field.value ? '在職' : '離職（停用）'}</span>
+                    <span className="text-sm">{field.value ? t('statusActive') : t('statusInactive')}</span>
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="true">在職</SelectItem>
-                  <SelectItem value="false">離職（停用）</SelectItem>
+                  <SelectItem value="true">{t('statusActive')}</SelectItem>
+                  <SelectItem value="false">{t('statusInactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>

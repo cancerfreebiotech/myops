@@ -687,7 +687,18 @@
       "manager": "Manager",
       "deputyApprover": "Deputy Approver",
       "grantedFeatures": "Granted Features",
-      "status": "Account Status"
+      "status": "Account Status",
+      "roleAdmin": "Admin",
+      "roleMember": "Member",
+      "employmentFullTime": "Full-time",
+      "employmentIntern": "Intern",
+      "regionTW": "Taiwan",
+      "regionJP": "Japan",
+      "regionUS": "USA",
+      "regionOther": "Other",
+      "statusActive": "Active",
+      "statusInactive": "Deactivated",
+      "none": "None"
     },
     "profile": {
       "title": "Personnel Profile",
