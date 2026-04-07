@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SettingsClient } from './SettingsClient'
-import { FEATURE_KEYS } from '@/lib/feature-flags'
+import { FEATURE_KEYS } from '@/lib/feature-flag-keys'
 
 export default async function SettingsPage() {
   const supabase = await createClient()

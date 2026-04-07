@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
-import type { FeatureFlags } from '@/lib/feature-flags'
+import type { FeatureFlags } from '@/lib/feature-flag-keys'
 
 interface BottomNavProps {
   userId?: string

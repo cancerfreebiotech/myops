@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.33] - 2026-04-07
+
+### Fixed
+- CI build 修復：將 `feature-flag-keys.ts` 拆出為 client-safe 常數檔
+  - `SettingsClient.tsx`（Client Component）原本 import `feature-flags.ts` 導致 `next/headers` 被打包進 client bundle，Turbopack 報錯
+  - 現在 client 元件只 import `feature-flag-keys.ts`（無 server 依賴）
+  - `Sidebar.tsx` / `BottomNav.tsx` 的 `import type { FeatureFlags }` 同步改為 `feature-flag-keys.ts`
+
 ## [0.2.32] - 2026-04-07
 
 ### Fixed

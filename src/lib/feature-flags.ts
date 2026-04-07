@@ -1,12 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
-
-export const FEATURE_KEYS = [
-  'attendance', 'leave', 'overtime', 'payroll',
-  'documents', 'announcements', 'contracts', 'projects', 'feedback',
-] as const
-
-export type FeatureFlagKey = typeof FEATURE_KEYS[number]
-export type FeatureFlags = Record<FeatureFlagKey, boolean>
+import { FEATURE_KEYS } from '@/lib/feature-flag-keys'
+import type { FeatureFlagKey, FeatureFlags } from '@/lib/feature-flag-keys'
+export { FEATURE_KEYS } from '@/lib/feature-flag-keys'
+export type { FeatureFlagKey, FeatureFlags } from '@/lib/feature-flag-keys'
 
 export async function getFeatureFlags(): Promise<FeatureFlags> {
   const service = await createServiceClient()

@@ -16,7 +16,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
 import type { User } from '@/types'
-import type { FeatureFlags } from '@/lib/feature-flags'
+import type { FeatureFlags } from '@/lib/feature-flag-keys'
 
 interface SidebarProps {
   user: User

@@ -7,7 +7,7 @@ import { toast } from 'sonner'
 import { Eye, EyeOff, Save } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flags'
+import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flag-keys'
 
 const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret']
 
