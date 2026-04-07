@@ -57,7 +57,10 @@
     "loginWith": "使用 Microsoft 帳號登入",
     "loginDescription": "請使用 @cancerfree.io 帳號登入",
     "unauthorized": "你沒有權限存取此頁面",
-    "quickStartLink": "首次使用？查看快速入門指南"
+    "quickStartLink": "首次使用？查看快速入門指南",
+    "suspendedTitle": "帳號已停用",
+    "suspendedMessage": "你的帳號已被停用，請聯絡管理員以重新啟用。",
+    "suspendedSignOut": "登出"
   },
   "mfa": {
     "setup": {
@@ -675,6 +678,9 @@
       "offboarding": "離職交接檢查",
       "offboardingWarning": "確認後將停用帳號，以上項目請先完成交接。",
       "noActiveItems": "此員工無待處理項目，可安全停用帳號。",
+      "confirmDeactivate": "確認停用帳號",
+      "deactivateSuccess": "帳號已停用",
+      "deactivateFailed": "停用失敗，請稍後再試",
       "ownedContracts": "名下合約",
       "activeProjects": "負責專案",
       "pendingLeaves": "待審請假",

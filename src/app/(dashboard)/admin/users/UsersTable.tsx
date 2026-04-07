@@ -1,6 +1,8 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +27,8 @@ export function UsersTable({ users, departments }: UsersTableProps) {
   const [offboardUser, setOffboardUser] = useState<any>(null)
   const [offboardData, setOffboardData] = useState<any>(null)
   const [offboardLoading, setOffboardLoading] = useState(false)
+  const [deactivating, setDeactivating] = useState(false)
+  const router = useRouter()
 
   const handleOffboard = async (user: any) => {
     setOffboardUser(user)
@@ -37,6 +41,29 @@ export function UsersTable({ users, departments }: UsersTableProps) {
       }
     } catch { /* ignore */ }
     setOffboardLoading(false)
+  }
+
+  const handleDeactivate = async () => {
+    if (!offboardUser) return
+    setDeactivating(true)
+    try {
+      const res = await fetch(`/api/admin/users/${offboardUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: false }),
+      })
+      if (res.ok) {
+        toast.success(t('deactivateSuccess'))
+        setOffboardUser(null)
+        setOffboardData(null)
+        router.refresh()
+      } else {
+        toast.error(t('deactivateFailed'))
+      }
+    } catch {
+      toast.error(t('deactivateFailed'))
+    }
+    setDeactivating(false)
   }
 
   const filtered = users.filter(u =>
@@ -170,6 +197,15 @@ export function UsersTable({ users, departments }: UsersTableProps) {
           ) : null}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setOffboardUser(null); setOffboardData(null) }}>{tc('close')}</Button>
+            {offboardData && (
+              <Button
+                variant="destructive"
+                onClick={handleDeactivate}
+                disabled={deactivating}
+              >
+                {deactivating ? tc('loading') : t('confirmDeactivate')}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

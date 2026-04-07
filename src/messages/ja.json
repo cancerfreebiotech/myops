@@ -57,6 +57,9 @@
     "loginWith": "Microsoftアカウントでログイン",
     "loginDescription": "@cancerfree.ioのアカウントでログインしてください",
     "unauthorized": "このページへのアクセス権限がありません",
+    "suspendedTitle": "アカウントが停止されました",
+    "suspendedMessage": "アカウントが停止されています。管理者に再有効化を依頼してください。",
+    "suspendedSignOut": "ログアウト",
     "quickStartLink": "初めてご利用の方はクイックスタートガイドをご覧ください"
   },
   "mfa": {
@@ -675,6 +678,9 @@
       "offboarding": "退職チェックリスト",
       "offboardingWarning": "アカウントを無効化する前に、上記の項目の引き継ぎを完了してください。",
       "noActiveItems": "保留中の項目はありません。アカウントを安全に無効化できます。",
+      "confirmDeactivate": "アカウントを無効化",
+      "deactivateSuccess": "アカウントが無効化されました",
+      "deactivateFailed": "無効化に失敗しました。再試行してください",
       "ownedContracts": "担当契約",
       "activeProjects": "担当プロジェクト",
       "pendingLeaves": "承認待ち休暇",

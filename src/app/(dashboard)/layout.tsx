@@ -19,7 +19,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .eq('id', authUser.id)
     .single()
 
-  if (!dbUser || !dbUser.is_active) redirect('/login')
+  if (!dbUser) redirect('/login')
+  if (!dbUser.is_active) redirect('/suspended')
 
   // Read current locale cookie (read is OK in Server Components)
   const cookieStore = await cookies()

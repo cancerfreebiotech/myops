@@ -57,6 +57,9 @@
     "loginWith": "Sign in with Microsoft",
     "loginDescription": "Please sign in with your @cancerfree.io account",
     "unauthorized": "You do not have permission to access this page",
+    "suspendedTitle": "Account Suspended",
+    "suspendedMessage": "Your account has been suspended. Please contact an administrator to reactivate it.",
+    "suspendedSignOut": "Sign Out",
     "quickStartLink": "New user? View Quick Start Guide"
   },
   "mfa": {
@@ -675,6 +678,9 @@
       "offboarding": "Offboarding Checklist",
       "offboardingWarning": "Please complete handover of the above items before deactivating the account.",
       "noActiveItems": "No pending items found. Account can be safely deactivated.",
+      "confirmDeactivate": "Confirm Deactivation",
+      "deactivateSuccess": "Account deactivated",
+      "deactivateFailed": "Deactivation failed, please try again",
       "ownedContracts": "Owned Contracts",
       "activeProjects": "Active Projects",
       "pendingLeaves": "Pending Leaves",
