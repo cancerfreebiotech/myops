@@ -13,9 +13,10 @@ interface Props {
   leaveTypes: any[]
   balances: any[]
   year: number
+  readOnly?: boolean
 }
 
-export function LeaveBalancesManager({ users, leaveTypes, balances, year }: Props) {
+export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOnly }: Props) {
   const router = useRouter()
   const t = useTranslations('common')
   const [filterUser, setFilterUser] = useState('')
@@ -94,6 +95,9 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year }: Prop
                   return (
                     <td key={lt.id} className="px-3 py-2 text-center">
                       {isApplicable ? (
+                        readOnly ? (
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{val}</span>
+                        ) : (
                         <div className="flex items-center gap-1 justify-center">
                           <Input
                             type="number"
@@ -109,6 +113,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year }: Prop
                             </Button>
                           )}
                         </div>
+                        )
                       ) : (
                         <span className="text-slate-300 dark:text-slate-600">—</span>
                       )}

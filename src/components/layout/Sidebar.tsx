@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight,
-  Users, Building2, BookOpen, AlertCircle, ClipboardList,
+  Users, Building2, BookOpen,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -113,22 +113,15 @@ export function Sidebar({ user, features }: SidebarProps) {
   ].filter(Boolean) as NavItem[]
 
   const adminItems: NavItem[] = isAdmin ? [
-    { href: '/admin/users',                 label: t('adminUsers'),               icon: Users },
-    { href: '/admin/departments',           label: t('adminDepartments'),         icon: Building2 },
-    { href: '/admin/companies',             label: t('adminCompanies'),           icon: Building2 },
-    { href: '/admin/leave-types',           label: t('adminLeaveTypes'),          icon: ClipboardList },
-    { href: '/admin/leave-balances',        label: t('adminLeaveBalances'),       icon: CalendarDays },
-    { href: '/admin/overtime-rates',        label: t('adminOvertimeRates'),       icon: SlidersHorizontal },
-    { href: '/admin/insurance-brackets',    label: t('adminInsuranceBrackets'),   icon: ClipboardList },
-    { href: '/admin/bonuses',               label: t('adminBonuses'),             icon: DollarSign },
-    { href: '/admin/payroll/anomalies',     label: t('adminPayrollAnomalies'),    icon: AlertCircle },
-    { href: '/admin/attendance-anomalies',  label: t('adminAttendanceAnomalies'), icon: AlertCircle },
-    { href: '/admin/feedback',              label: t('adminFeedback'),            icon: MessageCircle },
-    { href: '/admin/audit',                 label: t('adminAudit'),               icon: BookOpen },
-    { href: '/admin/hr-settings',           label: t('hrSettings'),               icon: SlidersHorizontal },
-    { href: '/admin/finance-settings',      label: t('financeSettings'),          icon: DollarSign },
-    { href: '/admin/coo-settings',          label: t('cooSettings'),              icon: SlidersHorizontal },
-    { href: '/admin/settings',              label: t('adminSettings'),            icon: Settings },
+    { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
+    { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
+    { href: '/admin/companies',        label: t('adminCompanies'),   icon: Building2 },
+    { href: '/admin/feedback',         label: t('adminFeedback'),    icon: MessageCircle },
+    { href: '/admin/audit',            label: t('adminAudit'),       icon: BookOpen },
+    { href: '/admin/hr-settings',      label: t('hrSettings'),       icon: SlidersHorizontal },
+    { href: '/admin/finance-settings', label: t('financeSettings'),  icon: DollarSign },
+    { href: '/admin/coo-settings',     label: t('cooSettings'),      icon: SlidersHorizontal },
+    { href: '/admin/settings',         label: t('adminSettings'),    icon: Settings },
   ] : []
 
   return (

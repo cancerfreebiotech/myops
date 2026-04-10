@@ -48,6 +48,7 @@ interface HealthRow {
 interface Props {
   initialLaborBrackets: LaborBracket[]
   initialHealthBrackets: HealthBracket[]
+  readOnly?: boolean
 }
 
 // ─── Column header aliases ────────────────────────────────────────────────────
@@ -486,7 +487,7 @@ function HealthTable({ brackets, year }: HealthTableProps) {
 
 // ─── Main Client Component ────────────────────────────────────────────────────
 
-export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets }: Props) {
+export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets, readOnly }: Props) {
   const t = useTranslations('admin.insuranceBrackets')
   const tc = useTranslations('common')
   const [laborBrackets, setLaborBrackets] = useState<LaborBracket[]>(initialLaborBrackets)
@@ -522,10 +523,12 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
   return (
     <div className="space-y-8">
       {/* Upload panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <UploadPanel type="labor" label={t('labor')} onSuccess={refreshData} />
-        <UploadPanel type="health" label={t('health')} onSuccess={refreshData} />
-      </div>
+      {!readOnly && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <UploadPanel type="labor" label={t('labor')} onSuccess={refreshData} />
+          <UploadPanel type="health" label={t('health')} onSuccess={refreshData} />
+        </div>
+      )}
 
       {/* View existing brackets */}
       <div className="space-y-4">

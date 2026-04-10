@@ -15,9 +15,10 @@ interface Props {
   initialBonuses: any[]
   allUsers: any[]
   currentYear: number
+  readOnly?: boolean
 }
 
-export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
+export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }: Props) {
   const router = useRouter()
   const t = useTranslations('admin.bonuses')
   const tc = useTranslations('common')
@@ -118,9 +119,11 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
             ))}
           </select>
         </div>
-        <Button onClick={() => setCreateOpen(true)} className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700">
-          <Plus size={15} className="mr-1.5" /> {t('addBonus')}
-        </Button>
+        {!readOnly && (
+          <Button onClick={() => setCreateOpen(true)} className="min-h-[44px] bg-emerald-600 hover:bg-emerald-700">
+            <Plus size={15} className="mr-1.5" /> {t('addBonus')}
+          </Button>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -133,13 +136,13 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                 <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('type')}</th>
                 <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('amount')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('description2')}</th>
-                <th className="px-4 py-3"></th>
+                {!readOnly && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {bonuses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-12">
+                  <td colSpan={readOnly ? 5 : 6} className="text-center py-12">
                     <Gift size={36} className="mx-auto text-slate-200 dark:text-slate-600 mb-3" />
                     <p className="text-sm text-slate-400">{year} {t('noData')}</p>
                   </td>
@@ -165,15 +168,17 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                         <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">
                           {b.description || '—'}
                         </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => setDeleteId(b.id)}
-                            aria-label="刪除獎金紀錄"
-                            className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </td>
+                        {!readOnly && (
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={() => setDeleteId(b.id)}
+                              aria-label="刪除獎金紀錄"
+                              className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     )
                   })}
@@ -184,7 +189,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear }: Props) {
                     <td className="px-4 py-3 text-right tabular-nums font-bold text-emerald-700 dark:text-emerald-400">
                       {formatCurrency(total)}
                     </td>
-                    <td colSpan={2}></td>
+                    {!readOnly && <td colSpan={2}></td>}
                   </tr>
                 </>
               )}

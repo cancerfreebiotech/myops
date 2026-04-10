@@ -3,8 +3,17 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { RoleSettingsSection } from '@/components/admin/RoleSettingsSection'
+import { InsuranceBracketsClient } from '@/app/(dashboard)/admin/insurance-brackets/InsuranceBracketsClient'
+import { AnomaliesClient } from '@/app/(dashboard)/admin/payroll/anomalies/AnomaliesClient'
 import { FINANCE_SETTINGS_KEYS } from '@/lib/role-settings'
-import { FinanceManagementLinks } from '@/components/admin/FinanceManagementLinks'
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div className="pt-2">
+      <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-2">{label}</h2>
+    </div>
+  )
+}
 
 export default async function FinanceSettingsPage() {
   const supabase = await createClient()
@@ -29,13 +38,31 @@ export default async function FinanceSettingsPage() {
   const byKey = Object.fromEntries((rows ?? []).map(r => [r.key, r.value ?? '']))
   const pick = (keys: readonly string[]) => keys.map(k => ({ key: k, value: byKey[k] ?? '' }))
 
+  const { data: laborBrackets } = await service
+    .from('labor_insurance_brackets')
+    .select('*')
+    .order('effective_year', { ascending: false })
+    .order('grade', { ascending: true })
+
+  const { data: healthBrackets } = await service
+    .from('health_insurance_brackets')
+    .select('*')
+    .order('effective_year', { ascending: false })
+    .order('grade', { ascending: true })
+
   const t = await getTranslations('admin')
+  const tNav = await getTranslations('nav')
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <PageHeader title={t('financeSettings.title')} description={t('financeSettings.description')} />
       <RoleSettingsSection title={t('financeSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={editable} />
-      <FinanceManagementLinks editable={editable} />
+
+      <SectionHeader label={tNav('adminInsuranceBrackets')} />
+      <InsuranceBracketsClient initialLaborBrackets={laborBrackets ?? []} initialHealthBrackets={healthBrackets ?? []} readOnly={!editable} />
+
+      <SectionHeader label={tNav('adminPayrollAnomalies')} />
+      <AnomaliesClient />
     </div>
   )
 }

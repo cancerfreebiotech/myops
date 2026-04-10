@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.47] - 2026-04-10
+
+### Changed
+- **HR 管理頁面**（`/admin/hr-settings`）：直接嵌入假別管理、假別額度、加班費率、出勤異常、獎金管理功能，移除外部連結
+- **財務管理頁面**（`/admin/finance-settings`）：直接嵌入勞健保級距表、薪資異常檢查功能，移除外部連結
+- **Sidebar**：移除 7 個已嵌入設定頁的獨立管理項目（leave-types, leave-balances, overtime-rates, attendance-anomalies, bonuses, insurance-brackets, payroll/anomalies）
+- **管理組件 readOnly 支援**：LeaveTypesManager、LeaveBalancesManager、OvertimeRatesManager、BonusClient、InsuranceBracketsClient 加上 `readOnly` prop，COO 角色唯讀檢視
+
+### Removed
+- `HRManagementLinks` 組件（功能已嵌入 HR 管理頁）
+- `FinanceManagementLinks` 組件（功能已嵌入財務管理頁）
+
 ## [0.2.44] - 2026-04-08
 
 ### Added

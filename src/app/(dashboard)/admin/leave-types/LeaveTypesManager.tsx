@@ -23,7 +23,7 @@ const EMPTY_FORM = {
   max_days_per_year: '', advance_days_required: '1', is_active: true,
 }
 
-export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
+export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[]; readOnly?: boolean }) {
   const router = useRouter()
   const t = useTranslations('common')
   const [open, setOpen] = useState(false)
@@ -75,11 +75,13 @@ export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={openCreate} className="min-h-[44px]">
-          <Plus size={16} className="mr-1" /> 新增假別
-        </Button>
-      </div>
+      {!readOnly && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={openCreate} className="min-h-[44px]">
+            <Plus size={16} className="mr-1" /> 新增假別
+          </Button>
+        </div>
+      )}
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full text-sm">
@@ -91,7 +93,7 @@ export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">年上限</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">提前天數</th>
               <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">狀態</th>
-              <th className="px-4 py-3"></th>
+              {!readOnly && <th className="px-4 py-3"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -107,11 +109,13 @@ export function LeaveTypesManager({ leaveTypes }: { leaveTypes: any[] }) {
                     {lt.is_active ? t('active') : t('inactive')}
                   </Badge>
                 </td>
-                <td className="px-4 py-3">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(lt)}>
-                    <Pencil size={13} />
-                  </Button>
-                </td>
+                {!readOnly && (
+                  <td className="px-4 py-3">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(lt)}>
+                      <Pencil size={13} />
+                    </Button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
