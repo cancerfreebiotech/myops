@@ -11,14 +11,16 @@ export default async function PayrollAnomaliesPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role, granted_features')
     .eq('id', user.id)
     .single()
 
   const isAdmin = currentUser?.role === 'admin'
+  const isFinanceJobRole = currentUser?.job_role === 'finance'
+  const isCOO = currentUser?.job_role === 'coo'
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !isHR && !isFinance) redirect('/')
+  if (!isAdmin && !isFinanceJobRole && !isCOO && !isHR && !isFinance) redirect('/')
 
   const t = await getTranslations('payroll.anomalies')
 

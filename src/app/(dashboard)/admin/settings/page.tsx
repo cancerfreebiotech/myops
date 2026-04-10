@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SettingsClient } from './SettingsClient'
 import { FEATURE_KEYS } from '@/lib/feature-flag-keys'
+import { ROLE_SETTINGS_KEYS } from '@/lib/role-settings'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -19,7 +20,7 @@ export default async function SettingsPage() {
     .select('key, value')
     .order('key')
 
-  const settings = (allSettings ?? []).filter(s => !s.key.startsWith('feature.'))
+  const settings = (allSettings ?? []).filter(s => !s.key.startsWith('feature.') && !ROLE_SETTINGS_KEYS.includes(s.key as any))
   const featureRows = (allSettings ?? []).filter(s => s.key.startsWith('feature.'))
   const featureFlags = Object.fromEntries(
     FEATURE_KEYS.map(k => [k, featureRows.find(r => r.key === `feature.${k}`)?.value === 'true'])

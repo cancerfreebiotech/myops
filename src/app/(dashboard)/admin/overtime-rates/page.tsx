@@ -12,8 +12,9 @@ export default async function OvertimeRatesPage() {
 
   const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
-  const isFinance = currentUser?.job_role === 'finance'
-  if (!isAdmin && !isFinance) redirect('/')
+  const isHR = currentUser?.job_role === 'hr_manager'
+  const isCOO = currentUser?.job_role === 'coo'
+  if (!isAdmin && !isHR && !isCOO) redirect('/')
 
   const { data: rates } = await service.from('overtime_rates').select('*').order('ot_type')
 

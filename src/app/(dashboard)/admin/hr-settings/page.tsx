@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { RoleSettingsSection } from '@/components/admin/RoleSettingsSection'
+import { HRManagementLinks } from '@/components/admin/HRManagementLinks'
 import { HR_SETTINGS_KEYS } from '@/lib/role-settings'
 
 export default async function HRSettingsPage() {
@@ -15,7 +16,10 @@ export default async function HRSettingsPage() {
   const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
   const isHR = currentUser?.job_role === 'hr_manager'
-  if (!isAdmin && !isHR) redirect('/')
+  const isCOO = currentUser?.job_role === 'coo'
+  if (!isAdmin && !isHR && !isCOO) redirect('/')
+
+  const editable = isAdmin || isHR
 
   const { data: rows } = await service
     .from('system_settings')
@@ -30,7 +34,8 @@ export default async function HRSettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader title={t('hrSettings.title')} description={t('hrSettings.description')} />
-      <RoleSettingsSection title={t('hrSettings.hrSection')} settings={pick(HR_SETTINGS_KEYS)} editable={true} />
+      <RoleSettingsSection title={t('hrSettings.hrSection')} settings={pick(HR_SETTINGS_KEYS)} editable={editable} />
+      <HRManagementLinks editable={editable} />
     </div>
   )
 }

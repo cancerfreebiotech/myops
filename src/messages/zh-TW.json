@@ -133,7 +133,10 @@
     "pendingContracts": "待審合約",
     "unconfirmedAnnouncements": "未確認公告",
     "clockStatus": "今日打卡",
-    "goHandle": "立即處理"
+    "goHandle": "立即處理",
+    "recentAnnouncements": "最新公告",
+    "viewAllAnnouncements": "查看所有公告",
+    "noAnnouncements": "目前沒有公告"
   },
   "documents": {
     "title": "文件管理",
@@ -791,19 +794,24 @@
       "description": "連續自動補打、實習生漏打統計"
     },
     "hrSettings": {
-      "title": "HR 管理設定",
-      "description": "管理人資相關系統設定",
+      "title": "HR 管理",
+      "description": "管理人資相關系統設定與工具",
       "hrSection": "人資設定",
-      "financeSection": "財務設定（唯讀）",
+      "managementSection": "人資管理工具",
+      "leaveTypesLink": "假別管理",
+      "leaveBalancesLink": "假別額度",
+      "overtimeRatesLink": "加班費率管理",
+      "attendanceAnomaliesLink": "出勤異常",
+      "bonusesLink": "獎金管理",
       "cooSection": "營運設定（唯讀）"
     },
     "financeSettings": {
-      "title": "財務管理設定",
-      "description": "管理薪資與費率相關系統設定",
+      "title": "財務管理",
+      "description": "管理薪資與財務相關系統設定與工具",
       "financeSection": "財務設定",
-      "managementSection": "費率管理",
-      "overtimeRatesLink": "加班費率管理",
+      "managementSection": "財務管理工具",
       "insuranceBracketsLink": "勞健保級距管理",
+      "payrollAnomaliesLink": "薪資異常",
       "hrSection": "人資設定（唯讀）",
       "cooSection": "營運設定（唯讀）"
     },

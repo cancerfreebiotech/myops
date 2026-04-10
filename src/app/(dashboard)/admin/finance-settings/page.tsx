@@ -16,7 +16,10 @@ export default async function FinanceSettingsPage() {
   const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
   const isFinance = currentUser?.job_role === 'finance'
-  if (!isAdmin && !isFinance) redirect('/')
+  const isCOO = currentUser?.job_role === 'coo'
+  if (!isAdmin && !isFinance && !isCOO) redirect('/')
+
+  const editable = isAdmin || isFinance
 
   const { data: rows } = await service
     .from('system_settings')
@@ -31,8 +34,8 @@ export default async function FinanceSettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader title={t('financeSettings.title')} description={t('financeSettings.description')} />
-      <RoleSettingsSection title={t('financeSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={true} />
-      <FinanceManagementLinks editable={true} />
+      <RoleSettingsSection title={t('financeSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={editable} />
+      <FinanceManagementLinks editable={editable} />
     </div>
   )
 }

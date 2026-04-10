@@ -15,7 +15,10 @@ export default async function COOSettingsPage() {
   const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isCOO) redirect('/')
+  const isHR = currentUser?.job_role === 'hr_manager'
+  if (!isAdmin && !isCOO && !isHR) redirect('/')
+
+  const editable = isAdmin || isCOO
 
   const { data: rows } = await service
     .from('system_settings')
@@ -30,7 +33,7 @@ export default async function COOSettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <PageHeader title={t('cooSettings.title')} description={t('cooSettings.description')} />
-      <RoleSettingsSection title={t('cooSettings.cooSection')} settings={pick(COO_SETTINGS_KEYS)} editable={true} />
+      <RoleSettingsSection title={t('cooSettings.cooSection')} settings={pick(COO_SETTINGS_KEYS)} editable={editable} />
     </div>
   )
 }

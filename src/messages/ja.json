@@ -133,7 +133,10 @@
     "pendingContracts": "承認待ち契約",
     "unconfirmedAnnouncements": "未確認のお知らせ",
     "clockStatus": "今日の出退勤",
-    "goHandle": "今すぐ処理"
+    "goHandle": "今すぐ処理",
+    "recentAnnouncements": "最新のお知らせ",
+    "viewAllAnnouncements": "すべてのお知らせを見る",
+    "noAnnouncements": "お知らせはありません"
   },
   "documents": {
     "title": "ドキュメント",
@@ -791,19 +794,24 @@
       "description": "連続自動打刻・インターン打刻漏れ統計"
     },
     "hrSettings": {
-      "title": "HR管理設定",
-      "description": "人事関連のシステム設定を管理します",
+      "title": "HR管理",
+      "description": "人事関連のシステム設定とツールを管理します",
       "hrSection": "HR設定",
-      "financeSection": "財務設定（閲覧のみ）",
+      "managementSection": "HR管理ツール",
+      "leaveTypesLink": "休暇種別管理",
+      "leaveBalancesLink": "休暇残数管理",
+      "overtimeRatesLink": "残業代レート管理",
+      "attendanceAnomaliesLink": "勤怠異常",
+      "bonusesLink": "賞与管理",
       "cooSection": "営業設定（閲覧のみ）"
     },
     "financeSettings": {
-      "title": "財務管理設定",
-      "description": "給与・レート関連のシステム設定を管理します",
+      "title": "財務管理",
+      "description": "給与・財務関連のシステム設定とツールを管理します",
       "financeSection": "財務設定",
-      "managementSection": "レート管理",
-      "overtimeRatesLink": "残業代レート管理",
+      "managementSection": "財務管理ツール",
       "insuranceBracketsLink": "健康保険・労働保険等級管理",
+      "payrollAnomaliesLink": "給与異常",
       "hrSection": "HR設定（閲覧のみ）",
       "cooSection": "営業設定（閲覧のみ）"
     },

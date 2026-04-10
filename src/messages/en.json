@@ -133,7 +133,10 @@
     "pendingContracts": "Pending Contracts",
     "unconfirmedAnnouncements": "Unconfirmed Announcements",
     "clockStatus": "Today's Attendance",
-    "goHandle": "Handle Now"
+    "goHandle": "Handle Now",
+    "recentAnnouncements": "Recent Announcements",
+    "viewAllAnnouncements": "View All Announcements",
+    "noAnnouncements": "No announcements"
   },
   "documents": {
     "title": "Documents",
@@ -791,19 +794,24 @@
       "description": "Consecutive auto-clock and intern missed-clock statistics"
     },
     "hrSettings": {
-      "title": "HR Settings",
-      "description": "Manage HR-related system settings",
+      "title": "HR Management",
+      "description": "Manage HR-related system settings and tools",
       "hrSection": "HR Settings",
-      "financeSection": "Finance Settings (Read-only)",
+      "managementSection": "HR Management Tools",
+      "leaveTypesLink": "Leave Types",
+      "leaveBalancesLink": "Leave Balances",
+      "overtimeRatesLink": "Overtime Rates",
+      "attendanceAnomaliesLink": "Attendance Anomalies",
+      "bonusesLink": "Bonus Management",
       "cooSection": "Operations Settings (Read-only)"
     },
     "financeSettings": {
-      "title": "Finance Settings",
-      "description": "Manage payroll and rate-related system settings",
+      "title": "Finance Management",
+      "description": "Manage payroll and finance-related system settings and tools",
       "financeSection": "Finance Settings",
-      "managementSection": "Rate Management",
-      "overtimeRatesLink": "Overtime Rate Management",
+      "managementSection": "Finance Management Tools",
       "insuranceBracketsLink": "Insurance Bracket Management",
+      "payrollAnomaliesLink": "Payroll Anomalies",
       "hrSection": "HR Settings (Read-only)",
       "cooSection": "Operations Settings (Read-only)"
     },

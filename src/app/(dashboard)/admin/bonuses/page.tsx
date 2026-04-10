@@ -12,13 +12,15 @@ export default async function AdminBonusesPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role, granted_features')
     .eq('id', user.id)
     .single()
 
   const isAdmin = currentUser?.role === 'admin'
+  const isHR = currentUser?.job_role === 'hr_manager'
+  const isCOO = currentUser?.job_role === 'coo'
   const hasFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !hasFinance) redirect('/')
+  if (!isAdmin && !isHR && !isCOO && !hasFinance) redirect('/')
 
   const currentYear = new Date().getFullYear()
 

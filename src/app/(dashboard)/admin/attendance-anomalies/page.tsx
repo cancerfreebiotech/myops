@@ -10,8 +10,11 @@ export default async function AttendanceAnomaliesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (!['admin', 'hr'].includes(currentUser?.role ?? '')) redirect('/')
+  const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
+  const isAdmin = currentUser?.role === 'admin'
+  const isHR = currentUser?.job_role === 'hr_manager'
+  const isCOO = currentUser?.job_role === 'coo'
+  if (!isAdmin && !isHR && !isCOO) redirect('/')
 
   // Full-time users with 3+ consecutive auto-clock days in last 30 days
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]

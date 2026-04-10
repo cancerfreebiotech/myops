@@ -96,8 +96,8 @@ export function Sidebar({ user, features }: SidebarProps) {
   const show = (key: keyof typeof features) => isAdmin || features[key]
 
   const dmsItems: NavItem[] = [
-    show('documents')     && { href: '/documents',     label: t('documents'),     icon: FileText },
     show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
+    show('documents')     && { href: '/documents',     label: t('documents'),     icon: FileText },
     show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
   ].filter(Boolean) as NavItem[]
 
@@ -106,7 +106,10 @@ export function Sidebar({ user, features }: SidebarProps) {
     show('leave')      && { href: '/leave',      label: t('leave'),      icon: CalendarDays },
     show('overtime')   && { href: '/overtime',   label: t('overtime'),   icon: Timer },
     show('payroll')    && { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
-    show('projects')   && { href: '/projects',   label: t('projects'),   icon: FolderKanban },
+  ].filter(Boolean) as NavItem[]
+
+  const projectItems: NavItem[] = [
+    show('projects') && { href: '/projects', label: t('projects'), icon: FolderKanban },
   ].filter(Boolean) as NavItem[]
 
   const adminItems: NavItem[] = isAdmin ? [
@@ -168,6 +171,15 @@ export function Sidebar({ user, features }: SidebarProps) {
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
         ))}
 
+        {projectItems.length > 0 && (
+          <>
+            <SectionHeader label={t('projects')} collapsed={collapsed} />
+            {projectItems.map(item => (
+              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
+            ))}
+          </>
+        )}
+
         <SectionHeader label={t('other')} collapsed={collapsed} />
         <NavLink href="/settings" label={t('settings')} icon={Settings} collapsed={collapsed} active={isActive('/settings')} />
         {show('feedback') && <NavLink href="/feedback/new" label={t('feedback')} icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />}
@@ -189,13 +201,18 @@ export function Sidebar({ user, features }: SidebarProps) {
               <>
                 <NavLink href="/admin/users" label={t('adminUsers')} icon={Users} collapsed={collapsed} active={isActive('/admin/users')} />
                 <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
+                <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
               </>
             )}
             {hasJobRole('finance') && (
               <NavLink href="/admin/finance-settings" label={t('financeSettings')} icon={DollarSign} collapsed={collapsed} active={isActive('/admin/finance-settings')} />
             )}
             {hasJobRole('coo') && (
-              <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
+              <>
+                <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
+                <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
+                <NavLink href="/admin/finance-settings" label={t('financeSettings')} icon={DollarSign} collapsed={collapsed} active={isActive('/admin/finance-settings')} />
+              </>
             )}
           </>
         )}

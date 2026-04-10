@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { getTranslations } from 'next-intl/server'
-import { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign } from 'lucide-react'
+import { Megaphone, ChevronRight } from 'lucide-react'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -45,13 +45,27 @@ export default async function DashboardPage() {
     .eq('approver_id', user.id)
     .eq('status', 'pending')
 
-  // My pending announcement confirmations
-  const { data: pendingAnnouncements } = await supabase
+  // My pending announcement confirmations (with document details)
+  const { data: pendingAnnouncementsData } = await supabase
     .from('document_recipients')
-    .select('id')
+    .select('id, document_id, document:documents(id, title, announcement_category, content_zh, created_at)')
     .eq('user_id', user.id)
     .eq('requires_confirmation', true)
     .is('confirmed_at', null)
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  const pendingAnnouncements = pendingAnnouncementsData ?? []
+
+  // Recent published announcements
+  const { data: recentAnnouncements } = await service
+    .from('documents')
+    .select('id, title, announcement_category, content_zh, created_at')
+    .eq('doc_type', 'ANN')
+    .eq('status', 'approved')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(5)
 
   // Pending documents for approval
   const canApprove = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('approve_contract')
@@ -77,7 +91,7 @@ export default async function DashboardPage() {
   const counts = {
     pendingLeave: pendingLeave?.length ?? 0,
     pendingOT: pendingOT?.length ?? 0,
-    pendingAnnouncements: pendingAnnouncements?.length ?? 0,
+    pendingAnnouncements: pendingAnnouncements.length,
     pendingDocs: pendingDocs?.length ?? 0,
   }
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0)
@@ -182,31 +196,55 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Quick links */}
+      {/* Announcements */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">{t('goHandle')}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[
-            { href: '/attendance', label: tNav('attendance'), icon: 'Clock' },
-            { href: '/leave', label: tNav('leave'), icon: 'CalendarDays' },
-            { href: '/overtime', label: tNav('overtime'), icon: 'Timer' },
-            { href: '/documents', label: tNav('documents'), icon: 'FileText' },
-            { href: '/announcements', label: tNav('announcements'), icon: 'Megaphone' },
-            { href: '/contracts', label: tNav('contracts'), icon: 'FileSignature' },
-            ...(currentUser?.role === 'admin' ? [{ href: '/payroll', label: tNav('payroll'), icon: 'DollarSign' }] : []),
-          ].map(item => {
-            const IconMap: Record<string, any> = { Clock, CalendarDays, Timer, FileText, Megaphone, FileSignature, DollarSign }
-            const Icon = IconMap[item.icon]
-            return (
-              <Link key={item.href} href={item.href}>
-                <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors flex items-center gap-3 cursor-pointer active:scale-[0.97]">
-                  {Icon && <Icon size={20} className="text-slate-400" aria-hidden="true" />}
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
-                </div>
-              </Link>
-            )
-          })}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
+            <Megaphone size={15} className="text-slate-400" aria-hidden="true" />
+            {t('recentAnnouncements')}
+          </h3>
+          <Link href="/announcements" className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+            {t('viewAllAnnouncements')} <ChevronRight size={13} />
+          </Link>
         </div>
+        {pendingAnnouncements.length === 0 && (recentAnnouncements?.length ?? 0) === 0 ? (
+          <p className="text-sm text-slate-400 py-4 text-center">{t('noAnnouncements')}</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingAnnouncements.map((item: any) => {
+              const doc = Array.isArray(item.document) ? item.document[0] : item.document
+              if (!doc) return null
+              return (
+                <Link key={item.id} href={`/documents/${doc.id}`}>
+                  <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 hover:border-amber-300 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">{doc.title}</p>
+                      <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0 font-medium">{t('unconfirmedAnnouncements')}</span>
+                    </div>
+                    {doc.content_zh && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{doc.content_zh}</p>}
+                  </div>
+                </Link>
+              )
+            })}
+            {(recentAnnouncements ?? [])
+              .filter((ann: any) => !pendingAnnouncements.some((p: any) => {
+                const doc = Array.isArray(p.document) ? p.document[0] : p.document
+                return doc?.id === ann.id
+              }))
+              .map((ann: any) => (
+                <Link key={ann.id} href={`/documents/${ann.id}`}>
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 hover:border-blue-300 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">{ann.title}</p>
+                      <span className="text-xs text-slate-400 shrink-0">{format(new Date(ann.created_at), 'MM/dd')}</span>
+                    </div>
+                    {ann.content_zh && <p className="text-xs text-slate-500 mt-1 line-clamp-2">{ann.content_zh}</p>}
+                  </div>
+                </Link>
+              ))
+            }
+          </div>
+        )}
       </div>
     </div>
   )
