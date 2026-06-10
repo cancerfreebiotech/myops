@@ -21,11 +21,16 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Bump patch version
+      - name: Bump version (patch caps at 9, then carries into minor)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
+          PATCH=$(node -p "require('./package.json').version.split('.')[2]")
+          if [ "$PATCH" -ge 9 ]; then
+            npm version minor --no-git-tag-version
+          else
+            npm version patch --no-git-tag-version
+          fi
           NEW_VERSION=$(node -p "require('./package.json').version")
           git add package.json package-lock.json
           git commit -m "chore: bump version to $NEW_VERSION [skip ci]"

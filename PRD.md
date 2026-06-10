@@ -1219,6 +1219,8 @@ POST /api/translate
 
 Pre-release：`alpha` → `beta` → `rc` → 正式版
 
+**PATCH 進位規則（2026-06-11 起）：** PATCH 最大到 9，超過即進位 MINOR——`v0.2.9` 的下一版是 `v0.3.0`（CI 的自動 bump 已實作此邏輯；歷史版本如 v0.2.50 不回溯改名，下一版直接進位為 v0.3.0）。
+
 **每次 Push 強制三件事：**
 1. `package.json` version 遞增
 2. `CHANGELOG.md` 頂部新增當版紀錄（分類：`Added` / `Changed` / `Fixed` / `Removed` / `Security` / `Docs` / `Chore`）
