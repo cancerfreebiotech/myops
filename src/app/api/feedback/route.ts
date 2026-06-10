@@ -1,14 +1,16 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { type, title, description, screenshot_url } = await request.json()
-  if (!type || !title || !description) return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+  if (!type || !title || !description) return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
 
   const { data, error } = await service.from('feedback').insert({
     submitted_by: user.id,
@@ -22,13 +24,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (currentUser?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (currentUser?.role !== 'admin') return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const { data, error } = await service
     .from('feedback')

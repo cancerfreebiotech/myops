@@ -145,7 +145,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
                     key={lang.code}
                     onClick={() => handleLanguageChange(lang.code)}
                     className={cn(
-                      'px-2 py-1.5 rounded-md text-xs font-medium transition-colors min-h-[36px]',
+                      'px-2 py-1.5 rounded-md text-xs font-medium transition-colors min-h-[44px] min-w-[44px] inline-flex items-center justify-center',
                       activeLocale === lang.code
                         ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'

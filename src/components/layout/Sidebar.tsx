@@ -216,7 +216,7 @@ export function Sidebar({ user, features }: SidebarProps) {
         <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+            className="p-2 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors min-w-[36px] min-h-[36px] pointer-coarse:min-w-11 pointer-coarse:min-h-11 flex items-center justify-center"
           >
             {mounted && theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
@@ -228,7 +228,7 @@ export function Sidebar({ user, features }: SidebarProps) {
                 key={lang.code}
                 onClick={() => handleLanguageChange(lang.code)}
                 className={cn(
-                  'px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer',
+                  'px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors cursor-pointer pointer-coarse:min-w-11 pointer-coarse:min-h-11 pointer-coarse:inline-flex pointer-coarse:items-center pointer-coarse:justify-center',
                   activeLocale === lang.code
                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'

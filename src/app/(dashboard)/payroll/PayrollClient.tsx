@@ -135,6 +135,7 @@ export function PayrollClient({
             </div>
           )}
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
@@ -177,6 +178,7 @@ export function PayrollClient({
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}

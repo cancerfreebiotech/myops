@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 async function requireAccess(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -17,11 +18,12 @@ async function requireAccess(supabase: any) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const user = await requireAccess(supabase)
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const { searchParams } = new URL(request.url)
   const year = parseInt(searchParams.get('year') ?? String(new Date().getFullYear()))
@@ -40,22 +42,23 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const user = await requireAccess(supabase)
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const body = await request.json()
   const { user_id, year, month, type, amount, description } = body
 
   if (!user_id || !year || !type || amount === undefined || amount === null) {
-    return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
   const validTypes = ['year_end', 'performance', 'project', 'other']
   if (!validTypes.includes(type)) {
-    return NextResponse.json({ error: '無效的獎金類型' }, { status: 400 })
+    return NextResponse.json({ error: t('adminBonuses.invalidBonusType') }, { status: 400 })
   }
 
   const { data, error } = await service

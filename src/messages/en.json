@@ -1165,5 +1165,54 @@
     "payroll": "Export Payroll Report",
     "attendance": "Export Attendance Report",
     "leave": "Export Leave Report"
+  },
+  "apiErrors": {
+    "common": {
+      "unauthorized": "Not signed in",
+      "forbidden": "Permission denied",
+      "notFound": "Resource not found",
+      "invalidRequest": "Invalid request",
+      "missingFields": "Missing required fields",
+      "serverError": "Server error",
+      "mfaRequired": "Two-factor verification required"
+    },
+    "adminBonuses": {
+      "invalidBonusType": "Invalid bonus type"
+    },
+    "adminInsurance": {
+      "emptyRows": "Rows cannot be empty",
+      "rowMissingGradeOrSalary": "Some rows are missing the grade or insured salary",
+      "uploadFailed": "Upload failed: {message}"
+    },
+    "attendanceClock": {
+      "alreadyClockedIn": "You have already clocked in today",
+      "notClockedIn": "You have not clocked in yet",
+      "alreadyClockedOut": "You have already clocked out today"
+    },
+    "documentTranslate": {
+      "noChineseContent": "No Chinese content available to translate",
+      "geminiKeyNotSet": "Gemini API Key is not set. Please configure it in System Settings",
+      "geminiApiError": "Gemini API error: {error}",
+      "parseFailed": "Failed to parse the AI translation result. Please try again"
+    },
+    "leaveRequestItem": {
+      "onlyPendingCancellable": "Only pending requests can be cancelled"
+    },
+    "leaveRequests": {
+      "insufficientBalance": "Insufficient {name} balance ({remaining} days remaining)"
+    },
+    "payrollCalculate": {
+      "noEligibleEmployees": "No eligible employees"
+    },
+    "payrollGenerate": {
+      "generationFailed": "Payroll generation failed",
+      "draftGenerated": "Payroll draft for {year}/{month} has been generated automatically"
+    },
+    "projects": {
+      "missingName": "Project name is required"
+    },
+    "teamsDailyDigest": {
+      "botNotConfigured": "Teams Bot not configured"
+    }
   }
 }

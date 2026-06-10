@@ -1,15 +1,17 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
 
 // T50: Payroll anomaly detection API
 // Scans payroll records for anomalies and flags them
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase
     .from('users')
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
   if (!isAdmin && !isHR && !isFinance) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
   const body = await request.json()
@@ -154,11 +156,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase
     .from('users')
@@ -170,7 +173,7 @@ export async function GET(request: NextRequest) {
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
   if (!isAdmin && !isHR && !isFinance) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
   const { searchParams } = new URL(request.url)

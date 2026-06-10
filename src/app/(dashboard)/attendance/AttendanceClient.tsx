@@ -254,6 +254,7 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
 
   return (
     <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="bg-slate-50 dark:bg-slate-800">
           <tr>
@@ -302,6 +303,7 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   )
 }

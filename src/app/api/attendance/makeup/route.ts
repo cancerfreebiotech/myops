@@ -1,16 +1,18 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { clock_date, clock_type, clock_time, reason } = await request.json()
   if (!clock_date || !clock_type || !clock_time || !reason) {
-    return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
   // Get user's manager
@@ -39,11 +41,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr'

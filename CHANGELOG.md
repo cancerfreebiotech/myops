@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.49] - 2026-06-10
+
+### Fixed
+- **API 錯誤訊息多語化**：21 個 API route 的錯誤回應改為依使用者語言回傳（next-intl 伺服器端翻譯，新增 `apiErrors` 命名空間；Teams 機器人訊息與匯出報表內容維持原樣）
+- **觸控目標**：按鈕、側欄、底部導覽在觸控裝置上保證 ≥44px（Tailwind `pointer-coarse:` variant，桌面密度不變）
+- **表格手機橫向捲動**：出勤紀錄與使用者列表表格補上 `overflow-x-auto`
+- **Dark mode 對比**：移除 16 處 `text-white` 直書（改 `text-gray-50` 或補 `dark:` variant），修正勞健保上傳區與出勤管理表頭的深色模式對比
+
+### Security
+- `/api/teams/notify` 加上 CRON_SECRET Bearer 驗證（比照其他 cron 端點）
+
 ## [0.2.48] - 2026-06-10
 
 ### Fixed

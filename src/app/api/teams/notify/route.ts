@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from 'next/server'
 // T56: Teams Bot instant notification
 // Called internally when important events happen (approval results, urgent announcements, payslips)
 export async function POST(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET
+  const authHeader = request.headers.get('authorization')
+
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const body = await request.json()
   const { user_email, message, type } = body
 

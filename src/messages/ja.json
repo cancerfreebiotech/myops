@@ -1165,5 +1165,54 @@
     "payroll": "給与レポートをエクスポート",
     "attendance": "出退勤レポートをエクスポート",
     "leave": "休暇レポートをエクスポート"
+  },
+  "apiErrors": {
+    "common": {
+      "unauthorized": "ログインしていません",
+      "forbidden": "権限がありません",
+      "notFound": "リソースが見つかりません",
+      "invalidRequest": "リクエストが不正です",
+      "missingFields": "必須項目が不足しています",
+      "serverError": "サーバーエラーが発生しました",
+      "mfaRequired": "二要素認証が必要です"
+    },
+    "adminBonuses": {
+      "invalidBonusType": "無効なボーナス種別です"
+    },
+    "adminInsurance": {
+      "emptyRows": "データ行を空にすることはできません",
+      "rowMissingGradeOrSalary": "等級または投保薪資が欠けている行があります",
+      "uploadFailed": "アップロードに失敗しました：{message}"
+    },
+    "attendanceClock": {
+      "alreadyClockedIn": "本日はすでに出勤打刻済みです",
+      "notClockedIn": "まだ出勤打刻がされていません",
+      "alreadyClockedOut": "本日はすでに退勤打刻済みです"
+    },
+    "documentTranslate": {
+      "noChineseContent": "翻訳できる中国語コンテンツがありません",
+      "geminiKeyNotSet": "Gemini API Key が未設定です。システム設定で入力してください",
+      "geminiApiError": "Gemini API エラー: {error}",
+      "parseFailed": "AI 翻訳結果の解析に失敗しました。再試行してください"
+    },
+    "leaveRequestItem": {
+      "onlyPendingCancellable": "承認待ちの申請のみキャンセルできます"
+    },
+    "leaveRequests": {
+      "insufficientBalance": "{name}の残日数が不足しています（残り {remaining} 日）"
+    },
+    "payrollCalculate": {
+      "noEligibleEmployees": "条件に該当する従業員がいません"
+    },
+    "payrollGenerate": {
+      "generationFailed": "給与の生成に失敗しました",
+      "draftGenerated": "{year}/{month} の給与ドラフトが自動生成されました"
+    },
+    "projects": {
+      "missingName": "プロジェクト名が必要です"
+    },
+    "teamsDailyDigest": {
+      "botNotConfigured": "Teams Bot が設定されていません"
+    }
   }
 }

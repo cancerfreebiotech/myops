@@ -1,9 +1,11 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 // T55: Teams Bot daily digest — called by cron at 08:30
 // Sends a summary of pending items to each user via Teams
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const cronSecret = process.env.CRON_SECRET
   const authHeader = request.headers.get('authorization')
 
@@ -13,9 +15,9 @@ export async function POST(request: NextRequest) {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
     const { data } = await supabase.from('users').select('role').eq('id', user.id).single()
-    if (data?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (data?.role !== 'admin') return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
   const service = await createServiceClient()
@@ -33,7 +35,7 @@ export async function POST(request: NextRequest) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ops.cancerfree.io'
 
   if (!botAppId || !botAppSecret) {
-    return NextResponse.json({ error: 'Teams Bot not configured' }, { status: 500 })
+    return NextResponse.json({ error: t('teamsDailyDigest.botNotConfigured') }, { status: 500 })
   }
 
   let sent = 0

@@ -1,15 +1,17 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { action, lat, lng } = await request.json()
-  if (!['in', 'out'].includes(action)) return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  if (!['in', 'out'].includes(action)) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
   const now = new Date()
   const clockDate = now.toISOString().split('T')[0]
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existing?.clock_in) {
-      return NextResponse.json({ error: '今日已打上班卡' }, { status: 400 })
+      return NextResponse.json({ error: t('attendanceClock.alreadyClockedIn') }, { status: 400 })
     }
 
     if (existing) {
@@ -60,10 +62,10 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (!record?.clock_in) {
-    return NextResponse.json({ error: '尚未打上班卡' }, { status: 400 })
+    return NextResponse.json({ error: t('attendanceClock.notClockedIn') }, { status: 400 })
   }
   if (record.clock_out) {
-    return NextResponse.json({ error: '今日已打下班卡' }, { status: 400 })
+    return NextResponse.json({ error: t('attendanceClock.alreadyClockedOut') }, { status: 400 })
   }
 
   const { error } = await service.from('attendance_records').update({
@@ -78,9 +80,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const today = new Date().toISOString().split('T')[0]
   const { data } = await supabase

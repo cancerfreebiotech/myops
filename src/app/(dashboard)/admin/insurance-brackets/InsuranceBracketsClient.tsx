@@ -211,9 +211,9 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
   return (
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm overflow-hidden">
       {/* Panel header */}
-      <div className="bg-slate-700 px-5 py-3.5 flex items-center gap-2">
-        <FileSpreadsheet size={18} className="text-slate-200" aria-hidden="true" />
-        <h2 className="text-sm font-semibold text-white font-[Lexend]">{label} — {t('uploadLabel')}</h2>
+      <div className="bg-slate-700 dark:bg-slate-900 px-5 py-3.5 flex items-center gap-2">
+        <FileSpreadsheet size={18} className="text-slate-200 dark:text-slate-300" aria-hidden="true" />
+        <h2 className="text-sm font-semibold text-gray-50 dark:text-slate-100 font-[Lexend]">{label} — {t('uploadLabel')}</h2>
       </div>
 
       <div className="p-5 space-y-4">
@@ -360,7 +360,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
               onClick={handleUpload}
               disabled={uploading}
               aria-label={tm('confirmUploadAria', { year, label })}
-              className="w-full bg-slate-700 hover:bg-slate-800 text-white transition-colors duration-150 cursor-pointer active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-gray-50 transition-colors duration-150 cursor-pointer active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {uploading ? (
                 <>

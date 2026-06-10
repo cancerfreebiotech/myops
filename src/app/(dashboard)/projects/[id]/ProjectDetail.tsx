@@ -262,7 +262,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
               {tc('cancel')}
             </Button>
             <Button
-              className="min-h-[44px] bg-orange-600 hover:bg-orange-700 text-white transition-colors duration-150"
+              className="min-h-[44px] bg-orange-600 hover:bg-orange-700 text-gray-50 transition-colors duration-150"
               onClick={handleAddMember}
               disabled={loading}
             >

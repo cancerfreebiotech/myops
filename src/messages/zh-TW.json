@@ -1165,5 +1165,54 @@
     "payroll": "匯出薪資報表",
     "attendance": "匯出出勤報表",
     "leave": "匯出請假報表"
+  },
+  "apiErrors": {
+    "common": {
+      "unauthorized": "未登入",
+      "forbidden": "權限不足",
+      "notFound": "找不到資源",
+      "invalidRequest": "參數錯誤",
+      "missingFields": "缺少必填欄位",
+      "serverError": "伺服器錯誤",
+      "mfaRequired": "需要完成雙重驗證"
+    },
+    "adminBonuses": {
+      "invalidBonusType": "無效的獎金類型"
+    },
+    "adminInsurance": {
+      "emptyRows": "資料列不可為空",
+      "rowMissingGradeOrSalary": "資料中有缺少等級或投保薪資的列",
+      "uploadFailed": "上傳失敗：{message}"
+    },
+    "attendanceClock": {
+      "alreadyClockedIn": "今日已打上班卡",
+      "notClockedIn": "尚未打上班卡",
+      "alreadyClockedOut": "今日已打下班卡"
+    },
+    "documentTranslate": {
+      "noChineseContent": "無中文內容可翻譯",
+      "geminiKeyNotSet": "尚未設定 Gemini API Key，請至系統設定填入",
+      "geminiApiError": "Gemini API 錯誤: {error}",
+      "parseFailed": "AI 翻譯結果解析失敗，請重試"
+    },
+    "leaveRequestItem": {
+      "onlyPendingCancellable": "只能取消待審核的申請"
+    },
+    "leaveRequests": {
+      "insufficientBalance": "{name}餘額不足（剩餘 {remaining} 天）"
+    },
+    "payrollCalculate": {
+      "noEligibleEmployees": "無符合條件的員工"
+    },
+    "payrollGenerate": {
+      "generationFailed": "薪資產出失敗",
+      "draftGenerated": "{year}/{month} 薪資草稿已自動產出"
+    },
+    "projects": {
+      "missingName": "缺少專案名稱"
+    },
+    "teamsDailyDigest": {
+      "botNotConfigured": "尚未設定 Teams Bot"
+    }
   }
 }

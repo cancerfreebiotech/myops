@@ -1,18 +1,20 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations('apiErrors')
   const { id } = await params
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   // Check AAL2 for approvals
   const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (aalData?.currentLevel !== 'aal2') {
-    return NextResponse.json({ error: '需要完成雙重驗證才能審核請假', code: 'MFA_REQUIRED' }, { status: 403 })
+    return NextResponse.json({ error: t('common.mfaRequired'), code: 'MFA_REQUIRED' }, { status: 403 })
   }
 
   const { action, reject_reason } = await request.json()
@@ -23,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .eq('id', id)
     .single()
 
-  if (!leaveReq) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!leaveReq) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
 
   if (action === 'approve') {
     const { error } = await service.from('leave_requests').update({
@@ -61,8 +63,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   } else if (action === 'cancel') {
     // Only requestor can cancel
-    if (leaveReq.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    if (leaveReq.status !== 'pending') return NextResponse.json({ error: '只能取消待審核的申請' }, { status: 400 })
+    if (leaveReq.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    if (leaveReq.status !== 'pending') return NextResponse.json({ error: t('leaveRequestItem.onlyPendingCancellable') }, { status: 400 })
     const { error } = await service.from('leave_requests').update({ status: 'cancelled' }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   }

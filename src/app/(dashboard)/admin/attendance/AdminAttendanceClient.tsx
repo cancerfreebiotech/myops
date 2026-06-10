@@ -214,7 +214,7 @@ export function AdminAttendanceClient({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-700 dark:bg-slate-900">
+              <tr className="bg-slate-700 dark:bg-slate-800 border-b border-slate-700 dark:border-slate-600">
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('employee')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('date')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockInLabel')}</th>

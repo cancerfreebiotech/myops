@@ -1,18 +1,20 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
   const { ot_date, start_time, end_time, reason, ot_type, project_id } = body
 
   if (!ot_date || !start_time || !end_time || !reason || !ot_type) {
-    return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
   const { data: userRecord } = await service
@@ -44,11 +46,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view') ?? 'mine'

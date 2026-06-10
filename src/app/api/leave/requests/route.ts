@@ -1,18 +1,20 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
   const { leave_type_id, start_date, end_date, half_day, total_days, reason, deputy_id } = body
 
   if (!leave_type_id || !start_date || !end_date || !total_days || !reason) {
-    return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
   // Get user info for approver chain
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   if (leaveType?.max_days_per_year && balance) {
     if (balance.remaining_days < total_days) {
-      return NextResponse.json({ error: `${leaveType.name}餘額不足（剩餘 ${balance.remaining_days} 天）` }, { status: 400 })
+      return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType.name, remaining: balance.remaining_days }) }, { status: 400 })
     }
   }
 
@@ -62,11 +64,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view') ?? 'mine'

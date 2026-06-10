@@ -1,18 +1,20 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations('apiErrors')
   const { id } = await params
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   // Check AAL2 (2FA confirmed)
   const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (aalData?.currentLevel !== 'aal2') {
-    return NextResponse.json({ error: '需要完成雙重驗證才能確認公告', code: 'MFA_REQUIRED' }, { status: 403 })
+    return NextResponse.json({ error: t('common.mfaRequired'), code: 'MFA_REQUIRED' }, { status: 403 })
   }
 
   const { error } = await service.from('document_recipients').update({

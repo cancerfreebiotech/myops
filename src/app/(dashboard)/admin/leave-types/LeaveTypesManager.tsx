@@ -85,6 +85,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
       )}
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
@@ -121,6 +122,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

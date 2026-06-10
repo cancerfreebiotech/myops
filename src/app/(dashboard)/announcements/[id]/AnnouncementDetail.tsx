@@ -339,7 +339,7 @@ export function AnnouncementDetail({
                 </p>
                 <Button
                   onClick={() => setConfirmDialogOpen(true)}
-                  className="w-full min-h-[44px] bg-violet-600 hover:bg-violet-700 text-white transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
+                  className="w-full min-h-[44px] bg-violet-600 hover:bg-violet-700 text-gray-50 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
                   aria-label={td('confirmReadAriaLabel')}
                 >
                   <CheckCircle size={16} className="mr-1.5" aria-hidden />
@@ -469,7 +469,7 @@ export function AnnouncementDetail({
             <Button
               onClick={handleConfirmRead}
               disabled={loading}
-              className="min-h-[44px] bg-violet-600 hover:bg-violet-700 text-white transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
+              className="min-h-[44px] bg-violet-600 hover:bg-violet-700 text-gray-50 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
               aria-label={td('confirmSubmitAriaLabel')}
             >
               {loading ? (

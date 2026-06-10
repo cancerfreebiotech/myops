@@ -190,7 +190,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
             <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
               <a href={downloadUrl} target="_blank" rel="noreferrer">
                 <Button
-                  className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-150"
+                  className="min-h-[44px] bg-blue-600 hover:bg-blue-700 text-gray-50 transition-colors duration-150"
                   aria-label={td('downloadLabel', { name: doc.file_name ?? t('title') })}
                 >
                   <Download size={16} className="mr-2" aria-hidden />
@@ -241,7 +241,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-2">
             <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{td('reviewActions')}</h3>
             <Button
-              className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-150"
+              className="w-full min-h-[44px] bg-blue-600 hover:bg-blue-700 text-gray-50 transition-colors duration-150"
               onClick={() => setApproveOpen(true)}
               disabled={loading}
             >
@@ -318,7 +318,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               {tc('cancel')}
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700 text-white min-h-[44px] transition-colors duration-150"
+              className="bg-blue-600 hover:bg-blue-700 text-gray-50 min-h-[44px] transition-colors duration-150"
               onClick={handleApprove}
               disabled={loading}
             >

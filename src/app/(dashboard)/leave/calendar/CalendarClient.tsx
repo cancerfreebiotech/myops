@@ -379,7 +379,7 @@ export function CalendarClient({
                   className={cn(
                     'inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium',
                     isToday && isCurrentMonth
-                      ? 'bg-violet-600 text-white'
+                      ? 'bg-violet-600 text-gray-50'
                       : isSelected
                       ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300'
                       : getDay(day) === 0

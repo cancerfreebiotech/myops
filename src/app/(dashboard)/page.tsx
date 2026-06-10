@@ -122,7 +122,7 @@ export default async function DashboardPage() {
               </p>
             </div>
             <Link href="/attendance">
-              <div className="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors min-h-[36px] flex items-center">
+              <div className="px-3 py-2 rounded-lg bg-blue-600 text-gray-50 text-xs font-medium hover:bg-blue-700 transition-colors min-h-[36px] pointer-coarse:min-h-11 flex items-center">
                 {tAtt('clockIn')}
               </div>
             </Link>

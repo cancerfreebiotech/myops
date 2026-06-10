@@ -301,7 +301,7 @@ export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: 
                   onClick={() => toggleFeature(key)}
                   className={`px-3 py-1.5 rounded-full text-xs border transition-colors min-h-[36px] ${
                     features.includes(key)
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-blue-600 text-gray-50 border-blue-600'
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-600'
                   }`}
                 >

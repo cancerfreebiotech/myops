@@ -1,10 +1,12 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
 
 // T48: Payroll auto-calculation API
 // Generates draft payroll records for all active TW full-time employees
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const service = await createServiceClient()
 
   // Support both user auth and cron secret
@@ -16,7 +18,7 @@ export async function POST(request: NextRequest) {
   } else {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
     const { data: currentUser } = await supabase
       .from('users')
@@ -27,7 +29,7 @@ export async function POST(request: NextRequest) {
     const isAdmin = currentUser?.role === 'admin'
     const isHR = currentUser?.granted_features?.includes('hr_manager')
     if (!isAdmin && !isHR) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
     }
   }
 
@@ -44,7 +46,7 @@ export async function POST(request: NextRequest) {
     .eq('employment_type', 'full_time')
 
   if (!employees?.length) {
-    return NextResponse.json({ data: { generated: 0, message: '無符合條件的員工' } })
+    return NextResponse.json({ data: { generated: 0, message: t('payrollCalculate.noEligibleEmployees') } })
   }
 
   const userIds = employees.map(e => e.id)

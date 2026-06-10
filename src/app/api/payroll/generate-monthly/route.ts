@@ -1,10 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 // T49: Monthly payroll auto-generation endpoint
 // Can be called by pg_cron or Supabase Edge Function on the 1st of each month
 // Also callable manually by admin/HR from the admin payroll page
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const service = await createServiceClient()
 
   // Verify caller is either admin or has a valid cron secret
@@ -18,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
     const { data: currentUser } = await supabase
       .from('users')
@@ -29,7 +31,7 @@ export async function POST(request: NextRequest) {
     const isAdmin = currentUser?.role === 'admin'
     const isHR = currentUser?.granted_features?.includes('hr_manager')
     if (!isAdmin && !isHR) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
     }
   }
 
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
   const result = await calcRes.json()
 
   if (!calcRes.ok) {
-    return NextResponse.json({ error: result.error ?? 'Generation failed' }, { status: 500 })
+    return NextResponse.json({ error: result.error ?? t('payrollGenerate.generationFailed') }, { status: 500 })
   }
 
   return NextResponse.json({
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
       ...result.data,
       year,
       month,
-      message: `${year}/${month} 薪資草稿已自動產出`,
+      message: t('payrollGenerate.draftGenerated', { year, month }),
     },
   })
 }

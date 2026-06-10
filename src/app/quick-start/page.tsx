@@ -287,7 +287,7 @@ export default function QuickStartPage() {
               <div className="flex items-start gap-4">
                 {/* Step number + icon */}
                 <div className="flex flex-col items-center gap-1.5 shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-gray-50 flex items-center justify-center text-sm font-semibold">
                     {i + 1}
                   </div>
                 </div>

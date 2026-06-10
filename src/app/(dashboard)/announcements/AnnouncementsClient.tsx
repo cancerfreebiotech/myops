@@ -75,7 +75,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
           >
             {t.label}
             {t.badge > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-red-500 text-white rounded-full">{t.badge}</span>
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-red-500 text-gray-50 rounded-full">{t.badge}</span>
             )}
           </button>
         ))}

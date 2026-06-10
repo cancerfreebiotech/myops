@@ -33,6 +33,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
           </div>
         ) : (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
@@ -57,6 +58,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
@@ -80,6 +82,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
           </div>
         ) : (
           <div className="rounded-lg border border-red-200 dark:border-red-900 overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-red-50 dark:bg-red-900/20">
                 <tr>
@@ -100,6 +103,7 @@ export function AnomaliesClient({ anomalies, internAnomalies }: Props) {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

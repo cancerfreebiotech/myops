@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 interface LaborRow {
   grade: number
@@ -17,11 +18,12 @@ interface HealthRow {
 }
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase
     .from('users')
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
   const isAdmin = currentUser?.role === 'admin'
   const hasFinancePayroll = currentUser?.granted_features?.includes('finance_payroll')
   if (!isAdmin && !hasFinancePayroll) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
   const body = await request.json()
@@ -43,13 +45,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (!type || !year || !Array.isArray(rows)) {
-    return NextResponse.json({ error: 'Missing required fields: type, year, rows' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
   if (type !== 'labor' && type !== 'health') {
-    return NextResponse.json({ error: 'type must be "labor" or "health"' }, { status: 400 })
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
   }
   if (rows.length === 0) {
-    return NextResponse.json({ error: 'rows cannot be empty' }, { status: 400 })
+    return NextResponse.json({ error: t('adminInsurance.emptyRows') }, { status: 400 })
   }
 
   const table = type === 'labor' ? 'labor_insurance_brackets' : 'health_insurance_brackets'
@@ -64,7 +66,7 @@ export async function POST(request: NextRequest) {
   // Validate all rows have required fields
   for (const row of insertRows) {
     if (!row.grade || !row.insured_salary) {
-      return NextResponse.json({ error: '資料中有缺少等級或投保薪資的列' }, { status: 400 })
+      return NextResponse.json({ error: t('adminInsurance.rowMissingGradeOrSalary') }, { status: 400 })
     }
   }
 
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
     .select('id')
 
   if (insertError) {
-    return NextResponse.json({ error: `上傳失敗：${insertError.message}` }, { status: 500 })
+    return NextResponse.json({ error: t('adminInsurance.uploadFailed', { message: insertError.message }) }, { status: 500 })
   }
 
   // Step 2: Delete old rows for this year (exclude the ones we just inserted)

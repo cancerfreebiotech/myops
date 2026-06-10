@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getTranslations } from 'next-intl/server'
 
 async function requireFinance(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -10,11 +11,12 @@ async function requireFinance(supabase: any) {
 }
 
 export async function GET(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
   const isPrivileged = ['admin', 'hr'].includes(currentUser?.role ?? '') ||
@@ -44,16 +46,17 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const t = await getTranslations('apiErrors')
   const supabase = await createClient()
   const service = await createServiceClient()
   const user = await requireFinance(supabase)
-  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const body = await request.json()
   const { user_id, year, month, base_salary, overtime_pay, bonus, deductions, notes } = body
 
   if (!user_id || !year || !month || base_salary === undefined) {
-    return NextResponse.json({ error: '缺少必填欄位' }, { status: 400 })
+    return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
   const gross = (base_salary ?? 0) + (overtime_pay ?? 0) + (bonus ?? 0)
