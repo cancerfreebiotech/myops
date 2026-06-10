@@ -1,4 +1,5 @@
 export function Footer() {
+  const author = process.env.NEXT_PUBLIC_AUTHOR_NAME ?? '坂本'
   const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.1.0'
   const deployTimeRaw = process.env.NEXT_PUBLIC_DEPLOY_TIME ?? ''
 
@@ -10,12 +11,12 @@ export function Footer() {
     deployTime = taipei.toISOString().slice(0, 16).replace('T', ' ')
   }
 
+  // PRD-mandated format: 坂本  |  v{version}  |  Deployed: {YYYY-MM-DD HH:mm}
+  const text = `${author}  |  v${version}${deployTime ? `  |  Deployed: ${deployTime}` : ''}`
+
   return (
-    <footer className="px-4 py-3 border-t border-slate-200 dark:border-slate-700">
-      <p className="text-xs text-slate-400 dark:text-slate-500">v{version}</p>
-      {deployTime && (
-        <p className="text-xs text-slate-300 dark:text-slate-600">{deployTime}</p>
-      )}
+    <footer className="mt-8 border-t border-border px-4 py-3">
+      <p className="whitespace-pre-wrap text-center text-xs text-muted-foreground">{text}</p>
     </footer>
   )
 }

@@ -9,6 +9,8 @@ import { AlertTriangle, Search, Loader2 } from 'lucide-react'
 export function AnomaliesClient() {
   const t = useTranslations('payroll.anomalies')
   const tc = useTranslations('common')
+  const tp = useTranslations('payroll')
+  const ta = useTranslations('admin.payrollAnomalies')
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1
 
@@ -40,12 +42,12 @@ export function AnomaliesClient() {
       setStats({ scanned: json.data.scanned, flagged: json.data.flagged })
       setScanned(true)
       if (json.data.flagged === 0) {
-        toast.success(`掃描完成，${json.data.scanned} 筆紀錄無異常`)
+        toast.success(ta('scanCompleteNoAnomalies', { count: json.data.scanned }))
       } else {
-        toast.error(`發現 ${json.data.flagged} 筆異常紀錄`, { duration: 5000 })
+        toast.error(ta('foundAnomalies', { count: json.data.flagged }), { duration: 5000 })
       }
     } catch {
-      toast.error('掃描失敗')
+      toast.error(ta('scanFailed'))
     } finally {
       setScanning(false)
     }
@@ -83,7 +85,7 @@ export function AnomaliesClient() {
             className="block mt-1 h-9 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-              <option key={m} value={m}>{m} 月</option>
+              <option key={m} value={m}>{tp('annualMonthSuffix', { month: m })}</option>
             ))}
           </select>
         </div>
@@ -105,9 +107,17 @@ export function AnomaliesClient() {
 
       {stats && (
         <div className="flex gap-4 text-sm">
-          <span className="text-slate-500">{t('scanned')}：<strong className="tabular-nums">{stats.scanned}</strong> 筆</span>
+          <span className="text-slate-500">
+            {ta.rich('scannedCount', {
+              count: stats.scanned,
+              strong: (chunks) => <strong className="tabular-nums">{chunks}</strong>,
+            })}
+          </span>
           <span className={stats.flagged > 0 ? 'text-red-600 font-medium' : 'text-green-600'}>
-            {t('flagged')}：<strong className="tabular-nums">{stats.flagged}</strong> 筆
+            {ta.rich('flaggedCount', {
+              count: stats.flagged,
+              strong: (chunks) => <strong className="tabular-nums">{chunks}</strong>,
+            })}
           </span>
         </div>
       )}
@@ -117,9 +127,9 @@ export function AnomaliesClient() {
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">員工</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">實發金額</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">異常項目</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{ta('colEmployee')}</th>
+                <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{ta('colNetPay')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{ta('colFlags')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -127,7 +137,7 @@ export function AnomaliesClient() {
                 <tr>
                   <td colSpan={3} className="text-center py-12">
                     <Search size={36} className="mx-auto text-slate-200 dark:text-slate-600 mb-3" />
-                    <p className="text-sm text-slate-400">請選擇年月後執行異常掃描</p>
+                    <p className="text-sm text-slate-400">{ta('emptyPrompt')}</p>
                   </td>
                 </tr>
               ) : anomalies.length === 0 ? (

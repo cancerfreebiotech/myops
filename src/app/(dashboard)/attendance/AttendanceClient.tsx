@@ -19,6 +19,7 @@ interface Props {
 export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   const t = useTranslations('attendance')
   const tc = useTranslations('common')
+  const tx = useTranslations('attendance.clientExtra')
   const [todayRecord, setTodayRecord] = useState<any>(null)
   const [records, setRecords] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -126,7 +127,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
         <div className="max-w-sm mx-auto space-y-4">
           {/* Today status */}
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 text-center">
-            <p className="text-xs text-slate-400 mb-1">{format(now, 'yyyy年MM月dd日 EEEE')}</p>
+            <p className="text-xs text-slate-400 mb-1">{format(now, tx('todayDateFormat'))}</p>
             <p className="text-4xl font-bold text-slate-900 dark:text-slate-100 font-mono">
               {format(now, 'HH:mm')}
             </p>

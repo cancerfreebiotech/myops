@@ -9,15 +9,16 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
-import { Image } from 'lucide-react'
-
-const TYPE_LABELS: Record<string, string> = {
-  feature: '新功能', bug: 'Bug', improvement: '改善建議', other: '其他',
-}
+import { Image as ImageIcon } from 'lucide-react'
+import Image from 'next/image'
 
 export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
   const router = useRouter()
+  const t = useTranslations('admin.feedbackAdmin')
   const tc = useTranslations('common')
+  const TYPE_LABELS: Record<string, string> = {
+    feature: t('types.feature'), bug: t('types.bug'), improvement: t('types.improvement'), other: t('types.other'),
+  }
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -37,7 +38,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
     })
     const { error } = await res.json()
     if (error) { toast.error(error); return }
-    toast.success('狀態已更新')
+    toast.success(t('statusUpdated'))
     router.refresh()
   }
 
@@ -45,28 +46,28 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
     <>
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <Select value={filterStatus} onValueChange={v => setFilterStatus(v ?? '')}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="所有狀態" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder={t('allStatuses')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有狀態</SelectItem>
-            <SelectItem value="open">待處理</SelectItem>
-            <SelectItem value="in_progress">處理中</SelectItem>
-            <SelectItem value="done">已完成</SelectItem>
-            <SelectItem value="cancelled">已取消</SelectItem>
+            <SelectItem value="">{t('allStatuses')}</SelectItem>
+            <SelectItem value="open">{tc('open')}</SelectItem>
+            <SelectItem value="in_progress">{tc('in_progress')}</SelectItem>
+            <SelectItem value="done">{tc('done')}</SelectItem>
+            <SelectItem value="cancelled">{tc('cancelled')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterType} onValueChange={v => setFilterType(v ?? '')}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="所有類型" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder={t('allTypes')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有類型</SelectItem>
+            <SelectItem value="">{t('allTypes')}</SelectItem>
             {Object.entries(TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
-        <span className="text-sm text-slate-400 ml-auto">{filtered.length} 筆</span>
+        <span className="text-sm text-slate-400 ml-auto">{t('countLabel', { count: filtered.length })}</span>
       </div>
 
       <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 text-slate-400">無回饋紀錄</div>
+          <div className="text-center py-12 text-slate-400">{t('noRecords')}</div>
         ) : filtered.map(f => (
           <div key={f.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -81,7 +82,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
                 <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
                   <span>{f.user?.display_name}</span>
                   <span>{format(new Date(f.created_at), 'yyyy/MM/dd HH:mm')}</span>
-                  {f.screenshot_url && <span className="flex items-center gap-0.5"><Image size={11} /> 有截圖</span>}
+                  {f.screenshot_url && <span className="flex items-center gap-0.5"><ImageIcon size={11} /> {t('hasScreenshot')}</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -91,10 +92,10 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
                   <Select value={f.status} onValueChange={v => v && handleStatus(f.id, v)}>
                     <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="open">待處理</SelectItem>
-                      <SelectItem value="in_progress">處理中</SelectItem>
-                      <SelectItem value="done">已完成</SelectItem>
-                      <SelectItem value="cancelled">已取消</SelectItem>
+                      <SelectItem value="open">{tc('open')}</SelectItem>
+                      <SelectItem value="in_progress">{tc('in_progress')}</SelectItem>
+                      <SelectItem value="done">{tc('done')}</SelectItem>
+                      <SelectItem value="cancelled">{tc('cancelled')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -121,8 +122,16 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
               <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{selected.description}</p>
               {selected.screenshot_url && (
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">截圖</p>
-                  <img src={`/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(selected.screenshot_url)}`} alt="截圖" className="rounded-md max-w-full border border-slate-200" />
+                  <p className="text-xs text-slate-400 mb-1">{t('screenshot')}</p>
+                  <div className="relative w-full aspect-video rounded-md border border-slate-200 overflow-hidden">
+                    <Image
+                      src={`/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(selected.screenshot_url)}`}
+                      alt={t('screenshot')}
+                      fill
+                      unoptimized
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
               )}
             </div>

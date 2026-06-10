@@ -88,6 +88,7 @@ interface UploadPanelProps {
 
 function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
   const t = useTranslations('admin.insuranceBrackets')
+  const tm = useTranslations('admin.insuranceMgmt')
   const fileRef = useRef<HTMLInputElement>(null)
   const [year, setYear] = useState<number>(new Date().getFullYear())
   const [preview, setPreview] = useState<(LaborRow | HealthRow)[] | null>(null)
@@ -109,7 +110,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
         const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: '' })
 
         if (raw.length === 0) {
-          setParseError('試算表為空，請確認檔案內容')
+          setParseError(tm('emptySpreadsheet'))
           return
         }
 
@@ -122,12 +123,12 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
 
         if (!gradeKey || !salaryKey || !empShareKey || !emplShareKey) {
           const missing = [
-            !gradeKey && '等級(Grade)',
-            !salaryKey && '投保薪資(InsuredSalary)',
-            !empShareKey && '個人負擔(EmployeeShare)',
-            !emplShareKey && '雇主負擔(EmployerShare)',
+            !gradeKey && tm('fieldGrade'),
+            !salaryKey && tm('fieldInsuredSalary'),
+            !empShareKey && tm('fieldEmployeeShare'),
+            !emplShareKey && tm('fieldEmployerShare'),
           ].filter(Boolean)
-          setParseError(`找不到必要欄位：${missing.join('、')}`)
+          setParseError(tm('missingColumns', { fields: missing.join(tm('listSeparator')) }))
           return
         }
 
@@ -142,7 +143,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
         } else {
           const depKey = findKey(headers, EMP_DEPENDENTS_KEYS)
           if (!depKey) {
-            setParseError('健保需要「眷屬負擔(EmployeeDependents)」欄位')
+            setParseError(tm('missingDependentsColumn'))
             return
           }
           const rows: HealthRow[] = raw.map(r => ({
@@ -155,11 +156,11 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
           setPreview(rows)
         }
       } catch {
-        setParseError('無法解析檔案，請確認為有效的 Excel / CSV 格式')
+        setParseError(tm('parseFailed'))
       }
     }
     reader.readAsArrayBuffer(file)
-  }, [type])
+  }, [type, tm])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -183,16 +184,16 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
       })
       const json = await res.json()
       if (!res.ok) {
-        toast.error(`上傳失敗：${json.error ?? '未知錯誤'}`, { duration: 5000 })
+        toast.error(tm('uploadFailed', { error: json.error ?? tm('unknownError') }), { duration: 5000 })
       } else {
-        toast.success(`成功上傳 ${json.data.inserted} 筆${label}級距資料（${year} 年）`)
+        toast.success(tm('uploadSuccess', { count: json.data.inserted, label, year }))
         setPreview(null)
         setFileName(null)
         if (fileRef.current) fileRef.current.value = ''
         onSuccess()
       }
     } catch {
-      toast.error('網路錯誤，請稍後再試', { duration: 5000 })
+      toast.error(tm('networkError'), { duration: 5000 })
     } finally {
       setUploading(false)
     }
@@ -245,7 +246,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
           <div
             role="button"
             tabIndex={0}
-            aria-label="點擊或拖曳上傳 Excel 檔案"
+            aria-label={tm('dropZoneAria')}
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
             onClick={() => fileRef.current?.click()}
@@ -254,8 +255,8 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
           >
             <Upload size={32} className="text-slate-300 dark:text-slate-500" aria-hidden="true" />
             <div className="text-center">
-              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">點擊或拖曳上傳</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">支援 .xlsx / .xls / .csv</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{tm('dropZoneTitle')}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tm('supportedFormats')}</p>
             </div>
           </div>
         )}
@@ -264,7 +265,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
           ref={fileRef}
           type="file"
           accept=".xlsx,.xls,.csv"
-          aria-label={`上傳${label}費率表檔案`}
+          aria-label={tm('uploadFileAria', { label })}
           onChange={handleInputChange}
           className="sr-only"
         />
@@ -278,7 +279,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
             </div>
             <button
               onClick={handleReset}
-              aria-label="清除錯誤重試"
+              aria-label={tm('clearErrorAria')}
               className="text-red-400 hover:text-red-600 cursor-pointer focus-visible:ring-2 focus-visible:ring-red-600 rounded"
             >
               <RefreshCw size={14} aria-hidden="true" />
@@ -292,14 +293,17 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
             <div className="flex items-center gap-2">
               <CheckCircle size={16} className="text-green-600 dark:text-green-400" aria-hidden="true" />
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t('parseComplete')}，共 <span className="tabular-nums font-semibold">{preview.length}</span> 筆資料
+                {tm.rich('parsedRowCount', {
+                  count: preview.length,
+                  num: (chunks) => <span className="tabular-nums font-semibold">{chunks}</span>,
+                })}
               </p>
               <button
                 onClick={handleReset}
-                aria-label="重新選擇檔案"
+                aria-label={tm('reselectFileAria')}
                 className="ml-auto text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-600 rounded px-1"
               >
-                重新選擇
+                {tm('reselect')}
               </button>
             </div>
 
@@ -343,7 +347,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
                         colSpan={isLabor ? 4 : 5}
                         className="px-3 py-1.5 text-center text-slate-400 dark:text-slate-500 italic"
                       >
-                        ...還有 {preview.length - 5} 筆
+                        {tm('moreRows', { count: preview.length - 5 })}
                       </td>
                     </tr>
                   )}
@@ -355,18 +359,18 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
             <Button
               onClick={handleUpload}
               disabled={uploading}
-              aria-label={`確認上傳 ${year} 年${label}費率表`}
+              aria-label={tm('confirmUploadAria', { year, label })}
               className="w-full bg-slate-700 hover:bg-slate-800 text-white transition-colors duration-150 cursor-pointer active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {uploading ? (
                 <>
                   <Loader2 size={16} className="mr-2 animate-spin" aria-hidden="true" />
-                  上傳中...
+                  {tm('uploading')}
                 </>
               ) : (
                 <>
                   <Upload size={16} className="mr-2" aria-hidden="true" />
-                  {t('confirmUpload')} {year} 年 {label}
+                  {tm('confirmUploadButton', { year, label })}
                 </>
               )}
             </Button>
@@ -386,14 +390,15 @@ interface LaborTableProps {
 
 function LaborTable({ brackets, year }: LaborTableProps) {
   const t = useTranslations('admin.insuranceBrackets')
+  const tm = useTranslations('admin.insuranceMgmt')
   const filtered = brackets.filter(b => b.effective_year === year)
 
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileSpreadsheet size={36} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無{t('labor')}費率資料</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">請上傳 Excel 檔案以匯入費率</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tm('noYearData', { year, label: t('labor') })}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tm('uploadHint')}</p>
       </div>
     )
   }
@@ -437,14 +442,15 @@ interface HealthTableProps {
 
 function HealthTable({ brackets, year }: HealthTableProps) {
   const t = useTranslations('admin.insuranceBrackets')
+  const tm = useTranslations('admin.insuranceMgmt')
   const filtered = brackets.filter(b => b.effective_year === year)
 
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <FileSpreadsheet size={36} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{year} 年尚無{t('health')}費率資料</p>
-        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">請上傳 Excel 檔案以匯入費率</p>
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{tm('noYearData', { year, label: t('health') })}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tm('uploadHint')}</p>
       </div>
     )
   }
@@ -489,6 +495,7 @@ function HealthTable({ brackets, year }: HealthTableProps) {
 
 export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets, readOnly }: Props) {
   const t = useTranslations('admin.insuranceBrackets')
+  const tm = useTranslations('admin.insuranceMgmt')
   const tc = useTranslations('common')
   const [laborBrackets, setLaborBrackets] = useState<LaborBracket[]>(initialLaborBrackets)
   const [healthBrackets, setHealthBrackets] = useState<HealthBracket[]>(initialHealthBrackets)
@@ -549,7 +556,7 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
               className="h-8 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 pr-7 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-600 cursor-pointer appearance-none"
             >
               {availableYears.map(y => (
-                <option key={y} value={y}>{y} 年</option>
+                <option key={y} value={y}>{tm('yearOption', { y })}</option>
               ))}
             </select>
           </div>
@@ -557,7 +564,7 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
           <button
             onClick={refreshData}
             disabled={refreshing}
-            aria-label="重新整理費率資料"
+            aria-label={tm('refreshAria')}
             className="ml-auto inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-50 cursor-pointer focus-visible:ring-2 focus-visible:ring-slate-600 rounded px-2 py-1 transition-colors"
           >
             <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} aria-hidden="true" />
@@ -568,7 +575,7 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
         {/* Labor brackets table */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('labor')}費率表 — {viewYear} 年</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{tm('rateTableTitle', { label: t('labor'), year: viewYear })}</h3>
           </div>
           <LaborTable brackets={laborBrackets} year={viewYear} />
         </div>
@@ -576,7 +583,7 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
         {/* Health brackets table */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm">
           <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('health')}費率表 — {viewYear} 年</h3>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{tm('rateTableTitle', { label: t('health'), year: viewYear })}</h3>
           </div>
           <HealthTable brackets={healthBrackets} year={viewYear} />
         </div>

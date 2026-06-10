@@ -9,10 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Search } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
-const ACTION_LABELS: Record<string, string> = {
-  upload: '上傳', approve: '核准', reject: '退回', archive: '封存',
-  publish: '發佈', translate: 'AI 翻譯', confirm: '確認閱讀',
-}
+const ACTION_TYPES = ['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm'] as const
 const ACTION_COLORS: Record<string, string> = {
   approve: 'bg-green-50 text-green-700 border-green-200',
   reject: 'bg-red-50 text-red-700 border-red-200',
@@ -24,7 +21,10 @@ const ACTION_COLORS: Record<string, string> = {
 }
 
 export function AuditClient() {
+  const t = useTranslations('admin.auditLog')
   const tc = useTranslations('common')
+  const actionLabel = (action: string) =>
+    (ACTION_TYPES as readonly string[]).includes(action) ? t(`actions.${action}`) : action
   const [logs, setLogs] = useState<any[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -55,33 +55,33 @@ export function AuditClient() {
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <Input
-            placeholder="搜尋文件標題或操作人..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             className="pl-9"
           />
         </div>
         <Select value={filterAction} onValueChange={v => { setFilterAction(v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="所有操作" /></SelectTrigger>
+          <SelectTrigger className="w-36"><SelectValue placeholder={t('allActions')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有操作</SelectItem>
-            {Object.entries(ACTION_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            <SelectItem value="">{t('allActions')}</SelectItem>
+            {ACTION_TYPES.map(k => (
+              <SelectItem key={k} value={k}>{t(`actions.${k}`)}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <span className="text-sm text-slate-400 ml-auto">共 {count} 筆</span>
+        <span className="text-sm text-slate-400 ml-auto">{t('totalCount', { count })}</span>
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">時間</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">操作人</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">操作</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">文件</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">備註</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.time')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.operator')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.action')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.document')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.note')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -99,7 +99,7 @@ export function AuditClient() {
                 </td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-medium ${ACTION_COLORS[log.action] ?? 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                    {ACTION_LABELS[log.action] ?? log.action}
+                    {actionLabel(log.action)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate">
@@ -116,11 +116,11 @@ export function AuditClient() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>第 {page} 頁，共 {count} 筆</span>
+          <span>{t('pageInfo', { page, count })}</span>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="min-h-[36px]">上一頁</Button>
+            <Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage(p => p - 1)} className="min-h-[36px]">{t('prevPage')}</Button>
             <span>{page} / {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="min-h-[36px]">下一頁</Button>
+            <Button variant="outline" size="sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="min-h-[36px]">{t('nextPage')}</Button>
           </div>
         </div>
       )}

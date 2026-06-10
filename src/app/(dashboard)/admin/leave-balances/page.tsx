@@ -38,10 +38,11 @@ export default async function LeaveBalancesPage() {
     .eq('year', currentYear)
 
   const t = await getTranslations('nav')
+  const tp = await getTranslations('admin.leaveBalancesPage')
 
   return (
     <div>
-      <PageHeader title={t('adminLeaveBalances')} description={`${currentYear} 年度員工假別額度`} />
+      <PageHeader title={t('adminLeaveBalances')} description={tp('description', { year: currentYear })} />
       <LeaveBalancesManager
         users={users ?? []}
         leaveTypes={leaveTypes ?? []}

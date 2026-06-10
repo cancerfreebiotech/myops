@@ -21,6 +21,7 @@ interface Props {
 export function AnnouncementsClient({ currentUser, canPublish, reportData, userId }: Props) {
   const router = useRouter()
   const t = useTranslations('announcements')
+  const tx = useTranslations('announcements.listExtra')
   const tc = useTranslations('common')
 
   const CATEGORY_LABELS: Record<string, string> = {
@@ -61,7 +62,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
         {[
           { key: 'my', label: t('unconfirmed'), badge: myPending.length },
           { key: 'all', label: t('title') },
-          ...(canPublish ? [{ key: 'report', label: '發佈報表' }] : []),
+          ...(canPublish ? [{ key: 'report', label: tx('reportTab') }] : []),
         ].map((t: any) => (
           <button
             key={t.key}
@@ -169,7 +170,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
       {/* Publisher report */}
       {tab === 'report' && canPublish && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">已發佈公告確認狀況</h3>
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{tx('reportTitle')}</h3>
           {reportData.length === 0 ? (
             <p className="text-center py-8 text-slate-400 text-sm">{tc('noData')}</p>
           ) : (
@@ -177,10 +178,10 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 dark:bg-slate-800">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">公告標題</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">分類</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">發佈日期</th>
-                    <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">確認狀況</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerTitle')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('category')}</th>
+                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerPublishDate')}</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerConfirmStatus')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -198,7 +199,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <Users size={13} className="text-slate-400" />
-                            <span className="text-slate-600 dark:text-slate-400">{total} 人</span>
+                            <span className="text-slate-600 dark:text-slate-400">{tx('recipientCount', { count: total })}</span>
                           </div>
                         </td>
                       </tr>

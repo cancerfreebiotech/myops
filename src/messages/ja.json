@@ -259,6 +259,10 @@
       "publish": "公開",
       "translate": "AI翻訳",
       "confirm": "既読確認"
+    },
+    "detailExtra": {
+      "english": "英語",
+      "japanese": "日本語"
     }
   },
   "announcements": {
@@ -276,7 +280,52 @@
       "regulation": "規程",
       "urgent": "緊急通知"
     },
-    "noAnnouncements": "お知らせはまだありません"
+    "noAnnouncements": "お知らせはまだありません",
+    "listExtra": {
+      "reportTab": "公開レポート",
+      "reportTitle": "公開済みお知らせの確認状況",
+      "headerTitle": "お知らせタイトル",
+      "headerPublishDate": "公開日",
+      "headerConfirmStatus": "確認状況",
+      "recipientCount": "{count}名"
+    },
+    "detailExtra": {
+      "docTypes": {
+        "ANN": "お知らせ",
+        "REG": "規程"
+      },
+      "actions": {
+        "archive": "アーカイブ",
+        "publish": "公開",
+        "confirm": "既読確認"
+      },
+      "aiTranslation": "AI翻訳",
+      "languages": {
+        "zh": "中文",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "publisher": "発行者",
+      "publishedDate": "発行日",
+      "department": "所属部署",
+      "expiresAt": "有効期限",
+      "fallbackNotice": "現在の言語版がないため、原文を表示しています。",
+      "noContent": "このお知らせには本文がありません",
+      "pleaseConfirmRead": "このお知らせを読んだことを確認してください",
+      "confirmReadAriaLabel": "このお知らせの既読を確認（二要素認証が必要）",
+      "announcementInfo": "お知らせ情報",
+      "type": "種類",
+      "published": "公開済み",
+      "yes": "はい",
+      "no": "いいえ",
+      "languageVersions": "言語版",
+      "auditLog": "操作履歴",
+      "noRecords": "記録なし",
+      "reasonLabel": "理由：{reason}",
+      "confirmDialogMessage": "このお知らせを読んだことを確認しますか？この操作には二要素認証が必要です。",
+      "mfaGuidance": "二要素認証が未完了の場合は、認証完了後に確認を送信できるようご案内します。",
+      "confirmSubmitAriaLabel": "既読を確認して送信"
+    }
   },
   "contracts": {
     "title": "契約管理",
@@ -384,6 +433,9 @@
     "admin": {
       "title": "全社出退勤記録",
       "description": "全従業員の出退勤記録を表示・管理"
+    },
+    "clientExtra": {
+      "todayDateFormat": "yyyy年MM月dd日 EEEE"
     }
   },
   "leave": {
@@ -469,6 +521,12 @@
       "dayUnit": "日",
       "prevMonth": "前月",
       "nextMonth": "翌月"
+    },
+    "calendarExtra": {
+      "yearMonthTitle": "{y}年{m}月",
+      "monthDayLabel": "{m}月{d}日",
+      "weekdayParen": "（{w}）",
+      "dateRange": "{start} ～ {end}"
     }
   },
   "overtime": {
@@ -650,7 +708,12 @@
     "mfaResetDescription": "MFAをリセットすると、次回ログイン時にQRコードを再スキャンする必要があります。",
     "mfaReset": "MFAをリセット",
     "mfaNotSet": "MFAはまだ設定されていません",
-    "mfaResetSuccess": "MFAがリセットされました。次回ログイン時に再設定が必要です。"
+    "mfaResetSuccess": "MFAがリセットされました。次回ログイン時に再設定が必要です。",
+    "clientExtra": {
+      "languageZhTw": "繁體中文",
+      "languageEn": "English",
+      "languageJa": "日本語"
+    }
   },
   "feedback": {
     "title": "フィードバック",
@@ -791,7 +854,18 @@
       "description": "各種残業レートの設定"
     },
     "attendanceAnomalies": {
-      "description": "連続自動打刻・インターン打刻漏れ統計"
+      "description": "連続自動打刻・インターン打刻漏れ統計",
+      "fullTimeTitle": "正社員の連続自動打刻補完（直近30日で3回以上）",
+      "internTitle": "今月の打刻漏れが3回を超えるインターン",
+      "peopleCount": "{count} 名",
+      "daysCount": "{count} 日",
+      "timesCount": "{count} 回",
+      "thEmployee": "従業員",
+      "thDepartment": "部署",
+      "thAutoClockDays": "自動打刻補完日数",
+      "thRecentDates": "直近の日付",
+      "thMissedThisMonth": "今月の打刻漏れ回数",
+      "listSeparator": "、"
     },
     "hrSettings": {
       "title": "HR管理",
@@ -861,6 +935,208 @@
     "feedback": {
       "title": "フィードバック管理",
       "description": "ユーザーフィードバックの管理"
+    },
+    "attendanceMgmt": {
+      "todayClockedIn": "本日の出勤打刻人数",
+      "todayClockedInDesc": "本日出勤打刻の記録がある人数",
+      "avgDaysTitle": "今月の出勤日数（平均）",
+      "avgDaysValue": "{n} 日",
+      "avgDaysDesc": "出勤した従業員の平均出勤日数",
+      "autoMakeupTitle": "自動補完打刻の件数",
+      "autoMakeupDesc": "今月のシステム自動補完記録",
+      "monthLabel": "月",
+      "allEmployees": "全従業員",
+      "empTypeLabel": "雇用形態",
+      "allTypes": "すべての形態",
+      "empType": {
+        "full_time": "正社員",
+        "intern": "インターン",
+        "part_time": "アルバイト",
+        "contractor": "顧問"
+      },
+      "totalCount": "全 <b>{count}</b> 件",
+      "notes": "備考",
+      "noRecordsHint": "フィルター条件を確認するか、別の月を選択してください",
+      "missing": "未打刻",
+      "manual": "手動",
+      "pageLabel": "<b>{page}</b> ページ目",
+      "prevPage": "前へ",
+      "nextPage": "次へ"
+    },
+    "auditLog": {
+      "searchPlaceholder": "文書タイトルまたは操作者を検索...",
+      "allActions": "すべての操作",
+      "totalCount": "全 {count} 件",
+      "headers": {
+        "time": "時刻",
+        "operator": "操作者",
+        "action": "操作",
+        "document": "文書",
+        "note": "備考"
+      },
+      "actions": {
+        "upload": "アップロード",
+        "approve": "承認",
+        "reject": "差し戻し",
+        "archive": "アーカイブ",
+        "publish": "公開",
+        "translate": "AI 翻訳",
+        "confirm": "既読確認"
+      },
+      "pageInfo": "{page} ページ目・全 {count} 件",
+      "prevPage": "前へ",
+      "nextPage": "次へ"
+    },
+    "bonusMgmt": {
+      "fillRequired": "従業員、種類、金額を入力してください",
+      "created": "賞与記録を作成しました",
+      "deleted": "賞与記録を削除しました",
+      "yearLabel": "{y}年",
+      "monthLabel": "{m}月",
+      "deleteBonusAria": "賞与記録を削除",
+      "selectEmployee": "従業員を選択",
+      "selectType": "種類を選択",
+      "optionalPlaceholder": "任意"
+    },
+    "companiesMgmt": {
+      "addCompany": "会社を追加",
+      "editCompany": "会社を編集",
+      "companyName": "会社名",
+      "aliases": "別名",
+      "aliasesLabel": "別名（カンマ区切り、空欄可）",
+      "aliasesPlaceholder": "例：CancerFree, CF Biotech",
+      "saveFailed": "保存に失敗しました",
+      "companyUpdated": "会社を更新しました",
+      "companyCreated": "会社を追加しました"
+    },
+    "departmentsMgmt": {
+      "addDepartment": "部門を追加",
+      "editDepartment": "部門を編集",
+      "codeHeader": "コード",
+      "nameLabel": "部門名",
+      "codeLabel": "コード（英大文字）",
+      "saveFailed": "保存に失敗しました",
+      "updated": "部門を更新しました",
+      "created": "部門を追加しました"
+    },
+    "feedbackAdmin": {
+      "allStatuses": "すべてのステータス",
+      "allTypes": "すべての種類",
+      "countLabel": "{count} 件",
+      "noRecords": "フィードバックの記録はありません",
+      "hasScreenshot": "スクリーンショットあり",
+      "screenshot": "スクリーンショット",
+      "statusUpdated": "ステータスを更新しました",
+      "types": {
+        "feature": "新機能",
+        "bug": "バグ",
+        "improvement": "改善提案",
+        "other": "その他"
+      }
+    },
+    "insuranceMgmt": {
+      "emptySpreadsheet": "スプレッドシートが空です。ファイルの内容を確認してください。",
+      "fieldGrade": "等級 (Grade)",
+      "fieldInsuredSalary": "投保薪資 (InsuredSalary)",
+      "fieldEmployeeShare": "個人負担 (EmployeeShare)",
+      "fieldEmployerShare": "雇用主負担 (EmployerShare)",
+      "listSeparator": "、",
+      "missingColumns": "必須の列が見つかりません：{fields}",
+      "missingDependentsColumn": "健康保険には「眷屬負擔 (EmployeeDependents)」の列が必要です",
+      "parseFailed": "ファイルを解析できません。有効な Excel / CSV 形式か確認してください。",
+      "uploadFailed": "アップロードに失敗しました：{error}",
+      "unknownError": "不明なエラー",
+      "uploadSuccess": "{label}の等級データ {count} 件をアップロードしました（{year} 年）",
+      "networkError": "ネットワークエラーです。しばらくしてからもう一度お試しください。",
+      "dropZoneAria": "クリックまたはドラッグ＆ドロップで Excel ファイルをアップロード",
+      "dropZoneTitle": "クリックまたはドラッグ＆ドロップでアップロード",
+      "supportedFormats": ".xlsx / .xls / .csv に対応",
+      "uploadFileAria": "{label}料率表ファイルをアップロード",
+      "clearErrorAria": "エラーをクリアして再試行",
+      "parsedRowCount": "解析が完了しました。全 <num>{count}</num> 件のデータ",
+      "reselectFileAria": "ファイルを選び直す",
+      "reselect": "選び直す",
+      "moreRows": "...他 {count} 件",
+      "confirmUploadAria": "{year} 年の{label}料率表のアップロードを確認",
+      "uploading": "アップロード中...",
+      "confirmUploadButton": "{year} 年 {label} をアップロード",
+      "noYearData": "{year} 年の{label}料率データはまだありません",
+      "uploadHint": "Excel ファイルをアップロードして料率を取り込んでください",
+      "yearOption": "{y} 年",
+      "refreshAria": "料率データを再読み込み",
+      "rateTableTitle": "{label}料率表 — {year} 年"
+    },
+    "leaveBalancesMgmt": {
+      "allEmployees": "全従業員",
+      "yearLabel": "{y}年度",
+      "employee": "従業員",
+      "appliesAll": "全員",
+      "fullTime": "正社員",
+      "intern": "インターン",
+      "saveShort": "保存"
+    },
+    "leaveBalancesPage": {
+      "description": "{year} 年度の従業員休暇枠"
+    },
+    "leaveTypesMgmt": {
+      "addLeaveType": "休暇種別を追加",
+      "editLeaveType": "休暇種別を編集",
+      "nameLabel": "休暇種別名",
+      "appliesToLabel": "適用対象",
+      "payHeader": "給与",
+      "maxPerYearHeader": "年間上限",
+      "advanceDaysHeader": "事前申請日数",
+      "payRateCalcLabel": "給与計算",
+      "maxPerYearFieldLabel": "年間上限（日数、空欄＝上限なし）",
+      "advanceFieldLabel": "事前申請（日数）",
+      "enableLabel": "この休暇種別を有効にする",
+      "noLimit": "上限なし",
+      "daysCount": "{d} 日",
+      "nameRequired": "休暇種別名を入力してください",
+      "updated": "休暇種別を更新しました",
+      "created": "休暇種別を追加しました",
+      "appliesToAll": "全員",
+      "appliesToFullTime": "正社員",
+      "appliesToIntern": "インターン",
+      "payRateFull": "全額支給",
+      "payRateHalf": "半額支給",
+      "payRateNone": "無給"
+    },
+    "overtimeRatesMgmt": {
+      "types": {
+        "weekday": "平日残業",
+        "weekend": "休日残業",
+        "holiday": "祝日残業",
+        "project": "プロジェクト残業",
+        "on_call": "当直",
+        "emergency": "緊急残業"
+      },
+      "headers": {
+        "type": "残業タイプ",
+        "multiplier": "割増率",
+        "active": "有効"
+      },
+      "enabled": "有効",
+      "disabled": "無効",
+      "updateSuccess": "レートを更新しました",
+      "multiplierHint": "割増率 = 時給 × 倍率（例：1.33 = 1.33倍）"
+    },
+    "payrollAnomalies": {
+      "scanCompleteNoAnomalies": "スキャン完了。{count} 件の記録に異常はありません",
+      "foundAnomalies": "{count} 件の異常記録が見つかりました",
+      "scanFailed": "スキャンに失敗しました",
+      "scannedCount": "スキャン済み：<strong>{count}</strong> 件",
+      "flaggedCount": "異常：<strong>{count}</strong> 件",
+      "colEmployee": "従業員",
+      "colNetPay": "差引支給額",
+      "colFlags": "異常項目",
+      "emptyPrompt": "年月を選択して異常スキャンを実行してください"
+    },
+    "userProfileAdmin": {
+      "profileSaved": "人事情報を保存しました"
+    },
+    "usersTable": {
+      "name": "氏名"
     }
   },
   "tooltips": {

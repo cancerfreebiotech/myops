@@ -18,6 +18,8 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
   const router = useRouter()
   const t = useTranslations('admin.profile')
   const tc = useTranslations('common')
+  const tu = useTranslations('admin.users')
+  const tp = useTranslations('admin.userProfileAdmin')
   const [saving, setSaving] = useState(false)
   const [showId, setShowId] = useState(false)
   const [showBank, setShowBank] = useState(false)
@@ -55,7 +57,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
     const json = await res.json()
     setSaving(false)
     if (json.error) { toast.error(json.error); return }
-    toast.success('人事資料已儲存')
+    toast.success(tp('profileSaved'))
     router.refresh()
   }
 
@@ -78,7 +80,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
           </div>
           <div>
             <p className="font-medium text-slate-800 dark:text-slate-200">{targetUser.display_name}</p>
-            <p className="text-xs text-slate-400">{targetUser.email} · {dept ?? '—'} · {targetUser.employment_type === 'full_time' ? '正職' : '實習'}</p>
+            <p className="text-xs text-slate-400">{targetUser.email} · {dept ?? '—'} · {targetUser.employment_type === 'full_time' ? tu('employmentFullTime') : tu('employmentIntern')}</p>
           </div>
         </div>
       </div>

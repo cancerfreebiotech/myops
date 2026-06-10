@@ -14,20 +14,21 @@ import { useRouter } from 'next/navigation'
 import { Plus, Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-const schema = z.object({
-  name: z.string().min(1, '必填'),
-  code: z.string().min(1, '必填').max(10).toUpperCase(),
+const buildSchema = (requiredMessage: string) => z.object({
+  name: z.string().min(1, requiredMessage),
+  code: z.string().min(1, requiredMessage).max(10).toUpperCase(),
 })
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
 export function DepartmentsManager({ departments }: { departments: any[] }) {
   const router = useRouter()
+  const t = useTranslations('admin.departmentsMgmt')
   const tc = useTranslations('common')
   const [editDept, setEditDept] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(buildSchema(tc('required'))),
     defaultValues: { name: '', code: '' },
   })
 
@@ -53,10 +54,10 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
     })
     if (!res.ok) {
       const { error } = await res.json()
-      toast.error(error ?? '儲存失敗')
+      toast.error(error ?? t('saveFailed'))
       return
     }
-    toast.success(editDept ? '部門已更新' : '部門已新增')
+    toast.success(editDept ? t('updated') : t('created'))
     setShowForm(false)
     router.refresh()
   }
@@ -65,7 +66,7 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
     <>
       <div className="flex justify-end mb-4">
         <Button onClick={openCreate} className="min-h-[44px]">
-          <Plus size={16} className="mr-1" /> 新增部門
+          <Plus size={16} className="mr-1" /> {t('addDepartment')}
         </Button>
       </div>
 
@@ -73,8 +74,8 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
-              <TableHead>代號</TableHead>
-              <TableHead>部門名稱</TableHead>
+              <TableHead>{t('codeHeader')}</TableHead>
+              <TableHead>{t('nameLabel')}</TableHead>
               <TableHead className="w-16"></TableHead>
             </TableRow>
           </TableHeader>
@@ -97,20 +98,20 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editDept ? '編輯部門' : '新增部門'}</DialogTitle>
+            <DialogTitle>{editDept ? t('editDepartment') : t('addDepartment')}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>部門名稱</FormLabel>
+                  <FormLabel>{t('nameLabel')}</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="code" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>代號（英文大寫）</FormLabel>
+                  <FormLabel>{t('codeLabel')}</FormLabel>
                   <FormControl><Input {...field} onChange={e => field.onChange(e.target.value.toUpperCase())} className="font-mono" /></FormControl>
                   <FormMessage />
                 </FormItem>

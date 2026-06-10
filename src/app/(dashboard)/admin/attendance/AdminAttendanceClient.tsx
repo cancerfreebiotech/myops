@@ -51,12 +51,7 @@ const formatTime = (t: string | null) => {
   return t.substring(0, 5)
 }
 
-const employmentTypeLabel: Record<string, string> = {
-  full_time: '正職',
-  intern: '實習',
-  part_time: '兼職',
-  contractor: '顧問',
-}
+const EMPLOYMENT_TYPES = ['full_time', 'intern', 'part_time', 'contractor'] as const
 
 export function AdminAttendanceClient({
   attendanceRecords,
@@ -71,6 +66,10 @@ export function AdminAttendanceClient({
   const router = useRouter()
   const t = useTranslations('attendance')
   const tc = useTranslations('common')
+  const ta = useTranslations('admin.attendanceMgmt')
+
+  const employmentTypeLabel = (type: string) =>
+    (EMPLOYMENT_TYPES as readonly string[]).includes(type) ? ta(`empType.${type}`) : type
   const [month, setMonth] = useState(initialMonth)
   const [userId, setUserId] = useState(initialUserId)
   const [employmentType, setEmploymentType] = useState(initialEmploymentType || 'all')
@@ -108,34 +107,34 @@ export function AdminAttendanceClient({
         <div className="rounded-xl border border-green-100 bg-green-50 dark:bg-green-950/30 dark:border-green-900 p-5">
           <div className="flex items-center gap-2 mb-1">
             <Users size={18} className="text-green-600" aria-hidden="true" />
-            <span className="text-sm font-medium text-green-700 dark:text-green-400">今日已打卡人數</span>
+            <span className="text-sm font-medium text-green-700 dark:text-green-400">{ta('todayClockedIn')}</span>
           </div>
           <p className="text-2xl font-bold tabular-nums text-green-700 dark:text-green-300 font-[Lexend]">
             {todayClockedIn}
           </p>
-          <p className="text-xs text-green-600/70 dark:text-green-500 mt-1">今日有上班打卡紀錄</p>
+          <p className="text-xs text-green-600/70 dark:text-green-500 mt-1">{ta('todayClockedInDesc')}</p>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-1">
             <CalendarDays size={18} className="text-slate-600 dark:text-slate-400" aria-hidden="true" />
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-400">本月出勤天數（平均）</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-400">{ta('avgDaysTitle')}</span>
           </div>
           <p className="text-2xl font-bold tabular-nums text-slate-700 dark:text-slate-200 font-[Lexend]">
-            {avgDays} 天
+            {ta('avgDaysValue', { n: avgDays })}
           </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">有出勤員工平均出勤日</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{ta('avgDaysDesc')}</p>
         </div>
 
         <div className="rounded-xl border border-yellow-100 bg-yellow-50 dark:bg-yellow-950/30 dark:border-yellow-900 p-5">
           <div className="flex items-center gap-2 mb-1">
             <Bot size={18} className="text-yellow-600" aria-hidden="true" />
-            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">自動補打筆數</span>
+            <span className="text-sm font-medium text-yellow-700 dark:text-yellow-400">{ta('autoMakeupTitle')}</span>
           </div>
           <p className="text-2xl font-bold tabular-nums text-yellow-700 dark:text-yellow-300 font-[Lexend]">
             {autoMakeupCount}
           </p>
-          <p className="text-xs text-yellow-600/70 dark:text-yellow-500 mt-1">本月系統自動補打紀錄</p>
+          <p className="text-xs text-yellow-600/70 dark:text-yellow-500 mt-1">{ta('autoMakeupDesc')}</p>
         </div>
       </div>
 
@@ -145,7 +144,7 @@ export function AdminAttendanceClient({
           {/* Month picker */}
           <div className="flex flex-col gap-1">
             <label htmlFor="month-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              月份
+              {ta('monthLabel')}
             </label>
             <input
               id="month-filter"
@@ -162,7 +161,7 @@ export function AdminAttendanceClient({
           {/* User filter */}
           <div className="flex flex-col gap-1">
             <label htmlFor="user-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              員工
+              {t('employee')}
             </label>
             <select
               id="user-filter"
@@ -173,7 +172,7 @@ export function AdminAttendanceClient({
               }}
               className="h-9 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 pr-8 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-600 cursor-pointer appearance-none"
             >
-              <option value="">全部員工</option>
+              <option value="">{ta('allEmployees')}</option>
               {allUsers.map(u => (
                 <option key={u.id} value={u.id}>{u.display_name}</option>
               ))}
@@ -183,7 +182,7 @@ export function AdminAttendanceClient({
           {/* Employment type filter */}
           <div className="flex flex-col gap-1">
             <label htmlFor="emptype-filter" className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              員工類型
+              {ta('empTypeLabel')}
             </label>
             <select
               id="emptype-filter"
@@ -194,16 +193,18 @@ export function AdminAttendanceClient({
               }}
               className="h-9 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 pr-8 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-green-600 cursor-pointer appearance-none"
             >
-              <option value="all">全部類型</option>
-              <option value="full_time">正職</option>
-              <option value="intern">實習</option>
-              <option value="part_time">兼職</option>
-              <option value="contractor">顧問</option>
+              <option value="all">{ta('allTypes')}</option>
+              {EMPLOYMENT_TYPES.map(et => (
+                <option key={et} value={et}>{ta(`empType.${et}`)}</option>
+              ))}
             </select>
           </div>
 
           <div className="ml-auto text-sm text-slate-500 dark:text-slate-400 self-end pb-0.5">
-            共 <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-300">{totalCount}</span> 筆
+            {ta.rich('totalCount', {
+              count: totalCount,
+              b: chunks => <span className="font-semibold tabular-nums text-slate-700 dark:text-slate-300">{chunks}</span>,
+            })}
           </div>
         </div>
       </div>
@@ -219,7 +220,7 @@ export function AdminAttendanceClient({
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockInLabel')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockOutLabel')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('autoClocked')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">備註</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{ta('notes')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -230,7 +231,7 @@ export function AdminAttendanceClient({
                       <Clock size={40} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
                       <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('noRecords')}</p>
                       <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
-                        請確認篩選條件或選擇其他月份
+                        {ta('noRecordsHint')}
                       </p>
                     </div>
                   </td>
@@ -257,7 +258,7 @@ export function AdminAttendanceClient({
                           {r.user?.department?.name ?? ''}
                           {r.user?.employment_type && (
                             <span className="ml-1">
-                              · {employmentTypeLabel[r.user.employment_type] ?? r.user.employment_type}
+                              · {employmentTypeLabel(r.user.employment_type)}
                             </span>
                           )}
                         </p>
@@ -272,7 +273,7 @@ export function AdminAttendanceClient({
                       <td className="px-4 py-3 whitespace-nowrap tabular-nums">
                         {missingIn ? (
                           <span className="text-red-600 dark:text-red-400 font-medium" role="status">
-                            缺打
+                            {ta('missing')}
                           </span>
                         ) : (
                           <span className="text-slate-700 dark:text-slate-300">
@@ -288,7 +289,7 @@ export function AdminAttendanceClient({
                       <td className="px-4 py-3 whitespace-nowrap tabular-nums">
                         {missingOut ? (
                           <span className="text-red-600 dark:text-red-400 font-medium" role="status">
-                            缺打
+                            {ta('missing')}
                           </span>
                         ) : (
                           <span className="text-slate-700 dark:text-slate-300">
@@ -308,10 +309,10 @@ export function AdminAttendanceClient({
                             role="status"
                           >
                             <Bot size={10} aria-hidden="true" />
-                            系統自動
+                            {t('autoClocked')}
                           </span>
                         ) : (
-                          <span className="text-slate-400 dark:text-slate-600 text-xs">手動</span>
+                          <span className="text-slate-400 dark:text-slate-600 text-xs">{ta('manual')}</span>
                         )}
                       </td>
 
@@ -331,18 +332,25 @@ export function AdminAttendanceClient({
         {totalCount > PAGE_SIZE && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
             <p className="text-sm text-slate-500 dark:text-slate-400 tabular-nums">
-              第 <span className="font-semibold text-slate-700 dark:text-slate-300">{page}</span> 頁&ensp;
-              共 <span className="font-semibold text-slate-700 dark:text-slate-300">{totalCount}</span> 筆
+              {ta.rich('pageLabel', {
+                page,
+                b: chunks => <span className="font-semibold text-slate-700 dark:text-slate-300">{chunks}</span>,
+              })}
+              &ensp;
+              {ta.rich('totalCount', {
+                count: totalCount,
+                b: chunks => <span className="font-semibold text-slate-700 dark:text-slate-300">{chunks}</span>,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                aria-label="上一頁"
+                aria-label={ta('prevPage')}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-green-600"
               >
                 <ChevronLeft size={14} aria-hidden="true" />
-                上一頁
+                {ta('prevPage')}
               </button>
               <span className="text-xs text-slate-400 tabular-nums">
                 {page} / {totalPages}
@@ -350,10 +358,10 @@ export function AdminAttendanceClient({
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                aria-label="下一頁"
+                aria-label={ta('nextPage')}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-md border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-green-600"
               >
-                下一頁
+                {ta('nextPage')}
                 <ChevronRight size={14} aria-hidden="true" />
               </button>
             </div>
@@ -365,12 +373,13 @@ export function AdminAttendanceClient({
 }
 
 function AutoBadge() {
+  const t = useTranslations('attendance')
   return (
     <span
       className="ml-1.5 inline-flex items-center text-[10px] font-medium px-1.5 py-0 rounded border bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700 align-middle"
-      aria-label="系統自動"
+      aria-label={t('autoClocked')}
     >
-      自動
+      {t('auto')}
     </span>
   )
 }

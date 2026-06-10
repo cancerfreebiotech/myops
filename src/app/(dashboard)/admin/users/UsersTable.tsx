@@ -23,6 +23,7 @@ interface UsersTableProps {
 export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
   const t = useTranslations('admin.users')
   const tc = useTranslations('common')
+  const tt = useTranslations('admin.usersTable')
   const [search, setSearch] = useState('')
   const [editUser, setEditUser] = useState<any>(null)
   const [offboardUser, setOffboardUser] = useState<any>(null)
@@ -91,7 +92,7 @@ export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
-              <TableHead>姓名</TableHead>
+              <TableHead>{tt('name')}</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>{t('department')}</TableHead>
               <TableHead>{t('role')}</TableHead>

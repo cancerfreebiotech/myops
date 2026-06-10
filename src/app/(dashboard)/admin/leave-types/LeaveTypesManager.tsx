@@ -11,11 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Plus, Pencil } from 'lucide-react'
 
-const APPLIES_TO_LABELS: Record<string, string> = {
-  all: '全員', full_time: '正職', intern: '實習生',
+const APPLIES_TO_KEYS: Record<string, string> = {
+  all: 'appliesToAll', full_time: 'appliesToFullTime', intern: 'appliesToIntern',
 }
-const PAY_RATE_LABELS: Record<string, string> = {
-  full: '全薪', half: '半薪', none: '無薪',
+const PAY_RATE_KEYS: Record<string, string> = {
+  full: 'payRateFull', half: 'payRateHalf', none: 'payRateNone',
 }
 
 const EMPTY_FORM = {
@@ -25,7 +25,8 @@ const EMPTY_FORM = {
 
 export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[]; readOnly?: boolean }) {
   const router = useRouter()
-  const t = useTranslations('common')
+  const t = useTranslations('admin.leaveTypesMgmt')
+  const tc = useTranslations('common')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState(EMPTY_FORM)
@@ -51,7 +52,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
   }
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('請填寫假別名稱'); return }
+    if (!form.name.trim()) { toast.error(t('nameRequired')); return }
     setLoading(true)
     const payload = {
       ...form,
@@ -68,7 +69,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
-    toast.success(editing ? '假別已更新' : '假別已新增')
+    toast.success(editing ? t('updated') : t('created'))
     setOpen(false)
     router.refresh()
   }
@@ -78,7 +79,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
       {!readOnly && (
         <div className="flex justify-end mb-4">
           <Button onClick={openCreate} className="min-h-[44px]">
-            <Plus size={16} className="mr-1" /> 新增假別
+            <Plus size={16} className="mr-1" /> {t('addLeaveType')}
           </Button>
         </div>
       )}
@@ -87,12 +88,12 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">假別名稱</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">適用對象</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">薪資</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">年上限</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">提前天數</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">狀態</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('nameLabel')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('appliesToLabel')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('payHeader')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('maxPerYearHeader')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('advanceDaysHeader')}</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tc('status')}</th>
               {!readOnly && <th className="px-4 py-3"></th>}
             </tr>
           </thead>
@@ -100,13 +101,13 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
             {leaveTypes.map(lt => (
               <tr key={lt.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{lt.name}</td>
-                <td className="px-4 py-3 text-slate-500">{APPLIES_TO_LABELS[lt.applies_to] ?? lt.applies_to}</td>
-                <td className="px-4 py-3 text-slate-500">{PAY_RATE_LABELS[lt.pay_rate] ?? lt.pay_rate}</td>
-                <td className="px-4 py-3 text-slate-500">{lt.max_days_per_year ?? '無上限'}</td>
-                <td className="px-4 py-3 text-slate-500">{lt.advance_days_required} 天</td>
+                <td className="px-4 py-3 text-slate-500">{APPLIES_TO_KEYS[lt.applies_to] ? t(APPLIES_TO_KEYS[lt.applies_to]) : lt.applies_to}</td>
+                <td className="px-4 py-3 text-slate-500">{PAY_RATE_KEYS[lt.pay_rate] ? t(PAY_RATE_KEYS[lt.pay_rate]) : lt.pay_rate}</td>
+                <td className="px-4 py-3 text-slate-500">{lt.max_days_per_year ?? t('noLimit')}</td>
+                <td className="px-4 py-3 text-slate-500">{t('daysCount', { d: lt.advance_days_required })}</td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={lt.is_active ? 'border-green-300 text-green-700' : 'border-slate-300 text-slate-500'}>
-                    {lt.is_active ? t('active') : t('inactive')}
+                    {lt.is_active ? tc('active') : tc('inactive')}
                   </Badge>
                 </td>
                 {!readOnly && (
@@ -124,39 +125,39 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? '編輯假別' : '新增假別'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? t('editLeaveType') : t('addLeaveType')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">假別名稱</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('nameLabel')}</label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="mt-1" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">適用對象</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('appliesToLabel')}</label>
                 <Select value={form.applies_to} onValueChange={v => setForm(f => ({ ...f, applies_to: v ?? f.applies_to }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(APPLIES_TO_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {Object.entries(APPLIES_TO_KEYS).map(([k, v]) => <SelectItem key={k} value={k}>{t(v)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">薪資計算</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('payRateCalcLabel')}</label>
                 <Select value={form.pay_rate} onValueChange={v => setForm(f => ({ ...f, pay_rate: v ?? f.pay_rate }))}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PAY_RATE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {Object.entries(PAY_RATE_KEYS).map(([k, v]) => <SelectItem key={k} value={k}>{t(v)}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">年上限（天，空白=無上限）</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('maxPerYearFieldLabel')}</label>
                 <Input type="number" value={form.max_days_per_year} onChange={e => setForm(f => ({ ...f, max_days_per_year: e.target.value }))} className="mt-1" min="0" />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">需提前申請（天）</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('advanceFieldLabel')}</label>
                 <Input type="number" value={form.advance_days_required} onChange={e => setForm(f => ({ ...f, advance_days_required: e.target.value }))} className="mt-1" min="0" />
               </div>
             </div>
@@ -168,12 +169,12 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
                 onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))}
                 className="accent-blue-600"
               />
-              <label htmlFor="is_active" className="text-sm text-slate-700 dark:text-slate-300">啟用此假別</label>
+              <label htmlFor="is_active" className="text-sm text-slate-700 dark:text-slate-300">{t('enableLabel')}</label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>{t('cancel')}</Button>
-            <Button onClick={handleSave} disabled={loading}>{loading ? t('saving') : t('save')}</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
+            <Button onClick={handleSave} disabled={loading}>{loading ? tc('saving') : tc('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

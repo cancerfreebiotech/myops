@@ -15,15 +15,17 @@ import { useRouter } from 'next/navigation'
 import { Plus, Pencil, Search } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-const schema = z.object({
-  name: z.string().min(1, '必填'),
+const buildSchema = (requiredMsg: string) => z.object({
+  name: z.string().min(1, requiredMsg),
   aliases: z.string(), // comma-separated
 })
-type FormValues = z.infer<typeof schema>
+type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
 export function CompaniesManager({ companies }: { companies: any[] }) {
   const router = useRouter()
+  const t = useTranslations('admin.companiesMgmt')
   const tc = useTranslations('common')
+  const schema = buildSchema(tc('required'))
   const [editCompany, setEditCompany] = useState<any>(null)
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
@@ -62,10 +64,10 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
     })
     if (!res.ok) {
       const { error } = await res.json()
-      toast.error(error ?? '儲存失敗')
+      toast.error(error ?? t('saveFailed'))
       return
     }
-    toast.success(editCompany ? '公司已更新' : '公司已新增')
+    toast.success(editCompany ? t('companyUpdated') : t('companyCreated'))
     setShowForm(false)
     router.refresh()
   }
@@ -78,7 +80,7 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
           <Input placeholder={`${tc('search')}...`} value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
         </div>
         <Button onClick={openCreate} className="min-h-[44px]">
-          <Plus size={16} className="mr-1" /> 新增公司
+          <Plus size={16} className="mr-1" /> {t('addCompany')}
         </Button>
       </div>
 
@@ -86,8 +88,8 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 dark:bg-slate-800">
-              <TableHead>公司名稱</TableHead>
-              <TableHead>別名</TableHead>
+              <TableHead>{t('companyName')}</TableHead>
+              <TableHead>{t('aliases')}</TableHead>
               <TableHead className="w-16"></TableHead>
             </TableRow>
           </TableHeader>
@@ -118,21 +120,21 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
       <Dialog open={showForm} onOpenChange={setShowForm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editCompany ? '編輯公司' : '新增公司'}</DialogTitle>
+            <DialogTitle>{editCompany ? t('editCompany') : t('addCompany')}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
               <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>公司名稱</FormLabel>
+                  <FormLabel>{t('companyName')}</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="aliases" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>別名（用逗號分隔，可空白）</FormLabel>
-                  <FormControl><Input {...field} placeholder="例：CancerFree, CF Biotech" /></FormControl>
+                  <FormLabel>{t('aliasesLabel')}</FormLabel>
+                  <FormControl><Input {...field} placeholder={t('aliasesPlaceholder')} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

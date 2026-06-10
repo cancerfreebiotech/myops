@@ -32,6 +32,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
   const td = useTranslations('documents.detail')
   const ta = useTranslations('documents.actions')
   const tc = useTranslations('common')
+  const tx = useTranslations('documents.detailExtra')
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [publishOpen, setPublishOpen] = useState(false)
@@ -206,13 +207,13 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
               </div>
               {doc.content_en && (
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">English {doc.ai_translated && <span className="text-blue-500">(AI)</span>}</p>
+                  <p className="text-xs text-slate-400 mb-1">{tx('english')} {doc.ai_translated && <span className="text-blue-500">(AI)</span>}</p>
                   <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{doc.content_en}</p>
                 </div>
               )}
               {doc.content_ja && (
                 <div>
-                  <p className="text-xs text-slate-400 mb-1">日本語 {doc.ai_translated && <span className="text-blue-500">(AI)</span>}</p>
+                  <p className="text-xs text-slate-400 mb-1">{tx('japanese')} {doc.ai_translated && <span className="text-blue-500">(AI)</span>}</p>
                   <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{doc.content_ja}</p>
                 </div>
               )}

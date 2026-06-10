@@ -49,21 +49,6 @@ const CATEGORY_STYLE: Record<
   },
 }
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  ANN: '公告',
-  REG: '規章',
-}
-
-const ACTION_LABELS: Record<string, string> = {
-  upload: '上傳',
-  approve: '核准',
-  reject: '退回',
-  archive: '封存',
-  publish: '發佈',
-  translate: 'AI 翻譯',
-  confirm: '確認閱讀',
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -105,8 +90,6 @@ function resolveContent(
   return { content: '', lang: 'zh', isFallback: false }
 }
 
-const LANG_LABELS: Record<string, string> = { zh: '中文', en: 'English', ja: '日本語' }
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AnnouncementDetail({
@@ -121,6 +104,7 @@ export function AnnouncementDetail({
   const router = useRouter()
   const t = useTranslations('announcements')
   const tc = useTranslations('common')
+  const td = useTranslations('announcements.detailExtra')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState(alreadyConfirmed)
@@ -128,6 +112,27 @@ export function AnnouncementDetail({
 
   const CATEGORY_LABELS: Record<string, string> = {
     hr: t('categories.hr'), admin: t('categories.admin'), regulation: t('categories.regulation'), urgent: t('categories.urgent'),
+  }
+
+  const DOC_TYPE_LABELS: Record<string, string> = {
+    ANN: td('docTypes.ANN'),
+    REG: td('docTypes.REG'),
+  }
+
+  const ACTION_LABELS: Record<string, string> = {
+    upload: tc('upload'),
+    approve: tc('approve'),
+    reject: tc('reject'),
+    archive: td('actions.archive'),
+    publish: td('actions.publish'),
+    translate: td('aiTranslation'),
+    confirm: td('actions.confirm'),
+  }
+
+  const LANG_LABELS: Record<string, string> = {
+    zh: td('languages.zh'),
+    en: td('languages.en'),
+    ja: td('languages.ja'),
   }
 
   const category = doc.announcement_category as string | undefined
@@ -228,26 +233,26 @@ export function AnnouncementDetail({
           {/* Meta grid */}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs text-slate-400 mb-0.5">發佈者</p>
+              <p className="text-xs text-slate-400 mb-0.5">{td('publisher')}</p>
               <p className="text-slate-700 dark:text-slate-300">
                 {doc.uploaded_by_user?.display_name ?? '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-400 mb-0.5">發佈日期</p>
+              <p className="text-xs text-slate-400 mb-0.5">{td('publishedDate')}</p>
               <p className="text-slate-700 dark:text-slate-300">
                 {format(new Date(doc.created_at), 'yyyy-MM-dd')}
               </p>
             </div>
             {doc.department && (
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">所屬部門</p>
+                <p className="text-xs text-slate-400 mb-0.5">{td('department')}</p>
                 <p className="text-slate-700 dark:text-slate-300">{doc.department.name}</p>
               </div>
             )}
             {doc.expires_at && (
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">到期日</p>
+                <p className="text-xs text-slate-400 mb-0.5">{td('expiresAt')}</p>
                 <p className="text-slate-700 dark:text-slate-300">{doc.expires_at}</p>
               </div>
             )}
@@ -283,7 +288,7 @@ export function AnnouncementDetail({
             {/* Fallback notice */}
             {isFallback && activeLang !== userLang && (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                目前語言版本不可用，顯示原文內容。
+                {td('fallbackNotice')}
               </p>
             )}
 
@@ -295,7 +300,7 @@ export function AnnouncementDetail({
         ) : (
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 text-center">
             <FileText size={32} className="text-slate-300 mx-auto mb-2" aria-hidden />
-            <p className="text-slate-400 text-sm">此公告無文字內容</p>
+            <p className="text-slate-400 text-sm">{td('noContent')}</p>
           </div>
         )}
       </div>
@@ -330,12 +335,12 @@ export function AnnouncementDetail({
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-                  請確認您已閱讀此公告
+                  {td('pleaseConfirmRead')}
                 </p>
                 <Button
                   onClick={() => setConfirmDialogOpen(true)}
                   className="w-full min-h-[44px] bg-violet-600 hover:bg-violet-700 text-white transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
-                  aria-label="確認已讀此公告（需雙重驗證）"
+                  aria-label={td('confirmReadAriaLabel')}
                 >
                   <CheckCircle size={16} className="mr-1.5" aria-hidden />
                   {t('confirmRead')}
@@ -349,17 +354,17 @@ export function AnnouncementDetail({
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
             <Calendar size={14} aria-hidden />
-            公告資訊
+            {td('announcementInfo')}
           </h3>
           <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex justify-between">
-              <span>類型</span>
+              <span>{td('type')}</span>
               <span className="font-medium text-slate-700 dark:text-slate-300">
                 {DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>狀態</span>
+              <span>{tc('status')}</span>
               <span
                 className={`font-medium ${
                   doc.status === 'approved'
@@ -367,18 +372,18 @@ export function AnnouncementDetail({
                     : 'text-slate-600 dark:text-slate-300'
                 }`}
               >
-                {doc.status === 'approved' ? '已發佈' : doc.status}
+                {doc.status === 'approved' ? td('published') : doc.status}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>AI 翻譯</span>
+              <span>{td('aiTranslation')}</span>
               <span className="font-medium text-slate-700 dark:text-slate-300">
-                {doc.ai_translated ? '是' : '否'}
+                {doc.ai_translated ? td('yes') : td('no')}
               </span>
             </div>
             {availableLangs.length > 0 && (
               <div className="flex justify-between">
-                <span>語言版本</span>
+                <span>{td('languageVersions')}</span>
                 <span className="font-medium text-slate-700 dark:text-slate-300">
                   {availableLangs.map((l) => LANG_LABELS[l]).join(' / ')}
                 </span>
@@ -391,10 +396,10 @@ export function AnnouncementDetail({
         <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
             <Clock size={14} aria-hidden />
-            操作記錄
+            {td('auditLog')}
           </h3>
           {auditLogs.length === 0 ? (
-            <p className="text-xs text-slate-400">無記錄</p>
+            <p className="text-xs text-slate-400">{td('noRecords')}</p>
           ) : (
             <div className="space-y-3">
               {auditLogs.map((log: any) => (
@@ -411,7 +416,7 @@ export function AnnouncementDetail({
                     {log.user?.display_name ?? '—'}
                   </p>
                   {log.detail?.reason && (
-                    <p className="text-red-500 mt-0.5">原因：{log.detail.reason}</p>
+                    <p className="text-red-500 mt-0.5">{td('reasonLabel', { reason: log.detail.reason })}</p>
                   )}
                 </div>
               ))}
@@ -432,7 +437,7 @@ export function AnnouncementDetail({
 
           <div className="py-3 space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-300">
-              確認您已閱讀此公告？此操作需要雙重驗證。
+              {td('confirmDialogMessage')}
             </p>
             <div className="rounded-md bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 p-3">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
@@ -448,7 +453,7 @@ export function AnnouncementDetail({
               )}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500">
-              若尚未完成雙重驗證，系統將引導您完成驗證後再提交確認。
+              {td('mfaGuidance')}
             </p>
           </div>
 
@@ -465,7 +470,7 @@ export function AnnouncementDetail({
               onClick={handleConfirmRead}
               disabled={loading}
               className="min-h-[44px] bg-violet-600 hover:bg-violet-700 text-white transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-violet-600 active:scale-[0.97]"
-              aria-label="確認已讀並送出"
+              aria-label={td('confirmSubmitAriaLabel')}
             >
               {loading ? (
                 <span className="flex items-center gap-2">

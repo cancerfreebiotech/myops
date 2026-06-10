@@ -259,6 +259,10 @@
       "publish": "Publish",
       "translate": "AI Translate",
       "confirm": "Confirm Read"
+    },
+    "detailExtra": {
+      "english": "English",
+      "japanese": "Japanese"
     }
   },
   "announcements": {
@@ -276,7 +280,52 @@
       "regulation": "Regulation",
       "urgent": "Urgent Notice"
     },
-    "noAnnouncements": "No announcements yet"
+    "noAnnouncements": "No announcements yet",
+    "listExtra": {
+      "reportTab": "Publishing Report",
+      "reportTitle": "Confirmation Status of Published Announcements",
+      "headerTitle": "Announcement Title",
+      "headerPublishDate": "Published Date",
+      "headerConfirmStatus": "Confirmation Status",
+      "recipientCount": "{count} recipients"
+    },
+    "detailExtra": {
+      "docTypes": {
+        "ANN": "Announcement",
+        "REG": "Regulation"
+      },
+      "actions": {
+        "archive": "Archive",
+        "publish": "Publish",
+        "confirm": "Confirm read"
+      },
+      "aiTranslation": "AI Translation",
+      "languages": {
+        "zh": "中文",
+        "en": "English",
+        "ja": "日本語"
+      },
+      "publisher": "Published by",
+      "publishedDate": "Published Date",
+      "department": "Department",
+      "expiresAt": "Expiry Date",
+      "fallbackNotice": "This language version is unavailable; showing the original content.",
+      "noContent": "This announcement has no text content",
+      "pleaseConfirmRead": "Please confirm you have read this announcement",
+      "confirmReadAriaLabel": "Confirm you have read this announcement (MFA required)",
+      "announcementInfo": "Announcement Info",
+      "type": "Type",
+      "published": "Published",
+      "yes": "Yes",
+      "no": "No",
+      "languageVersions": "Language Versions",
+      "auditLog": "Activity Log",
+      "noRecords": "No records",
+      "reasonLabel": "Reason: {reason}",
+      "confirmDialogMessage": "Confirm you have read this announcement? This action requires MFA verification.",
+      "mfaGuidance": "If you have not completed MFA verification, the system will guide you through verification before submitting your confirmation.",
+      "confirmSubmitAriaLabel": "Confirm read and submit"
+    }
   },
   "contracts": {
     "title": "Contract Management",
@@ -384,6 +433,9 @@
     "admin": {
       "title": "Company Attendance Records",
       "description": "View and manage all employee attendance records"
+    },
+    "clientExtra": {
+      "todayDateFormat": "EEEE, MMMM d, yyyy"
     }
   },
   "leave": {
@@ -469,6 +521,12 @@
       "dayUnit": "day",
       "prevMonth": "Previous month",
       "nextMonth": "Next month"
+    },
+    "calendarExtra": {
+      "yearMonthTitle": "{y}/{m}",
+      "monthDayLabel": "{m}/{d}",
+      "weekdayParen": "({w})",
+      "dateRange": "{start} – {end}"
     }
   },
   "overtime": {
@@ -650,7 +708,12 @@
     "mfaResetDescription": "After resetting MFA, you will need to re-scan the QR Code with Authenticator on your next login.",
     "mfaReset": "Reset MFA",
     "mfaNotSet": "MFA is not set up yet",
-    "mfaResetSuccess": "MFA has been reset. You will need to set it up again on next login."
+    "mfaResetSuccess": "MFA has been reset. You will need to set it up again on next login.",
+    "clientExtra": {
+      "languageZhTw": "繁體中文",
+      "languageEn": "English",
+      "languageJa": "日本語"
+    }
   },
   "feedback": {
     "title": "Feedback",
@@ -791,7 +854,18 @@
       "description": "Configure overtime rate settings"
     },
     "attendanceAnomalies": {
-      "description": "Consecutive auto-clock and intern missed-clock statistics"
+      "description": "Consecutive auto-clock and intern missed-clock statistics",
+      "fullTimeTitle": "Full-time employees with repeated auto clock-ins (≥ 3 in the last 30 days)",
+      "internTitle": "Interns with more than 3 missed clock-ins this month",
+      "peopleCount": "{count} people",
+      "daysCount": "{count} days",
+      "timesCount": "{count} times",
+      "thEmployee": "Employee",
+      "thDepartment": "Department",
+      "thAutoClockDays": "Auto clock-in days",
+      "thRecentDates": "Recent dates",
+      "thMissedThisMonth": "Missed clock-ins this month",
+      "listSeparator": ", "
     },
     "hrSettings": {
       "title": "HR Management",
@@ -861,6 +935,208 @@
     "feedback": {
       "title": "Feedback Management",
       "description": "Manage user feedback"
+    },
+    "attendanceMgmt": {
+      "todayClockedIn": "Clocked In Today",
+      "todayClockedInDesc": "Employees with a clock-in record today",
+      "avgDaysTitle": "Attendance Days This Month (Avg.)",
+      "avgDaysValue": "{n} days",
+      "avgDaysDesc": "Average attendance days among employees with records",
+      "autoMakeupTitle": "Auto Clock-In Corrections",
+      "autoMakeupDesc": "System auto-corrected records this month",
+      "monthLabel": "Month",
+      "allEmployees": "All employees",
+      "empTypeLabel": "Employment Type",
+      "allTypes": "All types",
+      "empType": {
+        "full_time": "Full-time",
+        "intern": "Intern",
+        "part_time": "Part-time",
+        "contractor": "Contractor"
+      },
+      "totalCount": "<b>{count}</b> records",
+      "notes": "Notes",
+      "noRecordsHint": "Try adjusting the filters or selecting another month",
+      "missing": "Missing",
+      "manual": "Manual",
+      "pageLabel": "Page <b>{page}</b>",
+      "prevPage": "Previous",
+      "nextPage": "Next"
+    },
+    "auditLog": {
+      "searchPlaceholder": "Search document title or operator...",
+      "allActions": "All actions",
+      "totalCount": "{count} records",
+      "headers": {
+        "time": "Time",
+        "operator": "Operator",
+        "action": "Action",
+        "document": "Document",
+        "note": "Note"
+      },
+      "actions": {
+        "upload": "Upload",
+        "approve": "Approve",
+        "reject": "Reject",
+        "archive": "Archive",
+        "publish": "Publish",
+        "translate": "AI translation",
+        "confirm": "Confirm read"
+      },
+      "pageInfo": "Page {page}, {count} records",
+      "prevPage": "Previous",
+      "nextPage": "Next"
+    },
+    "bonusMgmt": {
+      "fillRequired": "Please fill in the employee, type, and amount",
+      "created": "Bonus record created",
+      "deleted": "Bonus record deleted",
+      "yearLabel": "{y}",
+      "monthLabel": "Month {m}",
+      "deleteBonusAria": "Delete bonus record",
+      "selectEmployee": "Select employee",
+      "selectType": "Select type",
+      "optionalPlaceholder": "Optional"
+    },
+    "companiesMgmt": {
+      "addCompany": "Add Company",
+      "editCompany": "Edit Company",
+      "companyName": "Company Name",
+      "aliases": "Aliases",
+      "aliasesLabel": "Aliases (comma-separated, optional)",
+      "aliasesPlaceholder": "e.g. CancerFree, CF Biotech",
+      "saveFailed": "Failed to save",
+      "companyUpdated": "Company updated",
+      "companyCreated": "Company created"
+    },
+    "departmentsMgmt": {
+      "addDepartment": "Add Department",
+      "editDepartment": "Edit Department",
+      "codeHeader": "Code",
+      "nameLabel": "Department Name",
+      "codeLabel": "Code (uppercase letters)",
+      "saveFailed": "Failed to save",
+      "updated": "Department updated",
+      "created": "Department created"
+    },
+    "feedbackAdmin": {
+      "allStatuses": "All statuses",
+      "allTypes": "All types",
+      "countLabel": "{count} items",
+      "noRecords": "No feedback records",
+      "hasScreenshot": "Has screenshot",
+      "screenshot": "Screenshot",
+      "statusUpdated": "Status updated",
+      "types": {
+        "feature": "New feature",
+        "bug": "Bug",
+        "improvement": "Improvement",
+        "other": "Other"
+      }
+    },
+    "insuranceMgmt": {
+      "emptySpreadsheet": "The spreadsheet is empty. Please check the file contents.",
+      "fieldGrade": "Grade",
+      "fieldInsuredSalary": "Insured Salary",
+      "fieldEmployeeShare": "Employee Share",
+      "fieldEmployerShare": "Employer Share",
+      "listSeparator": ", ",
+      "missingColumns": "Missing required columns: {fields}",
+      "missingDependentsColumn": "Health insurance requires an \"Employee Dependents\" column",
+      "parseFailed": "Unable to parse the file. Please make sure it is a valid Excel / CSV file.",
+      "uploadFailed": "Upload failed: {error}",
+      "unknownError": "Unknown error",
+      "uploadSuccess": "Successfully uploaded {count} {label} bracket rows ({year})",
+      "networkError": "Network error. Please try again later.",
+      "dropZoneAria": "Click or drag and drop to upload an Excel file",
+      "dropZoneTitle": "Click or drag and drop to upload",
+      "supportedFormats": "Supports .xlsx / .xls / .csv",
+      "uploadFileAria": "Upload {label} rate table file",
+      "clearErrorAria": "Clear error and retry",
+      "parsedRowCount": "Parsing complete — <num>{count}</num> rows found",
+      "reselectFileAria": "Choose a different file",
+      "reselect": "Choose again",
+      "moreRows": "...and {count} more rows",
+      "confirmUploadAria": "Confirm upload of {year} {label} rate table",
+      "uploading": "Uploading...",
+      "confirmUploadButton": "Confirm upload — {year} {label}",
+      "noYearData": "No {label} rate data for {year} yet",
+      "uploadHint": "Upload an Excel file to import rates",
+      "yearOption": "{y}",
+      "refreshAria": "Refresh rate data",
+      "rateTableTitle": "{label} Rate Table — {year}"
+    },
+    "leaveBalancesMgmt": {
+      "allEmployees": "All employees",
+      "yearLabel": "Year {y}",
+      "employee": "Employee",
+      "appliesAll": "All",
+      "fullTime": "Full-time",
+      "intern": "Intern",
+      "saveShort": "Save"
+    },
+    "leaveBalancesPage": {
+      "description": "Employee leave quotas for {year}"
+    },
+    "leaveTypesMgmt": {
+      "addLeaveType": "Add Leave Type",
+      "editLeaveType": "Edit Leave Type",
+      "nameLabel": "Leave Type Name",
+      "appliesToLabel": "Applies To",
+      "payHeader": "Pay",
+      "maxPerYearHeader": "Annual Limit",
+      "advanceDaysHeader": "Advance Days",
+      "payRateCalcLabel": "Pay Calculation",
+      "maxPerYearFieldLabel": "Annual limit (days, blank = no limit)",
+      "advanceFieldLabel": "Advance notice required (days)",
+      "enableLabel": "Enable this leave type",
+      "noLimit": "No limit",
+      "daysCount": "{d} days",
+      "nameRequired": "Please enter a leave type name",
+      "updated": "Leave type updated",
+      "created": "Leave type created",
+      "appliesToAll": "All Employees",
+      "appliesToFullTime": "Full-time",
+      "appliesToIntern": "Interns",
+      "payRateFull": "Full Pay",
+      "payRateHalf": "Half Pay",
+      "payRateNone": "Unpaid"
+    },
+    "overtimeRatesMgmt": {
+      "types": {
+        "weekday": "Weekday Overtime",
+        "weekend": "Weekend Overtime",
+        "holiday": "Public Holiday Overtime",
+        "project": "Project Overtime",
+        "on_call": "On-Call",
+        "emergency": "Emergency Overtime"
+      },
+      "headers": {
+        "type": "Overtime Type",
+        "multiplier": "Rate Multiplier",
+        "active": "Active"
+      },
+      "enabled": "Active",
+      "disabled": "Inactive",
+      "updateSuccess": "Rate updated",
+      "multiplierHint": "Rate multiplier = hourly wage × multiplier, e.g. 1.33 = 1.33x"
+    },
+    "payrollAnomalies": {
+      "scanCompleteNoAnomalies": "Scan complete — no anomalies found in {count} records",
+      "foundAnomalies": "Found {count} anomalous records",
+      "scanFailed": "Scan failed",
+      "scannedCount": "Scanned: <strong>{count}</strong> records",
+      "flaggedCount": "Flagged: <strong>{count}</strong> records",
+      "colEmployee": "Employee",
+      "colNetPay": "Net Pay",
+      "colFlags": "Anomaly Items",
+      "emptyPrompt": "Select a year and month, then run the anomaly scan"
+    },
+    "userProfileAdmin": {
+      "profileSaved": "HR profile saved"
+    },
+    "usersTable": {
+      "name": "Name"
     }
   },
   "tooltips": {

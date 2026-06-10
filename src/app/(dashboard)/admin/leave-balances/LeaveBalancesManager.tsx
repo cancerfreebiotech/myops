@@ -19,6 +19,7 @@ interface Props {
 export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOnly }: Props) {
   const router = useRouter()
   const t = useTranslations('common')
+  const tm = useTranslations('admin.leaveBalancesMgmt')
   const [filterUser, setFilterUser] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
   const [edits, setEdits] = useState<Record<string, number>>({})
@@ -50,26 +51,26 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
     router.refresh()
   }
 
-  const APPLIES_LABELS: Record<string, string> = { all: '全員', full_time: '正職', intern: '實習' }
+  const APPLIES_LABELS: Record<string, string> = { all: tm('appliesAll'), full_time: tm('fullTime'), intern: tm('intern') }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <Select value={filterUser} onValueChange={v => setFilterUser(v ?? '')}>
-          <SelectTrigger className="w-52"><SelectValue placeholder="所有員工" /></SelectTrigger>
+          <SelectTrigger className="w-52"><SelectValue placeholder={tm('allEmployees')} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">所有員工</SelectItem>
+            <SelectItem value="">{tm('allEmployees')}</SelectItem>
             {users.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <span className="text-sm text-slate-400">{year} 年度</span>
+        <span className="text-sm text-slate-400">{tm('yearLabel', { y: year })}</span>
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800">員工</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 sticky left-0 bg-slate-50 dark:bg-slate-800">{tm('employee')}</th>
               {leaveTypes.map(lt => (
                 <th key={lt.id} className="text-center px-3 py-3 font-medium text-slate-600 dark:text-slate-400 min-w-[90px]">
                   <div>{lt.name}</div>
@@ -83,7 +84,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
               <tr key={u.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <td className="px-4 py-2 sticky left-0 bg-white dark:bg-slate-800">
                   <p className="font-medium text-slate-800 dark:text-slate-200">{u.display_name}</p>
-                  <p className="text-xs text-slate-400">{u.department?.name} · {u.employment_type === 'full_time' ? '正職' : '實習'}</p>
+                  <p className="text-xs text-slate-400">{u.department?.name} · {u.employment_type === 'full_time' ? tm('fullTime') : tm('intern')}</p>
                 </td>
                 {leaveTypes.map(lt => {
                   const key = `${u.id}_${lt.id}`
@@ -109,7 +110,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
                           />
                           {changed && (
                             <Button size="sm" className="h-8 px-2 text-xs" onClick={() => handleSave(u.id, lt.id)} disabled={saving === key}>
-                              {saving === key ? '...' : '存'}
+                              {saving === key ? '...' : tm('saveShort')}
                             </Button>
                           )}
                         </div>

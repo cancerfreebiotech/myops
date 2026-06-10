@@ -22,6 +22,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
   const router = useRouter()
   const t = useTranslations('admin.bonuses')
   const tc = useTranslations('common')
+  const tm = useTranslations('admin.bonusMgmt')
 
   const BONUS_TYPES: Record<string, string> = {
     year_end: t('types.year_end'),
@@ -62,7 +63,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
 
   const handleCreate = async () => {
     if (!selUser || !bonusType || !amount) {
-      toast.error('請填寫員工、類型與金額')
+      toast.error(tm('fillRequired'))
       return
     }
     setLoading(true)
@@ -81,7 +82,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
     const json = await res.json()
     setLoading(false)
     if (json.error) { toast.error(json.error); return }
-    toast.success('獎金紀錄已建立')
+    toast.success(tm('created'))
     setCreateOpen(false)
     setSelUser('')
     setBonusType('')
@@ -96,7 +97,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
     const res = await fetch(`/api/admin/bonuses/${deleteId}`, { method: 'DELETE' })
     const json = await res.json()
     if (json.error) { toast.error(json.error); return }
-    toast.success('獎金紀錄已刪除')
+    toast.success(tm('deleted'))
     setDeleteId(null)
     await fetchBonuses(year)
   }
@@ -115,7 +116,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
             className="h-9 rounded-md border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-sm text-slate-700 dark:text-slate-300 cursor-pointer"
           >
             {Array.from({ length: 5 }, (_, i) => currentYear - 2 + i).map(y => (
-              <option key={y} value={y}>{y} 年</option>
+              <option key={y} value={y}>{tm('yearLabel', { y })}</option>
             ))}
           </select>
         </div>
@@ -157,7 +158,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                           {u?.display_name ?? '—'}
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                          {b.month ? `${b.month} 月` : '—'}
+                          {b.month ? tm('monthLabel', { m: b.month }) : '—'}
                         </td>
                         <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                           {BONUS_TYPES[b.type] ?? b.type}
@@ -172,7 +173,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                           <td className="px-4 py-3">
                             <button
                               onClick={() => setDeleteId(b.id)}
-                              aria-label="刪除獎金紀錄"
+                              aria-label={tm('deleteBonusAria')}
                               className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                             >
                               <Trash2 size={15} />
@@ -208,7 +209,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                 {t('employee')} <span className="text-red-500">*</span>
               </label>
               <Select value={selUser} onValueChange={v => setSelUser(v ?? '')}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="選擇員工" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={tm('selectEmployee')} /></SelectTrigger>
                 <SelectContent>
                   {allUsers.map((u: any) => (
                     <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>
@@ -222,7 +223,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                   {t('type')} <span className="text-red-500">*</span>
                 </label>
                 <Select value={bonusType} onValueChange={v => setBonusType(v ?? '')}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="選擇類型" /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={tm('selectType')} /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(BONUS_TYPES).map(([k, v]) => (
                       <SelectItem key={k} value={k}>{v}</SelectItem>
@@ -238,7 +239,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                   max={12}
                   value={month}
                   onChange={e => setMonth(e.target.value)}
-                  placeholder="可選"
+                  placeholder={tm('optionalPlaceholder')}
                   className="mt-1"
                 />
               </div>

@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ContractDetail } from './ContractDetail'
 
@@ -7,6 +8,7 @@ const CONTRACT_DOC_TYPES = ['NDA', 'MOU', 'CONTRACT', 'AMEND']
 
 export default async function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const t = await getTranslations('contracts')
   const supabase = await createClient()
   const service = await createServiceClient()
 
@@ -72,7 +74,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     <div>
       <PageHeader
         title={doc.title}
-        description={`合約詳情 · ${doc.company?.name ?? ''}`}
+        description={`${t('detail')} · ${doc.company?.name ?? ''}`}
       />
       <ContractDetail
         doc={doc}

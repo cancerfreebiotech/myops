@@ -86,6 +86,7 @@ export function CalendarClient({
 }: Props) {
   const t = useTranslations('leave.calendarView')
   const tc = useTranslations('common')
+  const tx = useTranslations('leave.calendarExtra')
 
   const WEEK_LABELS: string[] = [t('weekDays.0'), t('weekDays.1'), t('weekDays.2'), t('weekDays.3'), t('weekDays.4'), t('weekDays.5'), t('weekDays.6')]
 
@@ -311,7 +312,7 @@ export function CalendarClient({
           </button>
 
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 font-[Lexend]">
-            {format(currentMonth, 'yyyy 年 M 月')}
+            {tx('yearMonthTitle', { y: currentMonth.getFullYear(), m: currentMonth.getMonth() + 1 })}
           </h2>
 
           <button
@@ -478,10 +479,10 @@ export function CalendarClient({
                 {/* Date group header */}
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700">
                   <span className="text-sm font-semibold text-violet-700 dark:text-violet-400">
-                    {format(day, 'M 月 d 日')}
+                    {tx('monthDayLabel', { m: day.getMonth() + 1, d: day.getDate() })}
                   </span>
                   <span className="text-xs text-slate-400 dark:text-slate-500">
-                    （{WEEK_LABELS[getDay(day)]}）
+                    {tx('weekdayParen', { w: WEEK_LABELS[getDay(day)] })}
                   </span>
                   <span className="ml-auto text-xs text-slate-500 dark:text-slate-400">
                     {leaves.length} {t('peopleOnLeave')}
@@ -534,7 +535,7 @@ export function CalendarClient({
                           <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                             {leave.start_date === leave.end_date
                               ? leave.start_date
-                              : `${leave.start_date} ～ ${leave.end_date}`}
+                              : tx('dateRange', { start: leave.start_date, end: leave.end_date })}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                             {leaveDuration(leave.start_date, leave.end_date)}

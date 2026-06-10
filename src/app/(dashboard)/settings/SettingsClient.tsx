@@ -19,6 +19,7 @@ export function SettingsClient({ profile }: { profile: any }) {
   const [loading, setLoading] = useState(false)
   const t = useTranslations('settings')
   const tc = useTranslations('common')
+  const tx = useTranslations('settings.clientExtra')
 
   const handleSave = async () => {
     if (!displayName.trim()) { toast.error(t('displayNameRequired')); return }
@@ -126,9 +127,9 @@ export function SettingsClient({ profile }: { profile: any }) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="zh-TW">繁體中文</SelectItem>
-            <SelectItem value="en">English</SelectItem>
-            <SelectItem value="ja">日本語</SelectItem>
+            <SelectItem value="zh-TW">{tx('languageZhTw')}</SelectItem>
+            <SelectItem value="en">{tx('languageEn')}</SelectItem>
+            <SelectItem value="ja">{tx('languageJa')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

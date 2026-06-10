@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.48] - 2026-06-10
+
+### Fixed
+- **i18n 全面補洞**：抽出 22 個元件中約 218 條 hardcode 中文字串，改為 next-intl `t()` 翻譯鍵，zh-TW / en / ja 三語檔同步新增（涵蓋 admin 管理頁表頭、按鈕、placeholder、aria-label、toast 訊息等）
+- **回饋管理截圖**（`/admin/feedback`）：原生 `<img>` 改為 `next/image`（fill + aspect-video 容器，避免 layout shift）
+
+### Added
+- **Footer**：掛載至 dashboard layout，依 PRD 固定格式顯示 `坂本 | v{version} | Deployed: {time}`（讀取 `NEXT_PUBLIC_AUTHOR_NAME` / `NEXT_PUBLIC_APP_VERSION` / `NEXT_PUBLIC_DEPLOY_TIME`）
+
+### Chore
+- 三語訊息檔結構驗證一致（各 995 個 leaf key）；`npm run build` 通過
+
 ## [0.2.47] - 2026-04-10
 
 ### Changed

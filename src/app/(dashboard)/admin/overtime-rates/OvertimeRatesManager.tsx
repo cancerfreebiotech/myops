@@ -8,14 +8,12 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Save } from 'lucide-react'
 
-const OT_TYPE_LABELS: Record<string, string> = {
-  weekday: '平日加班', weekend: '假日加班', holiday: '國定假日加班',
-  project: '專案加班', on_call: '值班', emergency: '緊急加班',
-}
+const OT_TYPE_KEYS = ['weekday', 'weekend', 'holiday', 'project', 'on_call', 'emergency'] as const
 
 export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOnly?: boolean }) {
   const router = useRouter()
-  const t = useTranslations('common')
+  const t = useTranslations('admin.overtimeRatesMgmt')
+  const tc = useTranslations('common')
   const [edits, setEdits] = useState<Record<string, { multiplier: string; is_active: boolean }>>({})
   const [saving, setSaving] = useState<string | null>(null)
 
@@ -36,7 +34,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
     const { error } = await res.json()
     setSaving(null)
     if (error) { toast.error(error); return }
-    toast.success('費率已更新')
+    toast.success(t('updateSuccess'))
     const { [id]: _, ...rest } = edits
     setEdits(rest)
     router.refresh()
@@ -48,9 +46,9 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">加班類型</th>
-              <th className="text-center px-4 py-3 font-medium text-slate-600 dark:text-slate-400">費率倍數</th>
-              <th className="text-center px-4 py-3 font-medium text-slate-600 dark:text-slate-400">啟用</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.type')}</th>
+              <th className="text-center px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.multiplier')}</th>
+              <th className="text-center px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('headers.active')}</th>
               {!readOnly && <th className="px-4 py-3"></th>}
             </tr>
           </thead>
@@ -60,7 +58,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
               return (
                 <tr key={rate.id} className="bg-white dark:bg-slate-800">
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
-                    {OT_TYPE_LABELS[rate.ot_type] ?? rate.ot_type}
+                    {OT_TYPE_KEYS.includes(rate.ot_type) ? t(`types.${rate.ot_type}`) : rate.ot_type}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {readOnly ? (
@@ -82,7 +80,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
                   </td>
                   <td className="px-4 py-3 text-center">
                     {readOnly ? (
-                      <span className="text-xs text-slate-500">{(getVal(rate, 'is_active') as boolean) ? '啟用' : '停用'}</span>
+                      <span className="text-xs text-slate-500">{(getVal(rate, 'is_active') as boolean) ? t('enabled') : t('disabled')}</span>
                     ) : (
                       <input
                         type="checkbox"
@@ -99,7 +97,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
                     <td className="px-4 py-3">
                       {changed && (
                         <Button size="sm" className="h-8 min-h-0" onClick={() => handleSave(rate.id)} disabled={saving === rate.id}>
-                          <Save size={13} className="mr-1" />{saving === rate.id ? '...' : t('save')}
+                          <Save size={13} className="mr-1" />{saving === rate.id ? '...' : tc('save')}
                         </Button>
                       )}
                     </td>
@@ -110,7 +108,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-400 mt-2">費率倍數 = 時薪 × 倍數，例如 1.33 = 1.33 倍</p>
+      <p className="text-xs text-slate-400 mt-2">{t('multiplierHint')}</p>
     </div>
   )
 }
