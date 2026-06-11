@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { sendProactiveMessages } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 // T49: Monthly payroll auto-generation endpoint
 // Can be called by pg_cron or Supabase Edge Function on the 1st of each month
@@ -55,11 +57,48 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: result.error ?? t('payrollGenerate.generationFailed') }, { status: 500 })
   }
 
+  // T71: notify affected employees via Teams that their payslip is ready.
+  // Notification sending must never break payroll generation — guard everything.
+  let notified = 0
+  let notifyFailed = 0
+  try {
+    if ((result.data?.generated ?? 0) > 0) {
+      const { createServiceClient } = await import('@/lib/supabase/server')
+      const service = await createServiceClient()
+      const { data: records } = await service
+        .from('payroll_records')
+        .select('user_id')
+        .eq('year', year)
+        .eq('month', month)
+      const userIds = Array.from(new Set((records ?? []).map(r => r.user_id)))
+      if (userIds.length > 0) {
+        const { data: recipients } = await service
+          .from('users')
+          .select('id, language')
+          .in('id', userIds)
+        const monthLabel = `${year}-${String(month).padStart(2, '0')}`
+        // Build each message in the recipient's language (not the request cookie locale).
+        // teamsText uses createTranslator — getTranslations({ locale }) is ignored by
+        // src/i18n/request.ts and would fall back to the request cookie locale.
+        const messages = (recipients ?? []).map(u => ({
+          userId: u.id,
+          text: teamsText(u.language, 'payslipReady', { month: monthLabel }),
+        }))
+        // sendProactiveMessages never throws (per-item error isolation in the lib)
+        ;({ sent: notified, failed: notifyFailed } = await sendProactiveMessages(messages))
+      }
+    }
+  } catch (e) {
+    console.error('[payroll generate-monthly] Teams notification error:', e)
+  }
+
   return NextResponse.json({
     data: {
       ...result.data,
       year,
       month,
+      notified,
+      notifyFailed,
       message: t('payrollGenerate.draftGenerated', { year, month }),
     },
   })

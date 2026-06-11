@@ -1,6 +1,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { sendProactiveMessages } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 // T55: Teams Bot daily digest — called by cron at 08:30
 // Sends a summary of pending items to each user via Teams
@@ -29,17 +31,10 @@ export async function POST(request: NextRequest) {
     .select('id, display_name, email, language, role, granted_features, manager_id')
     .eq('is_active', true)
 
-  if (!users?.length) return NextResponse.json({ data: { sent: 0 } })
+  if (!users?.length) return NextResponse.json({ data: { sent: 0, failed: 0, total: 0 } })
 
-  const botAppId = process.env.TEAMS_BOT_APP_ID
-  const botAppSecret = process.env.TEAMS_BOT_APP_SECRET
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ops.cancerfree.io'
-
-  if (!botAppId || !botAppSecret) {
-    return NextResponse.json({ error: t('teamsDailyDigest.botNotConfigured') }, { status: 500 })
-  }
-
-  let sent = 0
+  // teams-bot lib handles missing TEAMS_BOT_APP_ID/SECRET itself (logs + returns false per message)
+  const messages: { userId: string; text: string }[] = []
 
   for (const u of users) {
     // Get pending items scoped to this user's responsibilities
@@ -86,20 +81,31 @@ export async function POST(request: NextRequest) {
 
     if (totalPending === 0) continue
 
-    // Build message
+    // Build message in the recipient's language (not the request cookie locale).
+    // teamsText uses createTranslator — getTranslations({ locale }) is ignored by
+    // src/i18n/request.ts and would fall back to the request cookie locale.
     const lines: string[] = []
-    lines.push(`📋 ${u.display_name}，你今天有 ${totalPending} 件待處理：`)
-    if (pendingLeaves > 0) lines.push(`  ⏰ ${pendingLeaves} 筆請假待審核`)
-    if (pendingContracts > 0) lines.push(`  📄 ${pendingContracts} 份合約待審核`)
-    lines.push(`👉 前往 myOPS 處理：${appUrl}`)
+    lines.push(teamsText(u.language, 'digestHeader', { name: u.display_name, count: totalPending }))
+    if (pendingLeaves > 0) lines.push(teamsText(u.language, 'digestLeaves', { count: pendingLeaves }))
+    if (pendingContracts > 0) lines.push(teamsText(u.language, 'digestContracts', { count: pendingContracts }))
+    if (unconfirmedAnnouncements > 0) lines.push(teamsText(u.language, 'digestAnnouncements', { count: unconfirmedAnnouncements }))
+    lines.push(teamsText(u.language, 'digestFooter'))
 
-    // TODO: Send via Teams Bot Framework
-    // For now, log the message (Teams Bot integration requires Bot Framework SDK)
-    console.log(`[Teams Digest] ${u.email}: ${lines.join('\n')}`)
-    sent++
+    messages.push({ userId: u.id, text: lines.join('\n') })
   }
 
-  return NextResponse.json({ data: { sent, total: users.length } })
+  // sendProactiveMessages never throws (per-item error isolation in the lib),
+  // but guard anyway so notification sending can never 500 the cron run
+  let sent = 0
+  let failed = 0
+  try {
+    ;({ sent, failed } = await sendProactiveMessages(messages))
+  } catch (e) {
+    console.error('[Teams Digest] batch send error:', e)
+    failed = messages.length - sent
+  }
+
+  return NextResponse.json({ data: { sent, failed, total: messages.length } })
 }
 
 // Vercel Cron invokes via GET

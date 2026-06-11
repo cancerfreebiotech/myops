@@ -1216,5 +1216,18 @@
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot が設定されていません"
     }
+  },
+  "teamsMessages": {
+    "digestHeader": "📋 {name}さん、本日の未処理は {count} 件です：",
+    "digestLeaves": "  ⏰ 休暇申請の承認待ち {count} 件",
+    "digestContracts": "  📄 契約書の承認待ち {count} 件",
+    "digestAnnouncements": "  📣 未確認のお知らせ {count} 件",
+    "digestFooter": "👉 myOPS はこちら：https://ops.cancerfree.io",
+    "clockIn": "⏰ 出勤打刻をお忘れなく！👉 https://ops.cancerfree.io/attendance",
+    "clockOut": "🏠 お疲れさまです。退勤打刻をお忘れなく！👉 https://ops.cancerfree.io/attendance",
+    "leaveApproved": "✅ 休暇申請（{date}）が承認されました",
+    "leaveRejected": "❌ 休暇申請（{date}）が却下されました：{reason}",
+    "payslipReady": "💰 {month} の給与明細が発行されました。myOPS でご確認ください",
+    "newAnnouncement": "📢 新しいお知らせ：{title}。myOPS で内容を確認のうえ、確認ボタンを押してください"
   }
 }

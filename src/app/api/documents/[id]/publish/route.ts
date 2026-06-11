@@ -1,5 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendProactiveMessages } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -34,6 +36,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }))
     const { error: recipientsError } = await service.from('document_recipients').insert(inserts)
     if (recipientsError) return NextResponse.json({ error: recipientsError.message }, { status: 400 })
+
+    // T72: notify recipients who must read-and-confirm via Teams, in their own language.
+    // Best-effort only — must never affect the publish response.
+    if (requires_confirmation ?? true) {
+      try {
+        const [{ data: doc }, { data: recipients }] = await Promise.all([
+          service.from('documents').select('title').eq('id', id).single(),
+          service.from('users').select('id, language').in('id', recipient_user_ids),
+        ])
+        const title = doc?.title ?? ''
+        const messages = (recipients ?? []).map((u) => ({
+          userId: u.id,
+          text: teamsText(u.language, 'newAnnouncement', { title }),
+        }))
+        if (messages.length) await sendProactiveMessages(messages)
+      } catch (e) {
+        console.error('T72: failed to send Teams announcement notifications', e)
+      }
+    }
   }
 
   await service.from('audit_logs').insert({

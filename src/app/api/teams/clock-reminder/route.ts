@@ -1,4 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { sendProactiveMessage } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 import { NextRequest, NextResponse } from 'next/server'
 
 // T57: Teams Bot clock reminder
@@ -20,12 +22,11 @@ function checkCronAuth(request: NextRequest): NextResponse | null {
 async function runReminder(reminderType: string) {
   const service = await createServiceClient()
   const today = new Date().toISOString().split('T')[0]
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ops.cancerfree.io'
 
   // Get all active users
   const { data: users } = await service
     .from('users')
-    .select('id, display_name, email, employment_type')
+    .select('id, display_name, email, employment_type, language')
     .eq('is_active', true)
 
   if (!users?.length) return NextResponse.json({ data: { sent: 0 } })
@@ -43,14 +44,23 @@ async function runReminder(reminderType: string) {
   for (const u of users) {
     const record = attendanceMap.get(u.id)
 
+    let messageKey: 'clockIn' | 'clockOut' | null = null
     if (reminderType === 'clock_in' && !record?.clock_in) {
       // User hasn't clocked in yet
-      console.log(`[Clock Reminder] ${u.email}: 請記得打上班卡 👉 ${appUrl}/attendance`)
-      sent++
+      messageKey = 'clockIn'
     } else if (reminderType === 'clock_out' && record?.clock_in && !record?.clock_out) {
       // User clocked in but hasn't clocked out
-      console.log(`[Clock Reminder] ${u.email}: 請記得打下班卡 👉 ${appUrl}/attendance`)
-      sent++
+      messageKey = 'clockOut'
+    }
+    if (!messageKey) continue
+
+    // Never let notification failures break the cron run.
+    // teamsText builds the message in the recipient's language — getTranslations({ locale })
+    // is ignored by src/i18n/request.ts and would use the request cookie locale.
+    try {
+      if (await sendProactiveMessage(u.id, teamsText(u.language, messageKey))) sent++
+    } catch (err) {
+      console.error(`[Clock Reminder] failed for ${u.email}:`, err)
     }
   }
 

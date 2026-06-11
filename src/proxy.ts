@@ -34,7 +34,8 @@ export default async function proxy(request: NextRequest) {
 
   // Cron endpoints — Vercel Cron has no session cookie; these routes enforce
   // their own fail-closed CRON_SECRET bearer check internally
-  const cronRoutes = ['/api/teams/clock-reminder', '/api/teams/daily-digest', '/api/teams/notify']
+  // /api/teams/bot enforces its own Bot Framework JWT validation internally
+  const cronRoutes = ['/api/teams/clock-reminder', '/api/teams/daily-digest', '/api/teams/notify', '/api/teams/bot']
   if (cronRoutes.some(r => pathname.startsWith(r))) {
     return supabaseResponse
   }

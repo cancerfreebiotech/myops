@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-06-11
+
+### Added
+- **Teams Bot 整合（PRD T63–T72）**：提醒與通知正式接上 Microsoft Teams
+  - `src/lib/teams-bot.ts`：Bot Framework token 快取與 proactive messaging（無 conversation reference 安靜跳過，發送失敗不影響主流程）
+  - `/api/teams/bot` webhook：驗證 Bot Framework JWT（jose），`conversationUpdate` 時以成員 email 對應使用者並儲存 conversation reference
+  - 接線完成：每日待辦摘要（T67）、上下班打卡提醒（T68）、即時通知（T69）、請假審核結果（T70）、薪資單發出（T71）、公告發布（T72）
+  - 訊息依**收件人**的 `users.language` 三語發送（新增 `teamsMessages` 命名空間）
+  - `teams_conversation_references` migration 與 `docs/teams-bot-setup.md`（Azure Bot 設定手冊）
+
 ## [0.3.0] - 2026-06-11
 
 ### Fixed

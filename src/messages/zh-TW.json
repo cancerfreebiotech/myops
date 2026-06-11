@@ -1216,5 +1216,18 @@
     "teamsDailyDigest": {
       "botNotConfigured": "尚未設定 Teams Bot"
     }
+  },
+  "teamsMessages": {
+    "digestHeader": "📋 {name}，你今天有 {count} 件待處理：",
+    "digestLeaves": "  ⏰ {count} 筆請假待審核",
+    "digestContracts": "  📄 {count} 份合約待審核",
+    "digestAnnouncements": "  📣 {count} 則公告未確認",
+    "digestFooter": "👉 前往 myOPS：https://ops.cancerfree.io",
+    "clockIn": "⏰ 別忘了打上班卡！👉 https://ops.cancerfree.io/attendance",
+    "clockOut": "🏠 下班了，記得打下班卡！👉 https://ops.cancerfree.io/attendance",
+    "leaveApproved": "✅ 你的請假申請（{date}）已通過審核",
+    "leaveRejected": "❌ 你的請假申請（{date}）已被拒絕：{reason}",
+    "payslipReady": "💰 {month} 薪資單已發出，請至 myOPS 查看",
+    "newAnnouncement": "📢 新公告：{title}，請至 myOPS 閱讀並確認"
   }
 }

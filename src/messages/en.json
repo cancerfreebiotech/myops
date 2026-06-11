@@ -1216,5 +1216,18 @@
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot not configured"
     }
+  },
+  "teamsMessages": {
+    "digestHeader": "📋 {name}, you have {count} pending items today:",
+    "digestLeaves": "  ⏰ {count} leave requests awaiting review",
+    "digestContracts": "  📄 {count} contracts awaiting review",
+    "digestAnnouncements": "  📣 {count} announcements unconfirmed",
+    "digestFooter": "👉 Go to myOPS: https://ops.cancerfree.io",
+    "clockIn": "⏰ Don't forget to clock in! 👉 https://ops.cancerfree.io/attendance",
+    "clockOut": "🏠 Time to head home — remember to clock out! 👉 https://ops.cancerfree.io/attendance",
+    "leaveApproved": "✅ Your leave request ({date}) has been approved",
+    "leaveRejected": "❌ Your leave request ({date}) was rejected: {reason}",
+    "payslipReady": "💰 Your payslip for {month} is ready — view it on myOPS",
+    "newAnnouncement": "📢 New announcement: {title} — please read and confirm on myOPS"
   }
 }
