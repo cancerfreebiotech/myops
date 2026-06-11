@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
-  Users, Building2, BookOpen,
+  Users, Building2, BookOpen, ShoppingCart,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -120,6 +120,10 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('projects') && { href: '/projects', label: t('projects'), icon: FolderKanban },
   ].filter(Boolean) as NavItem[]
 
+  const procurementItems: NavItem[] = [
+    show('procurement') && { href: '/procurement', label: t('procurement'), icon: ShoppingCart },
+  ].filter(Boolean) as NavItem[]
+
   const adminItems: NavItem[] = isAdmin ? [
     { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
     { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
@@ -186,6 +190,15 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
           <>
             <SectionHeader label={t('projects')} collapsed={collapsed} />
             {projectItems.map(item => (
+              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
+            ))}
+          </>
+        )}
+
+        {procurementItems.length > 0 && (
+          <>
+            <SectionHeader label={t('procurement')} collapsed={collapsed} />
+            {procurementItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
           </>

@@ -1,6 +1,6 @@
 export type Role = 'member' | 'admin'
 
-export type JobRole = 'member' | 'hr_manager' | 'finance' | 'coo'
+export type JobRole = 'member' | 'hr_manager' | 'finance' | 'coo' | 'ceo'
 
 export type EmploymentType = 'full_time' | 'intern'
 
@@ -19,6 +19,9 @@ export type FeatureKey =
   | 'bonuses_manage'
   | 'reports_view'
   | 'feedback_admin'
+  | 'procurement_unit'
+  | 'procurement_manage'
+  | 'procurement_payment_approve'
 
 export interface User {
   id: string

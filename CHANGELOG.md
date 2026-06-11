@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.3] - 2026-06-12
+
+### Added
+- **採購模組 Phase A（地基，feature flag 預設關閉）**：自 Ragic 採購系統 migrate 的第一階段
+  - 資料庫：21 張新表（廠商/商品/廠商報價主檔、倉庫/批號庫存、庫存分類帳 `stock_movements`、10 種單據骨架、簽核步驟表），已套用至 prod，RLS 全啟用
+  - 單據自動編號：`next_doc_no()`（前綴-年月-流水，並發安全），BEFORE INSERT trigger 自動產號
+  - **多關卡簽核引擎**：10 條簽核鏈（角色制：部門主管/COO/CEO/會計），簽核人支援角色/直屬主管/單據欄位動態/任意確認四型；核准拒絕沿用 MFA（AAL2）閘 + 審計日誌 + Teams 通知；過簽自動執行登錄（廠商評估→廠商清冊、商品評估→廠商商品價格）
+  - 商品主檔導入**雙單位制**（採購單位/庫存單位/換算率），解決報價以箱、出庫以瓶的單位不一致問題
+  - 頁面：採購總覽（我的待簽收件匣）、廠商主檔、商品主檔、廠商/商品審核評估（含簽核時間軸）
+  - 權限：新增 `ceo` 職務角色與 `procurement_unit` / `procurement_manage` / `procurement_payment_approve` 三個特殊權限
+  - i18n：`procurement` 命名空間 256 個 key 三語同步
+- 後續：Phase B（詢價→採購→進貨→出入庫單據鏈、條碼掃描、作廢重開、出入庫分類帳頁）、Phase C（Ragic 歷史資料匯入）完成後開啟功能
+
 ## [0.3.2] - 2026-06-11
 
 ### Docs

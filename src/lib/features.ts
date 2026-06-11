@@ -13,6 +13,9 @@ export const FEATURE_KEYS = [
   'bonuses_manage',
   'reports_view',
   'feedback_admin',
+  'procurement_unit',
+  'procurement_manage',
+  'procurement_payment_approve',
 ] as const
 
 export type FeatureKey = typeof FEATURE_KEYS[number]

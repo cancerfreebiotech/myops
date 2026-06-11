@@ -15,7 +15,7 @@ import type { User } from '@/types'
 const schema = z.object({
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
-  job_role: z.enum(['member', 'hr_manager', 'finance', 'coo']),
+  job_role: z.enum(['member', 'hr_manager', 'finance', 'coo', 'ceo']),
   employment_type: z.enum(['full_time', 'intern']),
   work_region: z.enum(['TW', 'JP', 'US', 'OTHER']),
   manager_id: z.string().nullable(),
@@ -50,6 +50,7 @@ export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: 
     hr_manager: t('jobRoleHR'),
     finance: t('jobRoleFinance'),
     coo: t('jobRoleCOO'),
+    ceo: t('jobRoleCEO'),
   }
 
   const EMPLOYMENT_LABELS: Record<string, string> = {
