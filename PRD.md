@@ -1,8 +1,15 @@
 # PRD：myOPS — 精拓生技營運管理系統
 
-> version: v0.3.1 | updated: 2026-06-11
+> version: v0.3.2 | updated: 2026-06-11
 
 > 供 Claude Code 使用。請先閱讀完整 PRD，理解需求後提出技術架構與任務拆分計畫，確認後再開始實作。
+
+## 現況說明
+
+- 系統已上線於 `ops.cancerfree.io`（目前版本 v0.3.1）。
+- 主要模組均已實作：出勤打卡（GPS / 補打卡 / 異常）、請假（簽核 / 日曆 / Outlook 同步）、加班（一般 / 專案）、薪資結算（HR → 財務 → 營運長）與獎金、專案管理、文件 / 合約、公告（AI 三語翻譯 + 2FA 確認）、回饋系統、admin 各管理頁、MFA、i18n 三語、深色模式、平板 Drawer。
+- Teams Bot（每日彙整、打卡提醒、即時通知）程式與排程已就緒，待 Azure Bot 註冊設定（見 `docs/teams-bot-setup.md`）。
+- 使用說明文件參見 `docs/generated/`。
 
 ---
 
@@ -1230,86 +1237,88 @@ Pre-release：`alpha` → `beta` → `rc` → 正式版
 
 ## 十三、開發任務清單（v0.1）
 
+> 任務狀態最後核對: 2026-06-11（v0.3.1）— 由程式碼逐項驗證
+
 ### Phase 1：基礎建設（必須先完成）
 
-- [ ] **Task 1** `[新增]` — 初始化 Next.js 14 專案，設定 TypeScript、Tailwind、ESLint、next-intl、shadcn/ui
-- [ ] **Task 2** `[新增]` — Supabase 專案設定：建立所有資料表（ORG + DMS + HR）、RLS 政策、Storage bucket
-- [ ] **Task 3** `[新增]` — Microsoft AAD OAuth 登入（沿用 myCRM 相同設定）
-- [ ] **Task 4** `[新增]` — MFA 強制設定（`/mfa/setup`、`/mfa/verify`、middleware AAL 檢查、簽核 session 寬限期）
-- [ ] **Task 5** `[新增]` — Layout、Sidebar、主題切換（dark/light）、i18n 三語架構、Footer
-- [ ] **Task 6** `[新增]` — 使用者管理頁（`/admin/users`）：部門、角色、granted_features、manager_id、deputy_approver_id
-- [ ] **Task 7** `[新增]` — 員工人事資料管理（`user_profiles`）：到職日、銀行帳戶、勞退自提等
-- [ ] **Task 8** `[新增]` — 部門管理頁（`/admin/departments`）
-- [ ] **Task 9** `[新增]` — 公司主檔頁（`/admin/companies`）：新增、編輯、別名管理
+- [x] **Task 1** `[新增]` — 初始化 Next.js 14 專案，設定 TypeScript、Tailwind、ESLint、next-intl、shadcn/ui
+- [x] **Task 2** `[新增]` — Supabase 專案設定：建立所有資料表（ORG + DMS + HR）、RLS 政策、Storage bucket
+- [x] **Task 3** `[新增]` — Microsoft AAD OAuth 登入（沿用 myCRM 相同設定）
+- [x] **Task 4** `[新增]` — MFA 強制設定（`/mfa/setup`、`/mfa/verify`、middleware AAL 檢查、簽核 session 寬限期）
+- [x] **Task 5** `[新增]` — Layout、Sidebar、主題切換（dark/light）、i18n 三語架構、Footer
+- [x] **Task 6** `[新增]` — 使用者管理頁（`/admin/users`）：部門、角色、granted_features、manager_id、deputy_approver_id
+- [x] **Task 7** `[新增]` — 員工人事資料管理（`user_profiles`）：到職日、銀行帳戶、勞退自提等
+- [x] **Task 8** `[新增]` — 部門管理頁（`/admin/departments`）
+- [x] **Task 9** `[新增]` — 公司主檔頁（`/admin/companies`）：新增、編輯、別名管理
 
 ### Phase 2：文件管理核心（DMS）
 
-- [ ] **Task 10** `[新增]` — 文件上傳（Presigned URL 直傳）+ 建立 DB 記錄
-- [ ] **Task 11** `[新增]` — 文件列表頁（搜尋、篩選、分類）
-- [ ] **Task 12** `[新增]` — 合約上傳流程：填寫到期日、負責人、關聯公司；同公司文件提示關聯
-- [ ] **Task 13** `[新增]` — 合約審核流程：主管審核（依簽核鏈）、通過/退回通知、通知營運長
-- [ ] **Task 14** `[新增]` — 合約列表：負責人狀態篩選 + 到期篩選
-- [ ] **Task 15** `[新增]` — 公告發布流程：填寫標題/內文（選語言）、選分類、選確認對象、設提醒頻率、入庫通知
-- [ ] **Task 15b** `[新增]` — AI 自動翻譯（`/api/translate`）：呼叫 Gemini、三語預覽、手動修改後確認發布
-- [ ] **Task 16** `[新增]` — 公告確認頁（2FA 驗證 + 確認已讀 + 記錄時間戳記）
-- [ ] **Task 17** `[新增]` — 公告歸檔頁（全員可查看歷史公告 + 自己的確認狀態）
-- [ ] **Task 18** `[新增]` — 公告發布者報表（確認進度、明細、一鍵催人）
-- [ ] **Task 19** `[新增]` — 稽核紀錄（不可刪除，每個操作自動記錄）
+- [x] **Task 10** `[新增]` — 文件上傳（Presigned URL 直傳）+ 建立 DB 記錄
+- [x] **Task 11** `[新增]` — 文件列表頁（搜尋、篩選、分類）
+- [x] **Task 12** `[新增]` — 合約上傳流程：填寫到期日、負責人、關聯公司；同公司文件提示關聯（部分: 到期日 / 關聯公司完成，同公司文件提示關聯未實作）
+- [x] **Task 13** `[新增]` — 合約審核流程：主管審核（依簽核鏈）、通過/退回通知、通知營運長（部分: 審核通過 / 退回 + 稽核紀錄完成，通知營運長未實作）
+- [x] **Task 14** `[新增]` — 合約列表：負責人狀態篩選 + 到期篩選
+- [x] **Task 15** `[新增]` — 公告發布流程：填寫標題/內文（選語言）、選分類、選確認對象、設提醒頻率、入庫通知
+- [x] **Task 15b** `[新增]` — AI 自動翻譯（`/api/translate`）：呼叫 Gemini、三語預覽、手動修改後確認發布（實際端點為 `/api/documents/[id]/translate`）
+- [x] **Task 16** `[新增]` — 公告確認頁（2FA 驗證 + 確認已讀 + 記錄時間戳記）
+- [x] **Task 17** `[新增]` — 公告歸檔頁（全員可查看歷史公告 + 自己的確認狀態）
+- [ ] **Task 18** `[新增]` — 公告發布者報表（確認進度、明細、一鍵催人） ← 未實作
+- [x] **Task 19** `[新增]` — 稽核紀錄（不可刪除，每個操作自動記錄）
 
 ### Phase 3：打卡系統
 
-- [ ] **Task 20** `[新增]` — 打卡頁面（Web + GPS）+ 打卡 API
-- [ ] **Task 21** `[新增]` — 自動打卡排程（Supabase Edge Function）：Full-time 忘打卡自動補
-- [ ] **Task 22** `[新增]` — 打卡紀錄頁（個人 + 部門總覽）
-- [ ] **Task 23** `[新增]` — 補打卡申請 + 主管審核
-- [ ] **Task 24** `[新增]` — 打卡異常 Dashboard（HR 可見）
+- [x] **Task 20** `[新增]` — 打卡頁面（Web + GPS）+ 打卡 API
+- [x] **Task 21** `[新增]` — 自動打卡排程（Supabase Edge Function）：Full-time 忘打卡自動補
+- [x] **Task 22** `[新增]` — 打卡紀錄頁（個人 + 部門總覽）
+- [x] **Task 23** `[新增]` — 補打卡申請 + 主管審核
+- [x] **Task 24** `[新增]` — 打卡異常 Dashboard（HR 可見）
 
 ### Phase 4：請假系統
 
-- [ ] **Task 25** `[新增]` — 假別管理頁（`/admin/leave-types`）：HR 可 CRUD、設定規則
-- [ ] **Task 26** `[新增]` — 員工假別額度管理（HR 依年資設定每人特休等額度）
-- [ ] **Task 27** `[新增]` — 請假申請頁（選假別、日期、代理人、附件）+ 額度 + 提前天數檢查
-- [ ] **Task 28** `[新增]` — 請假簽核流程（依簽核鏈：主管 / HR / CEO 指定人）
-- [ ] **Task 29** `[新增]` — 請假核准後同步 Outlook Calendar（Microsoft Graph API）
-- [ ] **Task 30** `[新增]` — 團隊請假日曆（`/leave/calendar`）
-- [ ] **Task 31** `[新增]` — 請假紀錄 + 取消請假功能
+- [x] **Task 25** `[新增]` — 假別管理頁（`/admin/leave-types`）：HR 可 CRUD、設定規則
+- [x] **Task 26** `[新增]` — 員工假別額度管理（HR 依年資設定每人特休等額度）
+- [x] **Task 27** `[新增]` — 請假申請頁（選假別、日期、代理人、附件）+ 額度 + 提前天數檢查
+- [x] **Task 28** `[新增]` — 請假簽核流程（依簽核鏈：主管 / HR / CEO 指定人）
+- [x] **Task 29** `[新增]` — 請假核准後同步 Outlook Calendar（Microsoft Graph API）
+- [x] **Task 30** `[新增]` — 團隊請假日曆（`/leave/calendar`）
+- [x] **Task 31** `[新增]` — 請假紀錄 + 取消請假功能
 
 ### Phase 5：加班系統
 
-- [ ] **Task 32** `[新增]` — 一般加班申請 + 主管審核（提前 8 小時）
-- [ ] **Task 33** `[新增]` — 加班費率管理（`/admin/overtime-rates`）HR 可調整
-- [ ] **Task 34** `[新增]` — 專案管理（建立專案、指定負責人、管理成員）
-- [ ] **Task 35** `[新增]` — 專案加班填報 + 專案負責人審核 + 營運長超額通知
-- [ ] **Task 36** `[新增]` — 加班紀錄頁（個人 + 管理總覽）
+- [x] **Task 32** `[新增]` — 一般加班申請 + 主管審核（提前 8 小時）
+- [x] **Task 33** `[新增]` — 加班費率管理（`/admin/overtime-rates`）HR 可調整
+- [x] **Task 34** `[新增]` — 專案管理（建立專案、指定負責人、管理成員）
+- [x] **Task 35** `[新增]` — 專案加班填報 + 專案負責人審核 + 營運長超額通知（部分: 專案加班填報與審核完成，營運長超額通知未實作）
+- [x] **Task 36** `[新增]` — 加班紀錄頁（個人 + 管理總覽）
 
 ### Phase 6：薪資結算（TW only）
 
-- [ ] **Task 37** `[新增]` — 勞健保級距表上傳（`/admin/insurance-brackets`）：Excel 上傳、解析、存 DB
-- [ ] **Task 38** `[新增]` — 薪資自動結算引擎：月薪 + 加班費 - 扣款 - 勞健保
-- [ ] **Task 39** `[新增]` — 薪資結算流程頁（`/admin/payroll`）：HR → 財務 → 營運長
-- [ ] **Task 40** `[新增]` — 薪資異常自動標記 + 異常檢查頁
-- [ ] **Task 41** `[新增]` — 員工薪資單頁（`/payroll`）+ 年度 Total Compensation 彙總
-- [ ] **Task 42** `[新增]` — 年終獎金 / 額外獎金管理（HR / 財務手動輸入）
+- [x] **Task 37** `[新增]` — 勞健保級距表上傳（`/admin/insurance-brackets`）：Excel 上傳、解析、存 DB
+- [x] **Task 38** `[新增]` — 薪資自動結算引擎：月薪 + 加班費 - 扣款 - 勞健保
+- [x] **Task 39** `[新增]` — 薪資結算流程頁（`/admin/payroll`）：HR → 財務 → 營運長
+- [x] **Task 40** `[新增]` — 薪資異常自動標記 + 異常檢查頁
+- [x] **Task 41** `[新增]` — 員工薪資單頁（`/payroll`）+ 年度 Total Compensation 彙總
+- [x] **Task 42** `[新增]` — 年終獎金 / 額外獎金管理（HR / 財務手動輸入）
 
 ### Phase 7：通知整合
 
-- [ ] **Task 43** `[新增]` — Teams Bot 整合：每日彙整通知
-- [ ] **Task 44** `[新增]` — Teams Bot：即時通知（審核結果、緊急公告、薪資單）
-- [ ] **Task 45** `[新增]` — Teams Bot：打卡提醒（含打卡按鈕連結）
-- [ ] **Task 46** `[新增]` — 合約到期自動提醒（Supabase Edge Function + pg_cron）
-- [ ] **Task 47** `[新增]` — 公告未確認定期提醒（依設定頻率，排除離職帳號）
+- [x] **Task 43** `[新增]` — Teams Bot 整合：每日彙整通知（部分: 程式與 cron 排程就緒，待 Azure Bot 註冊設定）
+- [x] **Task 44** `[新增]` — Teams Bot：即時通知（審核結果、緊急公告、薪資單）（部分: 請假 / 公告 / 薪資通知完成，合約審核結果通知未實作；待 Azure Bot 設定）
+- [x] **Task 45** `[新增]` — Teams Bot：打卡提醒（含打卡按鈕連結）（部分: 程式與 cron 排程就緒，待 Azure Bot 設定）
+- [ ] **Task 46** `[新增]` — 合約到期自動提醒（Supabase Edge Function + pg_cron） ← 未實作
+- [x] **Task 47** `[新增]` — 公告未確認定期提醒（依設定頻率，排除離職帳號）（部分: 經每日 Teams digest 提醒未確認公告並排除停用帳號，未依公告自訂 reminder_days 頻率）
 
 ### Phase 8：Dashboard + 匯出 + 收尾
 
-- [ ] **Task 48** `[新增]` — Dashboard 首頁：待辦事項、到期合約、未確認公告、今日打卡、請假概況
-- [ ] **Task 49** `[新增]` — 簽署清單匯出（.xlsx）：Admin 全公司、有權限者本部門
-- [ ] **Task 50** `[新增]` — 稽核紀錄頁（`/admin/audit`）：篩選、搜尋、保存 5 年
-- [ ] **Task 51** `[新增]` — 系統設定頁（`/admin/settings`）：所有可調參數集中管理，含 Gemini API Key 設定（masked 顯示，存入 system_settings，server-side only）
-- [ ] **Task 52** `[新增]` — 員工離職交接清單（列出名下合約、專案、待審項目）
-- [ ] **Task 53** `[新增]` — 系統回饋表單（`/feedback/new`）：新增功能需求 / Bug 回報（含截圖上傳）
-- [ ] **Task 54** `[新增]` — 回饋管理後台（`/admin/feedback`）：列表、狀態管理、截圖預覽
-- [ ] **Task 55** `[新增]` — i18n 補齊：所有頁面三語（zh-TW / en / ja）完整無缺漏
-- [ ] **Task 56** `[新增]` — docs/ 文件：中英日三語版本
+- [x] **Task 48** `[新增]` — Dashboard 首頁：待辦事項、到期合約、未確認公告、今日打卡、請假概況
+- [ ] **Task 49** `[新增]` — 簽署清單匯出（.xlsx）：Admin 全公司、有權限者本部門 ← 未實作（現有 .xlsx 匯出為出勤 / 請假 / 薪資，無公告簽署清單）
+- [x] **Task 50** `[新增]` — 稽核紀錄頁（`/admin/audit`）：篩選、搜尋、保存 5 年
+- [x] **Task 51** `[新增]` — 系統設定頁（`/admin/settings`）：所有可調參數集中管理，含 Gemini API Key 設定（masked 顯示，存入 system_settings，server-side only）
+- [x] **Task 52** `[新增]` — 員工離職交接清單（列出名下合約、專案、待審項目）
+- [x] **Task 53** `[新增]` — 系統回饋表單（`/feedback/new`）：新增功能需求 / Bug 回報（含截圖上傳）
+- [x] **Task 54** `[新增]` — 回饋管理後台（`/admin/feedback`）：列表、狀態管理、截圖預覽
+- [x] **Task 55** `[新增]` — i18n 補齊：所有頁面三語（zh-TW / en / ja）完整無缺漏
+- [x] **Task 56** `[新增]` — docs/ 文件：中英日三語版本（部分: 站內 `/help` 三語說明與 `docs/teams-bot-setup.md` 完成，repo `docs/` 目錄無完整三語手冊）
 
 ---
 

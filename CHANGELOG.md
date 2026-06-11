@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-06-11
+
+### Docs
+- **使用說明書上線**（`docs/generated/`）：user / admin 兩種角色 × 中／英／日三語共 6 份，含工作流程圖（mermaid）與 FAQ
+- **PRD 與現況同步**：PRD.md 任務清單 57 項逐一對照程式碼勾選（3 項標註未實作）、新增現況說明章節；Teams Bot PRD（myOPS-PRD-v0_3.md）標記結案（T64–T73 完成，T63 待 Azure 手動設定）
+
 ## [0.3.1] - 2026-06-11
 
 ### Added
