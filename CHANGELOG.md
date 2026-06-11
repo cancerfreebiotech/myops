@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-06-11
+
+### Fixed
+- **Cron 端點被登入攔截**：`proxy.ts` 把 Vercel Cron 的請求（無 session cookie）一律 307 轉向 /login，排程永遠打不到 route——三個 cron 端點（clock-reminder、daily-digest、notify）加入 middleware 豁免清單，依賴各自的 fail-closed CRON_SECRET 驗證（payroll 端點不豁免，維持 MFA 強制檢查）
+
+### Chore
+- 版本進位：依新規則（patch 最大 9）自 v0.2.50 進位至 v0.3.0
+
 ## [0.2.50] - 2026-06-11
 
 ### Added

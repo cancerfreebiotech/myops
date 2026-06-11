@@ -32,6 +32,13 @@ export default async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Cron endpoints — Vercel Cron has no session cookie; these routes enforce
+  // their own fail-closed CRON_SECRET bearer check internally
+  const cronRoutes = ['/api/teams/clock-reminder', '/api/teams/daily-digest', '/api/teams/notify']
+  if (cronRoutes.some(r => pathname.startsWith(r))) {
+    return supabaseResponse
+  }
+
   // Not logged in → redirect to login
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
