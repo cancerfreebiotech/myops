@@ -10,13 +10,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Plus, Users, Pencil } from 'lucide-react'
+import { Plus, Users } from 'lucide-react'
 import { format } from 'date-fns'
 
+interface UserOption {
+  id: string
+  display_name: string | null
+}
+
+interface ProjectMember {
+  user_id: string
+  role: string
+  user: UserOption | null
+}
+
+interface Project {
+  id: string
+  name: string
+  description: string | null
+  is_active: boolean
+  created_at: string
+  owner: UserOption | null
+  members: ProjectMember[] | null
+}
+
 interface Props {
-  projects: any[]
-  allUsers: any[]
-  currentUser: any
+  projects: Project[]
+  allUsers: UserOption[]
+  currentUser: { id: string; role: string; display_name: string | null } | null
   isAdmin: boolean
 }
 
@@ -121,10 +142,10 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
             {isAdmin && (
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('ownerLabel')}</label>
-                <Select value={ownerId} onValueChange={v => setOwnerId(v ?? currentUser?.id)}>
+                <Select value={ownerId} onValueChange={v => setOwnerId(v ?? currentUser?.id ?? '')}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {allUsers.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
+                    {allUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -143,7 +164,7 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
           <DialogHeader><DialogTitle>{selectedProject?.name} — {t('membersManage')}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2 max-h-48 overflow-y-auto">
-              {selectedProject?.members?.map((m: any) => (
+              {selectedProject?.members?.map(m => (
                 <div key={m.user_id} className="flex items-center justify-between text-sm">
                   <span className="text-slate-700 dark:text-slate-300">{m.user?.display_name}</span>
                   <Badge variant="outline" className="text-xs">{m.role === 'lead' ? t('roleLead') : t('roleMember')}</Badge>
@@ -155,7 +176,7 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
               <Select value={newMember} onValueChange={v => setNewMember(v ?? '')}>
                 <SelectTrigger className="flex-1"><SelectValue placeholder={t('selectMemberPlaceholder')} /></SelectTrigger>
                 <SelectContent>
-                  {allUsers.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
+                  {allUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={newMemberRole} onValueChange={v => setNewMemberRole(v ?? 'member')}>

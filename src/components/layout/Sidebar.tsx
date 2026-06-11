@@ -7,12 +7,12 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
-  Settings, MessageSquarePlus, ChevronLeft, ChevronRight,
+  Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
 import type { User } from '@/types'
@@ -21,9 +21,17 @@ import type { FeatureFlags } from '@/lib/feature-flag-keys'
 interface SidebarProps {
   user: User
   features: FeatureFlags
+  /** 'desktop' (default): fixed sidebar with collapse toggle. 'drawer': used inside the tablet slide-in drawer (never collapsed, shows a close button). */
+  variant?: 'desktop' | 'drawer'
+  /** Called when the close button is pressed (drawer variant only). */
+  onClose?: () => void
 }
 
 type NavItem = { href: string; label: string; icon: React.ElementType }
+
+// Hydration detection: false during SSR/hydration, true on the client.
+const emptySubscribe = () => () => {}
+const useMounted = () => useSyncExternalStore(emptySubscribe, () => true, () => false)
 
 function SectionHeader({ label, collapsed }: { label: string; collapsed: boolean }) {
   if (collapsed) return <div className="my-2 mx-3 border-t border-slate-200 dark:border-slate-700" />
@@ -51,18 +59,18 @@ function NavLink({ href, label, icon: Icon, collapsed, active }: NavItem & { col
   )
 }
 
-export function Sidebar({ user, features }: SidebarProps) {
+export function Sidebar({ user, features, variant = 'desktop', onClose }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const t = useTranslations('nav')
   const tAuth = useTranslations('auth')
-  const [collapsed, setCollapsed] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const isDrawer = variant === 'drawer'
+  const [collapsedState, setCollapsedState] = useState(false)
+  const collapsed = isDrawer ? false : collapsedState
+  const mounted = useMounted()
   const isAdmin = user.role === 'admin'
-  const jobRole: string = (user as any).job_role ?? 'member'
-  const grantedFeatures: string[] = (user as any).granted_features ?? []
+  const jobRole: string = user.job_role ?? 'member'
   const hasJobRole = (r: string) => isAdmin || jobRole === r
 
   const version = process.env.NEXT_PUBLIC_APP_VERSION ?? '0.2.2'
@@ -80,7 +88,7 @@ export function Sidebar({ user, features }: SidebarProps) {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    window.location.assign('/login')
   }
 
   const handleLanguageChange = async (lang: string) => {
@@ -90,7 +98,7 @@ export function Sidebar({ user, features }: SidebarProps) {
       Promise.resolve(supabase.from('users').update({ language: lang }).eq('id', user.id)).catch(() => {}),
       timeout,
     ])
-    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
+    window.location.assign(`/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`)
   }
 
   const show = (key: keyof typeof features) => isAdmin || features[key]
@@ -141,13 +149,23 @@ export function Sidebar({ user, features }: SidebarProps) {
             </p>
           </div>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? t('expand') : t('collapse')}
-          className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors duration-150"
-        >
-          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-        </button>
+        {isDrawer ? (
+          <button
+            onClick={onClose}
+            aria-label={t('closeMenu')}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors duration-150"
+          >
+            <X size={18} />
+          </button>
+        ) : (
+          <button
+            onClick={() => setCollapsedState(!collapsed)}
+            aria-label={collapsed ? t('expand') : t('collapse')}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer transition-colors duration-150"
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+        )}
       </div>
 
       {/* Nav */}

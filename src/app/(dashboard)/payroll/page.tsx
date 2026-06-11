@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { PayrollClient } from './PayrollClient'
+import { PayrollClient, type PayrollRecord } from './PayrollClient'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function PayrollPage() {
@@ -30,7 +30,7 @@ export default async function PayrollPage() {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  let payrollRecords: any[] = []
+  let payrollRecords: PayrollRecord[] = []
   if (canViewPayroll) {
     const { data } = await service
       .from('payroll_records')

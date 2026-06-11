@@ -3,6 +3,27 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
 
+interface AnomalyEntry {
+  id: string
+  user_id: string
+  display_name: string
+  net_pay: number
+  flags: string[]
+}
+
+interface AnomalyUserJoin {
+  id: string
+  display_name: string | null
+}
+
+interface FlaggedPayrollRow {
+  id: string
+  user_id: string
+  net_pay: number
+  anomaly_flags: string[] | null
+  user: AnomalyUserJoin | AnomalyUserJoin[] | null
+}
+
 // T50: Payroll anomaly detection API
 // Scans payroll records for anomalies and flags them
 export async function POST(request: NextRequest) {
@@ -85,7 +106,7 @@ export async function POST(request: NextRequest) {
     .not('anomaly_flags', 'is', null)
 
   // Detect anomalies
-  const anomalies: any[] = []
+  const anomalies: AnomalyEntry[] = []
   let flagged = 0
 
   for (const rec of records) {
@@ -191,7 +212,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Transform to match POST response shape: { id, user_id, display_name, net_pay, flags }
-  const transformed = (data ?? []).map((rec: any) => {
+  const transformed = (data ?? []).map((rec: FlaggedPayrollRow) => {
     const u = Array.isArray(rec.user) ? rec.user[0] : rec.user
     return {
       id: rec.id,

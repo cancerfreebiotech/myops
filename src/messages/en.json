@@ -120,6 +120,8 @@
     "cooSettings": "Operations Management",
     "expand": "Expand menu",
     "collapse": "Collapse menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
     "more": "More",
     "themeLight": "Light Mode",
     "themeDark": "Dark Mode",

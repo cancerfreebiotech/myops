@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
@@ -19,17 +19,16 @@ const DOC_TYPE_FOLDER: Record<string, string> = {
 }
 
 interface Props {
-  departments: any[]
-  companies: any[]
+  departments: { id: string; name: string }[]
+  companies: { id: string; name: string }[]
   canPublish: boolean
-  currentUser: any
+  currentUser: { department_id: string | null } | null
   onSuccess: () => void
 }
 
 export function DocumentUploadForm({ departments, companies, canPublish, currentUser, onSuccess }: Props) {
   const t = useTranslations('documents')
   const tf = useTranslations('documents.form')
-  const tc = useTranslations('common')
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
 
@@ -50,13 +49,13 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
     defaultValues: { doc_type: 'INTERNAL', folder: 'internal' },
   })
 
-  const docType = form.watch('doc_type')
+  const docType = useWatch({ control: form.control, name: 'doc_type' })
   const isAnnouncement = ['ANN', 'REG'].includes(docType)
   const isContract = ['NDA', 'MOU', 'CONTRACT', 'AMEND'].includes(docType)
 
   const onDocTypeChange = (val: string | null) => {
     if (!val) return
-    form.setValue('doc_type', val as any)
+    form.setValue('doc_type', val as FormValues['doc_type'])
     form.setValue('folder', DOC_TYPE_FOLDER[val] ?? 'internal')
   }
 
@@ -93,7 +92,8 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
     }
 
     // 3. Create DB record
-    const payload: any = { ...values, file_url, file_name, file_size: file_size || undefined }
+    const payload: Partial<FormValues> & { file_url: string; file_name: string; file_size?: number } =
+      { ...values, file_url, file_name, file_size: file_size || undefined }
     if (!values.department_id) delete payload.department_id
     if (!values.company_id) delete payload.company_id
     if (!values.expires_at) delete payload.expires_at

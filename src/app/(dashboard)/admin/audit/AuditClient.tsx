@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Search } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
@@ -20,31 +19,45 @@ const ACTION_COLORS: Record<string, string> = {
   confirm: 'bg-green-50 text-green-700 border-green-200',
 }
 
+interface AuditLog {
+  id: string
+  created_at: string
+  action: string
+  doc_id: string | null
+  detail: { title?: string; reason?: string; provider?: string } | null
+  user: { id: string; display_name: string | null } | null
+  document: { id: string; title: string | null } | null
+}
+
 export function AuditClient() {
   const t = useTranslations('admin.auditLog')
   const tc = useTranslations('common')
   const actionLabel = (action: string) =>
     (ACTION_TYPES as readonly string[]).includes(action) ? t(`actions.${action}`) : action
-  const [logs, setLogs] = useState<any[]>([])
-  const [count, setCount] = useState(0)
+  const [result, setResult] = useState<{ logs: AuditLog[]; count: number; key: string } | null>(null)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [filterAction, setFilterAction] = useState('')
-  const [loading, setLoading] = useState(true)
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true)
+  const queryKey = `${page}|${search}|${filterAction}`
+  const logs = result?.logs ?? []
+  const count = result?.count ?? 0
+  const loading = result?.key !== queryKey
+
+  useEffect(() => {
+    let cancelled = false
     const params = new URLSearchParams({ page: String(page) })
     if (search) params.set('search', search)
     if (filterAction) params.set('action', filterAction)
-    const res = await fetch(`/api/admin/audit?${params}`)
-    const { data, count } = await res.json()
-    setLogs(data ?? [])
-    setCount(count ?? 0)
-    setLoading(false)
+    fetch(`/api/admin/audit?${params}`)
+      .then(res => res.json())
+      .then(({ data, count }) => {
+        if (!cancelled) {
+          setResult({ logs: data ?? [], count: count ?? 0, key: `${page}|${search}|${filterAction}` })
+        }
+      })
+    return () => { cancelled = true }
   }, [page, search, filterAction])
-
-  useEffect(() => { fetchLogs() }, [fetchLogs])
 
   const PAGE_SIZE = 50
   const totalPages = Math.ceil(count / PAGE_SIZE)
@@ -90,7 +103,7 @@ export function AuditClient() {
               <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
             ) : logs.length === 0 ? (
               <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('noData')}</td></tr>
-            ) : logs.map((log: any) => (
+            ) : logs.map(log => (
               <tr key={log.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                   {format(parseISO(log.created_at), 'MM/dd HH:mm')}

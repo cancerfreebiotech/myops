@@ -6,6 +6,14 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { AlertTriangle, Search, Loader2 } from 'lucide-react'
 
+interface PayrollAnomaly {
+  id: string
+  user_id: string
+  display_name: string
+  net_pay: number | null
+  flags: string[] | null
+}
+
 export function AnomaliesClient() {
   const t = useTranslations('payroll.anomalies')
   const tc = useTranslations('common')
@@ -16,7 +24,7 @@ export function AnomaliesClient() {
 
   const [year, setYear] = useState(currentYear)
   const [month, setMonth] = useState(currentMonth)
-  const [anomalies, setAnomalies] = useState<any[]>([])
+  const [anomalies, setAnomalies] = useState<PayrollAnomaly[]>([])
   const [scanning, setScanning] = useState(false)
   const [scanned, setScanned] = useState(false)
   const [stats, setStats] = useState<{ scanned: number; flagged: number } | null>(null)
@@ -146,7 +154,7 @@ export function AnomaliesClient() {
                     <p className="text-sm text-green-600 font-medium">{t('noAnomalies')}</p>
                   </td>
                 </tr>
-              ) : anomalies.map((a: any) => (
+              ) : anomalies.map(a => (
                 <tr key={a.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
                     {a.display_name}

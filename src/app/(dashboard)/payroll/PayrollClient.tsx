@@ -8,16 +8,42 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { Plus, FileText } from 'lucide-react'
 
+export interface PayrollRecord {
+  id: string
+  user_id: string
+  year: number
+  month: number
+  base_salary: number | null
+  overtime_pay: number | null
+  bonus: number | null
+  deductions: number | null
+  net_salary: number | null
+  status: string
+  notes: string | null
+  user?: { id: string; display_name: string | null; department?: { name: string } | null } | null
+}
+
+interface PayrollUser {
+  id: string
+  display_name: string | null
+}
+
+interface CurrentUser {
+  id: string
+  role: string
+  display_name: string | null
+  granted_features: string[] | null
+}
+
 interface Props {
-  currentUser: any
-  payrollRecords: any[]
-  myPayslips: any[]
-  allUsers: any[]
+  currentUser: CurrentUser | null
+  payrollRecords: PayrollRecord[]
+  myPayslips: PayrollRecord[]
+  allUsers: PayrollUser[]
   isHR: boolean
   canViewPayroll: boolean
   canConfirmPayroll: boolean
@@ -43,7 +69,7 @@ export function PayrollClient({
   }
 
   const [tab, setTab] = useState<'records' | 'payslips' | 'create'>(canViewPayroll ? 'records' : 'payslips')
-  const [records, setRecords] = useState(payrollRecords)
+  const [records] = useState(payrollRecords)
   const [loading, setLoading] = useState(false)
 
   // Create form
@@ -107,10 +133,10 @@ export function PayrollClient({
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
-        {[
+        {([
           ...(canViewPayroll ? [{ key: 'records', label: t('payrollTableWithDate', { year: currentYear, month: currentMonth }) }] : []),
           { key: 'payslips', label: t('myPayslips') },
-        ].map((t: any) => (
+        ] as { key: 'records' | 'payslips'; label: string }[]).map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -151,7 +177,7 @@ export function PayrollClient({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                 {records.length === 0 ? (
                   <tr><td colSpan={7} className="text-center py-8 text-slate-400">{t('noRecordsMonth')}</td></tr>
-                ) : records.map((r: any) => (
+                ) : records.map((r) => (
                   <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name}</p>
@@ -187,7 +213,7 @@ export function PayrollClient({
         <div className="space-y-3">
           {myPayslips.length === 0 ? (
             <p className="text-center py-8 text-slate-400 text-sm">{t('noPayslips')}</p>
-          ) : myPayslips.map((r: any) => (
+          ) : myPayslips.map((r) => (
             <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -231,7 +257,7 @@ export function PayrollClient({
               <Select value={selUser} onValueChange={v => setSelUser(v ?? '')}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder={t('selectEmployee')} /></SelectTrigger>
                 <SelectContent>
-                  {allUsers.map((u: any) => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
+                  {allUsers.map((u) => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

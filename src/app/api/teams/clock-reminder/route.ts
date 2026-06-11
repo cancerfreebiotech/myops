@@ -3,14 +3,21 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // T57: Teams Bot clock reminder
 // Sends clock-in/clock-out reminders to users who haven't clocked yet
-export async function POST(request: NextRequest) {
+// Triggered by Vercel Cron (GET, type inferred from x-vercel-cron-schedule)
+// or manually (POST with { type: 'clock_in' | 'clock_out' })
+
+function checkCronAuth(request: NextRequest): NextResponse | null {
   const cronSecret = process.env.CRON_SECRET
   const authHeader = request.headers.get('authorization')
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Fail closed: without CRON_SECRET configured, the endpoint is disabled
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  return null
+}
 
+async function runReminder(reminderType: string) {
   const service = await createServiceClient()
   const today = new Date().toISOString().split('T')[0]
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ops.cancerfree.io'
@@ -31,9 +38,6 @@ export async function POST(request: NextRequest) {
 
   const attendanceMap = new Map(records?.map(r => [r.user_id, r]) ?? [])
 
-  const body = await request.json().catch(() => ({}))
-  const reminderType = body.type ?? 'clock_in' // 'clock_in' or 'clock_out'
-
   let sent = 0
 
   for (const u of users) {
@@ -51,4 +55,27 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ data: { sent, type: reminderType } })
+}
+
+export async function POST(request: NextRequest) {
+  const denied = checkCronAuth(request)
+  if (denied) return denied
+
+  const body = await request.json().catch(() => ({}))
+  return runReminder(body.type ?? 'clock_in')
+}
+
+export async function GET(request: NextRequest) {
+  const denied = checkCronAuth(request)
+  if (denied) return denied
+
+  // Vercel Cron invokes via GET with no body and no reliable schedule header.
+  // Infer the reminder type from Taipei local time: morning run (0 23 * * 0-4
+  // UTC = 07:00 Asia/Taipei) means clock-in, afternoon run (30 9 * * 1-5 UTC =
+  // 17:30 Asia/Taipei) means clock-out. ?type= overrides for manual calls.
+  const taipeiHour = (new Date().getUTCHours() + 8) % 24
+  const type =
+    request.nextUrl.searchParams.get('type') ??
+    (taipeiHour < 12 ? 'clock_in' : 'clock_out')
+  return runReminder(type)
 }

@@ -105,7 +105,7 @@ export function CalendarClient({
   const [selectedDeptId, setSelectedDeptId] = useState<string>('all')
   const [myDeptOnly, setMyDeptOnly] = useState<boolean>(false)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
-  const [loadingMonth, setLoadingMonth] = useState(false)
+  const [, setLoadingMonth] = useState(false)
 
   const listSectionRef = useRef<HTMLDivElement>(null)
 
@@ -188,13 +188,13 @@ export function CalendarClient({
 
   // ── Leaves on a specific day ───────────────────────────────────────────────
 
-  function leavesOnDay(day: Date): LeaveRecord[] {
+  const leavesOnDay = useCallback((day: Date): LeaveRecord[] => {
     return leavesInMonth.filter((l) => {
       const s = parseISO(l.start_date)
       const e = parseISO(l.end_date)
       return isWithinInterval(day, { start: s, end: e })
     })
-  }
+  }, [leavesInMonth])
 
   // ── Click a day → scroll to list section ──────────────────────────────────
 
@@ -212,7 +212,7 @@ export function CalendarClient({
     return allDays
       .map((day) => ({ day, leaves: leavesOnDay(day) }))
       .filter((entry) => entry.leaves.length > 0)
-  }, [leavesInMonth, monthStart, monthEnd])
+  }, [leavesOnDay, monthStart, monthEnd])
 
   const focusedEntries = useMemo(() => {
     if (!selectedDay) return daysWithLeaves

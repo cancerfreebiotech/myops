@@ -1,15 +1,16 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { FEATURE_KEYS } from '@/lib/features'
 import { useTranslations } from 'next-intl'
+import type { User } from '@/types'
 
 const schema = z.object({
   department_id: z.string().nullable(),
@@ -26,9 +27,9 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 interface UserEditFormProps {
-  user: any
-  departments: any[]
-  allUsers: any[]
+  user: User
+  departments: { id: string; name: string }[]
+  allUsers: { id: string; display_name: string | null; email: string }[]
   isAdmin: boolean
   onClose: () => void
 }
@@ -103,7 +104,7 @@ export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: 
     onClose()
   }
 
-  const features = form.watch('granted_features')
+  const features = useWatch({ control: form.control, name: 'granted_features' })
 
   const toggleFeature = (key: string) => {
     const current = form.getValues('granted_features')

@@ -3,6 +3,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import * as XLSX from 'xlsx'
 
+interface DepartmentJoin { name: string | null }
+interface UserJoin {
+  display_name: string | null
+  email: string | null
+  department: DepartmentJoin | DepartmentJoin[] | null
+}
+interface PayrollExportRow {
+  year: number
+  month: number
+  base_salary: number
+  overtime_pay: number
+  bonus: number
+  other_income: number
+  gross_pay: number
+  unpaid_leave_deduct: number
+  labor_insurance: number
+  health_insurance: number
+  labor_pension_self: number
+  other_deduction: number
+  total_deduction: number
+  net_pay: number
+  status: string
+  user: UserJoin | UserJoin[] | null
+}
+
 // T58: Export payroll records as xlsx
 export async function GET(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -40,7 +65,7 @@ export async function GET(request: NextRequest) {
 
   const { data } = await query
 
-  const rows = (data ?? []).map((r: any) => {
+  const rows = (data ?? []).map((r: PayrollExportRow) => {
     const u = Array.isArray(r.user) ? r.user[0] : r.user
     const dept = Array.isArray(u?.department) ? u.department[0] : u?.department
     return {

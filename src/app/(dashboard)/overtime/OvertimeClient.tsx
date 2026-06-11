@@ -9,19 +9,48 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
+interface CurrentUser {
+  id: string
+  role: string
+  department_id: string | null
+}
+
+interface Project {
+  id: string
+  name: string
+}
+
+interface OvertimeRate {
+  id: string
+  ot_type: string
+  multiplier: number
+  is_active: boolean
+}
+
+export interface OvertimeRequest {
+  id: string
+  ot_date: string
+  start_time: string
+  end_time: string
+  total_hours: number
+  ot_type: string
+  status: string
+  reason: string | null
+  user?: { id: string; display_name: string | null } | null
+  project?: { id: string; name: string } | null
+}
+
 interface Props {
-  currentUser: any
-  projects: any[]
-  rates: any[]
-  pendingApprovals: any[]
+  currentUser: CurrentUser | null
+  projects: Project[]
+  rates: OvertimeRate[]
+  pendingApprovals: OvertimeRequest[]
   isHR: boolean
 }
 
-export function OvertimeClient({ currentUser, projects, rates, pendingApprovals, isHR }: Props) {
-  const router = useRouter()
+export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const t = useTranslations('overtime')
   const tc = useTranslations('common')
 
@@ -31,7 +60,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
   }
 
   const [tab, setTab] = useState<'apply' | 'records' | 'approve'>('records')
-  const [records, setRecords] = useState<any[]>([])
+  const [records, setRecords] = useState<OvertimeRequest[]>([])
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [loading, setLoading] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
@@ -97,10 +126,10 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          { key: 'records', label: t('tabMyApplications') },
-          { key: 'apply', label: t('tabNewOvertime') },
-          ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve', label: t('tabPendingApproval'), badge: approvals.length }] : []),
-        ].map((t: any) => (
+          { key: 'records' as const, label: t('tabMyApplications') },
+          { key: 'apply' as const, label: t('tabNewOvertime') },
+          ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve' as const, label: t('tabPendingApproval'), badge: approvals.length }] : []),
+        ].map((t: { key: 'apply' | 'records' | 'approve'; label: string; badge?: number }) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -111,7 +140,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
             }`}
           >
             {t.label}
-            {t.badge > 0 && (
+            {(t.badge ?? 0) > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-red-500 text-gray-50 rounded-full">{t.badge}</span>
             )}
           </button>
@@ -135,7 +164,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
                 <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
               ) : records.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
-              ) : records.map((r: any) => (
+              ) : records.map((r) => (
                 <tr key={r.id} className="bg-white dark:bg-slate-800">
                   <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{r.ot_date}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{OT_TYPE_LABELS[r.ot_type] ?? r.ot_type}</td>
@@ -164,7 +193,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
               <CheckCircle size={32} className="text-green-400 mx-auto mb-2" />
               <p className="text-slate-500">{t('noApprovals')}</p>
             </div>
-          ) : approvals.map((r: any) => (
+          ) : approvals.map((r) => (
             <OTApprovalCard key={r.id} request={r} onAction={handleAction} />
           ))}
         </div>
@@ -208,7 +237,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
                   <SelectTrigger className="mt-1"><SelectValue placeholder={t('noProject')} /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">{t('noProject')}</SelectItem>
-                    {projects.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                    {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -228,7 +257,7 @@ export function OvertimeClient({ currentUser, projects, rates, pendingApprovals,
   )
 }
 
-function OTApprovalCard({ request, onAction }: { request: any, onAction: (id: string, action: 'approve' | 'reject', reason?: string) => void }) {
+function OTApprovalCard({ request, onAction }: { request: OvertimeRequest, onAction: (id: string, action: 'approve' | 'reject', reason?: string) => void }) {
   const t = useTranslations('overtime')
   const tc = useTranslations('common')
   const [rejectOpen, setRejectOpen] = useState(false)

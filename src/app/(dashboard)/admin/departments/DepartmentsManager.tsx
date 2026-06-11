@@ -20,11 +20,17 @@ const buildSchema = (requiredMessage: string) => z.object({
 })
 type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
-export function DepartmentsManager({ departments }: { departments: any[] }) {
+interface Department {
+  id: string
+  name: string
+  code: string
+}
+
+export function DepartmentsManager({ departments }: { departments: Department[] }) {
   const router = useRouter()
   const t = useTranslations('admin.departmentsMgmt')
   const tc = useTranslations('common')
-  const [editDept, setEditDept] = useState<any>(null)
+  const [editDept, setEditDept] = useState<Department | null>(null)
   const [showForm, setShowForm] = useState(false)
 
   const form = useForm<FormValues>({
@@ -32,7 +38,7 @@ export function DepartmentsManager({ departments }: { departments: any[] }) {
     defaultValues: { name: '', code: '' },
   })
 
-  const openEdit = (dept: any) => {
+  const openEdit = (dept: Department) => {
     setEditDept(dept)
     form.reset({ name: dept.name, code: dept.code })
     setShowForm(true)

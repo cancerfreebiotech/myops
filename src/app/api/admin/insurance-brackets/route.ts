@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Step 2: Delete old rows for this year (exclude the ones we just inserted)
-  const newIds = (inserted ?? []).map((r: any) => r.id)
+  const newIds = (inserted ?? []).map((r: { id: string }) => r.id)
   if (newIds.length > 0) {
     await service
       .from(table)

@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const eventBody: any = {
+    const eventBody = {
       subject,
       showAs: 'oof', // Out of Office
       isAllDay: is_all_day ?? true,
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id)
 
     return NextResponse.json({ data: { event_id: event.id } })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

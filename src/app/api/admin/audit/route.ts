@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get('search')
   const action = searchParams.get('action')
   const page = parseInt(searchParams.get('page') ?? '1')
   const PAGE_SIZE = 50

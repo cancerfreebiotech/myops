@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { AnnualPayrollClient } from './AnnualPayrollClient'
+import { AnnualPayrollClient, type PayrollRecord, type User } from './AnnualPayrollClient'
 
 interface PageProps {
   searchParams: Promise<{ year?: string }>
@@ -37,8 +37,8 @@ export default async function AnnualPayrollPage({ searchParams }: PageProps) {
     .order('month', { ascending: true })
 
   // HR/admin: fetch all active users + their annual records
-  let allUsers: any[] = []
-  let allAnnualRecords: any[] = []
+  let allUsers: User[] = []
+  let allAnnualRecords: PayrollRecord[] = []
 
   if (isHR) {
     const { data: usersData } = await service

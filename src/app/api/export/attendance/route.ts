@@ -4,6 +4,22 @@ import { getTranslations } from 'next-intl/server'
 import * as XLSX from 'xlsx'
 import { lastDayOfMonth } from '@/lib/date-utils'
 
+interface DepartmentJoin { name: string | null }
+interface UserJoin {
+  display_name: string | null
+  email: string | null
+  department: DepartmentJoin | DepartmentJoin[] | null
+}
+interface AttendanceExportRow {
+  clock_date: string
+  clock_in: string | null
+  clock_out: string | null
+  is_auto_in: boolean | null
+  is_auto_out: boolean | null
+  note: string | null
+  user: UserJoin | UserJoin[] | null
+}
+
 // T59: Export attendance records as xlsx
 export async function GET(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -46,7 +62,7 @@ export async function GET(request: NextRequest) {
     return new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Taipei' })
   }
 
-  const rows = (data ?? []).map((r: any) => {
+  const rows = (data ?? []).map((r: AttendanceExportRow) => {
     const u = Array.isArray(r.user) ? r.user[0] : r.user
     const dept = Array.isArray(u?.department) ? u.department[0] : u?.department
     return {

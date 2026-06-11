@@ -51,10 +51,33 @@ const CATEGORY_STYLE: Record<
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface AnnouncementDoc {
+  id: string
+  title: string
+  doc_type: string
+  status: string
+  announcement_category: string | null
+  created_at: string
+  expires_at: string | null
+  ai_translated: boolean | null
+  content_zh: string | null
+  content_en: string | null
+  content_ja: string | null
+  uploaded_by_user: { id: string; display_name: string | null } | null
+  department: { id: string; name: string } | null
+}
+
+interface AuditLog {
+  id: string
+  action: string
+  created_at: string
+  detail: { reason?: string } | null
+  user: { id: string; display_name: string | null } | null
+}
+
 interface Props {
-  doc: any
-  auditLogs: any[]
-  currentUser: any
+  doc: AnnouncementDoc
+  auditLogs: AuditLog[]
   isRecipient: boolean
   alreadyConfirmed: boolean
   confirmedAt: string | null
@@ -64,10 +87,10 @@ interface Props {
 // ─── Content language resolution ──────────────────────────────────────────────
 
 function resolveContent(
-  doc: any,
+  doc: AnnouncementDoc,
   userLang: string
 ): { content: string; lang: string; isFallback: boolean } {
-  const langMap: Record<string, string | undefined> = {
+  const langMap: Record<string, string | null | undefined> = {
     zh: doc.content_zh,
     en: doc.content_en,
     ja: doc.content_ja,
@@ -83,7 +106,7 @@ function resolveContent(
     ['zh', doc.content_zh],
     ['en', doc.content_en],
     ['ja', doc.content_ja],
-  ] as [string, string | undefined][]) {
+  ] as [string, string | null][]) {
     if (content) return { content, lang, isFallback: true }
   }
 
@@ -95,7 +118,6 @@ function resolveContent(
 export function AnnouncementDetail({
   doc,
   auditLogs,
-  currentUser,
   isRecipient,
   alreadyConfirmed,
   confirmedAt,
@@ -135,7 +157,7 @@ export function AnnouncementDetail({
     ja: td('languages.ja'),
   }
 
-  const category = doc.announcement_category as string | undefined
+  const category = doc.announcement_category ?? undefined
   const catStyle = category ? CATEGORY_STYLE[category] : undefined
   const catLabel = category ? (CATEGORY_LABELS[category] ?? category) : undefined
   const isUrgent = category === 'urgent'
@@ -148,8 +170,12 @@ export function AnnouncementDetail({
   )
   const [activeLang, setActiveLang] = useState<string>(lang)
 
-  const displayContent =
-    (doc[`content_${activeLang}`] as string | undefined) ?? content
+  const contentByLang: Record<string, string | null> = {
+    zh: doc.content_zh,
+    en: doc.content_en,
+    ja: doc.content_ja,
+  }
+  const displayContent = contentByLang[activeLang] ?? content
 
   // ── Confirm read handler ───────────────────────────────────────────────────
 
@@ -402,7 +428,7 @@ export function AnnouncementDetail({
             <p className="text-xs text-slate-400">{td('noRecords')}</p>
           ) : (
             <div className="space-y-3">
-              {auditLogs.map((log: any) => (
+              {auditLogs.map((log) => (
                 <div key={log.id} className="text-xs">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-medium text-slate-700 dark:text-slate-300">

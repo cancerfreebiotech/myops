@@ -36,7 +36,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   if (!project) notFound()
 
   // Access check: only admin, project lead, or project members can view
-  const isMember = project.members?.some((m: any) => m.user_id === currentUser?.id)
+  const isMember = project.members?.some((m: { user_id: string }) => m.user_id === currentUser?.id)
   const isProjectLead = project.project_lead_id === currentUser?.id
   if (currentUser?.role !== 'admin' && !isProjectLead && !isMember) {
     redirect('/projects')
@@ -62,7 +62,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isAdmin = currentUser?.role === 'admin'
   const isLead =
     project.owner_id === currentUser?.id ||
-    project.members?.some((m: any) => m.user_id === currentUser?.id && m.role === 'lead')
+    project.members?.some((m: { user_id: string; role: string }) => m.user_id === currentUser?.id && m.role === 'lead')
 
   const t = await getTranslations('projects')
 
@@ -76,7 +76,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         project={project}
         overtimeRequests={overtimeRequests ?? []}
         allUsers={allUsers ?? []}
-        currentUser={currentUser}
         canManageMembers={isAdmin || isLead}
       />
     </div>

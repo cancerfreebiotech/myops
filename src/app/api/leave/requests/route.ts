@@ -2,6 +2,24 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
+interface CalendarUserJoin {
+  id: string
+  display_name: string | null
+  department_id: string | null
+}
+interface CalendarLeaveTypeJoin { name: string | null }
+interface CalendarLeaveRow {
+  id: string
+  user_id: string
+  leave_type_id: string
+  start_date: string
+  end_date: string
+  status: string
+  reason: string | null
+  user: CalendarUserJoin | CalendarUserJoin[] | null
+  leave_type: CalendarLeaveTypeJoin | CalendarLeaveTypeJoin[] | null
+}
+
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
   const supabase = await createClient()
@@ -105,7 +123,7 @@ export async function GET(request: NextRequest) {
     if (calError) return NextResponse.json({ error: calError.message }, { status: 500 })
 
     // Flatten for CalendarClient
-    const flat = (calData ?? []).map((r: any) => {
+    const flat = (calData ?? []).map((r: CalendarLeaveRow) => {
       const u = Array.isArray(r.user) ? r.user[0] : r.user
       const lt = Array.isArray(r.leave_type) ? r.leave_type[0] : r.leave_type
       return {

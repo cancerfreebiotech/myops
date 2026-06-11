@@ -1,0 +1,18 @@
+{
+  "$comment": "Config for the user-level /notify-release skill. NOTE: the Supabase MCP token has no access to this project ref — query recipients via PostgREST using SUPABASE_SERVICE_ROLE_KEY from .env.local instead (custom_sql equivalent: active users with email).",
+  "supabaseProjectRef": "odzwvkhdrahomgqwlwba",
+  "recipientFilter": "custom_sql",
+  "recipientSql": "SELECT email FROM users WHERE is_active = true AND email IS NOT NULL",
+  "replyToEmail": "eva.hung@cancerfree.io",
+  "fromName": "myOPS 系統通知",
+  "changelogPath": "CHANGELOG.md",
+  "versionSource": "package.json",
+  "projectName": "myOPS",
+  "subjectTemplate": "{projectName} 已更新到 v{version}",
+  "greeting": "大家好，",
+  "introTemplate": "{projectName} 發布了 v{version}。",
+  "signature": "— Eva",
+  "timezone": "Asia/Taipei",
+  "language": "zh-TW",
+  "releaseTimeLabel": "發布時間"
+}

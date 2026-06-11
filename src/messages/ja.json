@@ -120,6 +120,8 @@
     "cooSettings": "営業管理",
     "expand": "メニューを展開",
     "collapse": "メニューを折りたたむ",
+    "openMenu": "メニューを開く",
+    "closeMenu": "メニューを閉じる",
     "more": "その他",
     "themeLight": "ライトモード",
     "themeDark": "ダークモード",

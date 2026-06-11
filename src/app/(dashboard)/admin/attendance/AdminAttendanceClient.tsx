@@ -7,7 +7,7 @@ import { Users, CalendarDays, Bot, ChevronLeft, ChevronRight, Clock } from 'luci
 
 const PAGE_SIZE = 20
 
-interface AttendanceRecord {
+export interface AttendanceRecord {
   id: string
   user_id: string
   clock_date: string
@@ -24,7 +24,7 @@ interface AttendanceRecord {
   } | null
 }
 
-interface User {
+export interface User {
   id: string
   display_name: string
   employment_type: string | null
@@ -65,7 +65,6 @@ export function AdminAttendanceClient({
 }: Props) {
   const router = useRouter()
   const t = useTranslations('attendance')
-  const tc = useTranslations('common')
   const ta = useTranslations('admin.attendanceMgmt')
 
   const employmentTypeLabel = (type: string) =>

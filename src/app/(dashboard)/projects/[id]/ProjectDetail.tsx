@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { UserPlus, Users, CalendarRange, Clock, ClipboardList } from 'lucide-react'
-import { format } from 'date-fns'
 
 // Generate a deterministic colour for an initial avatar based on name
 const AVATAR_COLORS = [
@@ -34,15 +33,46 @@ function initials(name: string) {
   return name.slice(0, 2).toUpperCase()
 }
 
+interface UserOption {
+  id: string
+  display_name: string | null
+}
+
+interface ProjectMember {
+  user_id: string
+  role: string
+  user: UserOption | null
+}
+
+interface Project {
+  id: string
+  name: string
+  description: string | null
+  is_active: boolean
+  start_date: string | null
+  end_date: string | null
+  owner: UserOption | null
+  members: ProjectMember[] | null
+}
+
+interface OvertimeRequest {
+  id: string
+  date: string
+  start_time: string | null
+  end_time: string | null
+  hours: number | null
+  status: string
+  user: UserOption | null
+}
+
 interface Props {
-  project: any
-  overtimeRequests: any[]
-  allUsers: any[]
-  currentUser: any
+  project: Project
+  overtimeRequests: OvertimeRequest[]
+  allUsers: UserOption[]
   canManageMembers: boolean
 }
 
-export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser, canManageMembers }: Props) {
+export function ProjectDetail({ project, overtimeRequests, allUsers, canManageMembers }: Props) {
   const router = useRouter()
   const t = useTranslations('projects')
   const tc = useTranslations('common')
@@ -70,10 +100,10 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
   const projectStatus = project.is_active ? 'in_progress' : 'done'
 
   // Members (deduplicated: owner first, then rest)
-  const memberList: any[] = project.members ?? []
+  const memberList: ProjectMember[] = project.members ?? []
 
   // Existing member user IDs for filtering the add-member dropdown
-  const existingMemberIds = new Set(memberList.map((m: any) => m.user_id))
+  const existingMemberIds = new Set(memberList.map(m => m.user_id))
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -144,7 +174,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                  {overtimeRequests.map((req: any) => (
+                  {overtimeRequests.map(req => (
                     <tr key={req.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                       <td className="py-2.5 pr-4 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                         {req.date}
@@ -198,7 +228,7 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
             <p className="text-xs text-slate-400 text-center py-4">{t('noMembers')}</p>
           ) : (
             <div className="space-y-2">
-              {memberList.map((m: any) => {
+              {memberList.map(m => {
                 const name = m.user?.display_name ?? t('unknown')
                 const color = avatarColor(name)
                 return (
@@ -247,8 +277,8 @@ export function ProjectDetail({ project, overtimeRequests, allUsers, currentUser
                 </SelectTrigger>
                 <SelectContent>
                   {allUsers
-                    .filter((u: any) => !existingMemberIds.has(u.id))
-                    .map((u: any) => (
+                    .filter(u => !existingMemberIds.has(u.id))
+                    .map(u => (
                       <SelectItem key={u.id} value={u.id}>
                         {u.display_name}
                       </SelectItem>

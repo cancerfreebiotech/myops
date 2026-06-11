@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { SidebarDrawer } from '@/components/layout/SidebarDrawer'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { Footer } from '@/components/layout/Footer'
 import { LocaleSync } from '@/components/LocaleSync'
@@ -37,7 +38,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <Sidebar user={dbUser as User} features={featureFlags} />
       </div>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">
+        <SidebarDrawer user={dbUser as User} features={featureFlags} />
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 md:pb-6">
           {children}
           <Footer />
         </main>

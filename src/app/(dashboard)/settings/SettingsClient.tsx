@@ -11,7 +11,18 @@ import { createClient } from '@/lib/supabase/client'
 import { Save, Shield, Sun, Moon, Globe } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-export function SettingsClient({ profile }: { profile: any }) {
+interface Profile {
+  id: string
+  display_name: string | null
+  email: string
+  role: string
+  department_id: string | null
+  employment_type: string | null
+  language: string | null
+  theme: string | null
+}
+
+export function SettingsClient({ profile }: { profile: Profile }) {
   const router = useRouter()
   const { theme, setTheme } = useTheme()
   const [displayName, setDisplayName] = useState(profile?.display_name ?? '')
@@ -44,7 +55,8 @@ export function SettingsClient({ profile }: { profile: any }) {
       .eq('id', profile.id)
   }
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = (lang: string | null) => {
+    if (!lang) return
     setLanguage(lang)
     // Save to DB (fire-and-forget)
     const supabase = createClient()

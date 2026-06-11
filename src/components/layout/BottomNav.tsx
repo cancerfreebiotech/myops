@@ -10,10 +10,14 @@ import {
   FolderKanban, Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { LANGUAGES } from '@/i18n/config'
 import type { FeatureFlags } from '@/lib/feature-flag-keys'
+
+// Hydration detection: false during SSR/hydration, true on the client.
+const emptySubscribe = () => () => {}
+const useMounted = () => useSyncExternalStore(emptySubscribe, () => true, () => false)
 
 interface BottomNavProps {
   userId?: string
@@ -28,8 +32,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
   const t = useTranslations('nav')
   const tAuth = useTranslations('auth')
   const [moreOpen, setMoreOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const show = (key: keyof NonNullable<typeof features>) =>
     isAdmin || (features ? features[key] : false)
@@ -61,18 +64,18 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
         timeout,
       ])
     }
-    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
+    window.location.assign(`/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`)
   }
 
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    window.location.assign('/login')
   }
 
   return (
     <>
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 h-14 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-stretch safe-area-inset-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 h-14 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 flex items-stretch safe-area-inset-bottom">
         {PRIMARY_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || (href !== '/' && pathname.startsWith(href))
           return (
@@ -102,7 +105,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
 
       {/* More drawer */}
       {moreOpen && (
-        <div className="lg:hidden fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
+        <div className="md:hidden fixed inset-0 z-50" onClick={() => setMoreOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
             className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-800 rounded-t-2xl p-4 pb-8"

@@ -25,19 +25,12 @@ export default async function ContractsPage() {
   const featureFlags = await getFeatureFlags()
   if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'contracts')) redirect('/')
 
-  const canApprove = currentUser?.role === 'admin' ||
-    currentUser?.granted_features?.includes('approve_contract')
-
   const t = await getTranslations('contracts')
 
   return (
     <div>
       <PageHeader title={t('title')} description={t('description')} />
-      <ContractsClient
-        companies={companies ?? []}
-        currentUser={currentUser}
-        canApprove={canApprove}
-      />
+      <ContractsClient companies={companies ?? []} />
     </div>
   )
 }

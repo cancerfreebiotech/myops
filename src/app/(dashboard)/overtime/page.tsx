@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { OvertimeClient } from './OvertimeClient'
+import { OvertimeClient, type OvertimeRequest } from './OvertimeClient'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function OvertimePage() {
@@ -35,7 +35,7 @@ export default async function OvertimePage() {
     .order('ot_type')
 
   // Pending for approval
-  let pendingApprovals: any[] = []
+  let pendingApprovals: OvertimeRequest[] = []
   const { data: pending } = await service
     .from('overtime_requests')
     .select(`*, user:users!overtime_requests_user_id_fkey(id, display_name), project:projects(name)`)

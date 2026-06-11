@@ -72,7 +72,7 @@ export async function PATCH(
     'monthly_salary', 'hourly_rate',
   ]
 
-  const updates: Record<string, any> = { updated_by: user.id }
+  const updates: Record<string, string | number | null> = { updated_by: user.id }
   for (const key of allowedFields) {
     if (body[key] !== undefined) {
       updates[key] = body[key] === '' ? null : body[key]

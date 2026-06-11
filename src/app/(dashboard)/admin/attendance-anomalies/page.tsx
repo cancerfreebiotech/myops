@@ -2,7 +2,11 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { AnomaliesClient } from './AnomaliesClient'
+import { AnomaliesClient, type AnomalyUser } from './AnomaliesClient'
+
+function getThirtyDaysAgoStr() {
+  return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+}
 
 export default async function AttendanceAnomaliesPage() {
   const supabase = await createClient()
@@ -17,7 +21,7 @@ export default async function AttendanceAnomaliesPage() {
   if (!isAdmin && !isHR && !isCOO) redirect('/')
 
   // Full-time users with 3+ consecutive auto-clock days in last 30 days
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const thirtyDaysAgo = getThirtyDaysAgoStr()
 
   const { data: autoRecords } = await service
     .from('attendance_records')
@@ -30,9 +34,9 @@ export default async function AttendanceAnomaliesPage() {
     .order('clock_date', { ascending: false })
 
   // Group by user and find consecutive auto days
-  const userAutoMap: Record<string, { user: any; dates: string[] }> = {}
+  const userAutoMap: Record<string, { user: AnomalyUser | null; dates: string[] }> = {}
   for (const r of autoRecords ?? []) {
-    if (!userAutoMap[r.user_id]) userAutoMap[r.user_id] = { user: r.user, dates: [] }
+    if (!userAutoMap[r.user_id]) userAutoMap[r.user_id] = { user: r.user as unknown as AnomalyUser | null, dates: [] }
     userAutoMap[r.user_id].dates.push(r.clock_date)
   }
 
@@ -60,11 +64,11 @@ export default async function AttendanceAnomaliesPage() {
     .or('clock_in.is.null,clock_out.is.null')
     .eq('user.employment_type', 'intern')
 
-  const internMap: Record<string, { user: any; missed: number }> = {}
+  const internMap: Record<string, { user: AnomalyUser | null; missed: number }> = {}
   for (const r of internMissed ?? []) {
     const u = Array.isArray(r.user) ? r.user[0] : r.user
     if (u?.employment_type !== 'intern') continue
-    if (!internMap[r.user_id]) internMap[r.user_id] = { user: r.user, missed: 0 }
+    if (!internMap[r.user_id]) internMap[r.user_id] = { user: r.user as unknown as AnomalyUser | null, missed: 0 }
     internMap[r.user_id].missed++
   }
   const internAnomalies = Object.values(internMap).filter(({ missed }) => missed > 3)

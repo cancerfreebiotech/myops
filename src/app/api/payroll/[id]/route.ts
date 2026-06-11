@@ -49,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
-  const updatePayload: any = { status: newStatus }
+  const updatePayload: { status: string; paid_at?: string } = { status: newStatus }
   if (action === 'pay') updatePayload.paid_at = new Date().toISOString()
 
   const { data, error } = await service.from('payroll_records').update(updatePayload).eq('id', id).select().single()

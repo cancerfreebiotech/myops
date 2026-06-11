@@ -5,6 +5,26 @@ import { format } from 'date-fns'
 import { getTranslations } from 'next-intl/server'
 import { Megaphone, ChevronRight } from 'lucide-react'
 
+interface AnnouncementSummary {
+  id: string
+  title: string
+  announcement_category: string | null
+  content_zh: string | null
+  created_at: string
+}
+
+interface PendingAnnouncement {
+  id: string
+  document_id: string
+  document: AnnouncementSummary | AnnouncementSummary[] | null
+}
+
+interface ExpiringContract {
+  id: string
+  title: string
+  expires_at: string
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const service = await createServiceClient()
@@ -21,7 +41,8 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
-  const today = new Date().toISOString().split('T')[0]
+  const now = new Date()
+  const today = now.toISOString().split('T')[0]
 
   // Today attendance
   const { data: todayAttendance } = await supabase
@@ -55,7 +76,7 @@ export default async function DashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
-  const pendingAnnouncements = pendingAnnouncementsData ?? []
+  const pendingAnnouncements: PendingAnnouncement[] = pendingAnnouncementsData ?? []
 
   // Recent published announcements
   const { data: recentAnnouncements } = await service
@@ -76,7 +97,7 @@ export default async function DashboardPage() {
     .is('deleted_at', null) : { data: [] }
 
   // Expiring contracts (30 days)
-  const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const { data: expiringContracts } = await service
     .from('documents')
     .select('id, title, expires_at')
@@ -178,7 +199,7 @@ export default async function DashboardPage() {
           <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-800 overflow-hidden">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-orange-100 dark:divide-orange-900">
-                {expiringContracts!.map((c: any) => (
+                {expiringContracts!.map((c: ExpiringContract) => (
                   <tr key={c.id}>
                     <td className="px-4 py-3">
                       <Link href={`/documents/${c.id}`} className="font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600">
@@ -211,7 +232,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-slate-400 py-4 text-center">{t('noAnnouncements')}</p>
         ) : (
           <div className="space-y-2">
-            {pendingAnnouncements.map((item: any) => {
+            {pendingAnnouncements.map((item) => {
               const doc = Array.isArray(item.document) ? item.document[0] : item.document
               if (!doc) return null
               return (
@@ -227,11 +248,11 @@ export default async function DashboardPage() {
               )
             })}
             {(recentAnnouncements ?? [])
-              .filter((ann: any) => !pendingAnnouncements.some((p: any) => {
+              .filter((ann: AnnouncementSummary) => !pendingAnnouncements.some((p) => {
                 const doc = Array.isArray(p.document) ? p.document[0] : p.document
                 return doc?.id === ann.id
               }))
-              .map((ann: any) => (
+              .map((ann: AnnouncementSummary) => (
                 <Link key={ann.id} href={`/documents/${ann.id}`}>
                   <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 hover:border-blue-300 transition-colors">
                     <div className="flex items-start justify-between gap-3">

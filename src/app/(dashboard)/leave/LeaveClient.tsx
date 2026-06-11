@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -8,27 +8,67 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle, Ban } from 'lucide-react'
-import { format, differenceInCalendarDays, addDays, parseISO } from 'date-fns'
+import { differenceInCalendarDays, parseISO } from 'date-fns'
+
+interface CurrentUser {
+  id: string
+  role: string
+  employment_type: string
+  department_id: string | null
+  manager_id: string | null
+  display_name: string | null
+}
+
+interface LeaveType {
+  id: string
+  name: string
+  applies_to: string
+  pay_rate: string
+  max_days_per_year: number | null
+  advance_days_required: number
+}
+
+interface LeaveBalance {
+  leave_type_id: string
+  allocated_days: number
+  used_days: number
+  remaining_days: number
+}
+
+interface Colleague {
+  id: string
+  display_name: string | null
+}
+
+export interface LeaveRequest {
+  id: string
+  start_date: string
+  end_date: string
+  total_days: number
+  status: string
+  reason: string | null
+  user?: { id: string; display_name: string | null } | null
+  leave_type?: { name: string } | null
+}
 
 interface Props {
-  currentUser: any
-  leaveTypes: any[]
-  balances: any[]
-  colleagues: any[]
-  pendingApprovals: any[]
+  currentUser: CurrentUser | null
+  leaveTypes: LeaveType[]
+  balances: LeaveBalance[]
+  colleagues: Colleague[]
+  pendingApprovals: LeaveRequest[]
   isHR: boolean
 }
 
-export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pendingApprovals, isHR }: Props) {
+export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals, isHR }: Props) {
   const router = useRouter()
   const t = useTranslations('leave')
   const tc = useTranslations('common')
   const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance'>('balance')
-  const [records, setRecords] = useState<any[]>([])
+  const [records, setRecords] = useState<LeaveRequest[]>([])
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -52,10 +92,6 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
     setLoading(false)
   }, [])
 
-  useEffect(() => {
-    if (tab === 'records') fetchRecords()
-  }, [tab, fetchRecords])
-
   const leaveType = leaveTypes.find(t => t.id === selectedType)
   const days = startDate && endDate
     ? differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1
@@ -67,7 +103,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
       toast.error(t('requiredFields'))
       return
     }
-    if (leaveType?.advance_days_required > 0) {
+    if (leaveType && leaveType.advance_days_required > 0) {
       const advanceDays = differenceInCalendarDays(parseISO(startDate), new Date())
       if (advanceDays < leaveType.advance_days_required) {
         toast.error(t('advanceDaysRequired', { days: leaveType.advance_days_required }))
@@ -128,14 +164,17 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          { key: 'balance', label: t('tabBalance') },
-          { key: 'apply', label: t('tabApply') },
-          { key: 'records', label: t('tabMyRecords') },
-          ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve', label: t('tabPendingApproval'), badge: approvals.length }] : []),
-        ].map((t: any) => (
+          { key: 'balance' as const, label: t('tabBalance') },
+          { key: 'apply' as const, label: t('tabApply') },
+          { key: 'records' as const, label: t('tabMyRecords') },
+          ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve' as const, label: t('tabPendingApproval'), badge: approvals.length }] : []),
+        ].map((t: { key: 'apply' | 'records' | 'approve' | 'balance'; label: string; badge?: number }) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => {
+              if (t.key === 'records' && tab !== 'records') fetchRecords()
+              setTab(t.key)
+            }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === t.key
                 ? 'border-blue-600 text-blue-600'
@@ -143,7 +182,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
             }`}
           >
             {t.label}
-            {t.badge > 0 && (
+            {(t.badge ?? 0) > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-red-500 text-gray-50 rounded-full">{t.badge}</span>
             )}
           </button>
@@ -215,7 +254,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
                 <tr><td colSpan={5} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
               ) : records.length === 0 ? (
                 <tr><td colSpan={5} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
-              ) : records.map((r: any) => (
+              ) : records.map((r) => (
                 <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.leave_type?.name ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_date}</td>
@@ -249,7 +288,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
               <CheckCircle size={32} className="text-green-400 mx-auto mb-2" />
               <p className="text-slate-500">{t('noApprovals')}</p>
             </div>
-          ) : approvals.map((r: any) => (
+          ) : approvals.map((r) => (
             <ApprovalCard key={r.id} request={r} onAction={handleApprove} />
           ))}
         </div>
@@ -335,7 +374,7 @@ export function LeaveClient({ currentUser, leaveTypes, balances, colleagues, pen
   )
 }
 
-function ApprovalCard({ request, onAction }: { request: any, onAction: (id: string, action: 'approve' | 'reject', reason?: string) => void }) {
+function ApprovalCard({ request, onAction }: { request: LeaveRequest, onAction: (id: string, action: 'approve' | 'reject', reason?: string) => void }) {
   const t = useTranslations('leave')
   const tc = useTranslations('common')
   const [rejectOpen, setRejectOpen] = useState(false)

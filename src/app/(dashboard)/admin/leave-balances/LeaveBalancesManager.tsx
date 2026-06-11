@@ -8,10 +8,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
+interface BalanceUser {
+  id: string
+  display_name: string | null
+  employment_type: string
+  department: { name: string } | { name: string }[] | null
+}
+
+interface LeaveType {
+  id: string
+  name: string
+  applies_to: string
+}
+
+interface LeaveBalance {
+  user_id: string
+  leave_type_id: string
+  allocated_days: number | null
+}
+
 interface Props {
-  users: any[]
-  leaveTypes: any[]
-  balances: any[]
+  users: BalanceUser[]
+  leaveTypes: LeaveType[]
+  balances: LeaveBalance[]
   year: number
   readOnly?: boolean
 }
@@ -46,7 +65,8 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
     setSaving(null)
     if (error) { toast.error(error); return }
     toast.success(t('success'))
-    const { [key]: _, ...rest } = edits
+    const rest = { ...edits }
+    delete rest[key]
     setEdits(rest)
     router.refresh()
   }
@@ -85,7 +105,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
               <tr key={u.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <td className="px-4 py-2 sticky left-0 bg-white dark:bg-slate-800">
                   <p className="font-medium text-slate-800 dark:text-slate-200">{u.display_name}</p>
-                  <p className="text-xs text-slate-400">{u.department?.name} · {u.employment_type === 'full_time' ? tm('fullTime') : tm('intern')}</p>
+                  <p className="text-xs text-slate-400">{(Array.isArray(u.department) ? u.department[0] : u.department)?.name} · {u.employment_type === 'full_time' ? tm('fullTime') : tm('intern')}</p>
                 </td>
                 {leaveTypes.map(lt => {
                   const key = `${u.id}_${lt.id}`

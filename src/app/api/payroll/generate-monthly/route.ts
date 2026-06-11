@@ -1,4 +1,3 @@
-import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
@@ -7,7 +6,6 @@ import { getTranslations } from 'next-intl/server'
 // Also callable manually by admin/HR from the admin payroll page
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
-  const service = await createServiceClient()
 
   // Verify caller is either admin or has a valid cron secret
   const authHeader = request.headers.get('authorization')

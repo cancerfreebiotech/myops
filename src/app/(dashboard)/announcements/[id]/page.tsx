@@ -77,7 +77,6 @@ export default async function AnnouncementDetailPage({
       <AnnouncementDetail
         doc={doc}
         auditLogs={auditLogs ?? []}
-        currentUser={currentUser}
         isRecipient={isRecipient}
         alreadyConfirmed={alreadyConfirmed}
         confirmedAt={myRecipientRecord?.confirmed_at ?? null}

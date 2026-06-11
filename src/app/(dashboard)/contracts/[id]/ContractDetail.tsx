@@ -14,16 +14,78 @@ import {
 } from 'lucide-react'
 import { format, parseISO, differenceInCalendarDays } from 'date-fns'
 
+interface ContractDoc {
+  id: string
+  title: string
+  doc_type: string
+  status: string
+  expires_at: string | null
+  created_at: string
+  file_name: string | null
+  file_size: number | null
+  company: { id: string; name: string } | null
+  uploaded_by_user: { id: string; display_name: string | null } | null
+}
+
+interface RelatedDoc {
+  id: string
+  title: string
+  doc_type: string
+  status: string
+  created_at: string
+}
+
+interface AuditLog {
+  id: string
+  action: string
+  created_at: string
+  detail: { reason?: string } | null
+  user: { id: string; display_name: string | null } | null
+}
+
 interface Props {
-  doc: any
-  relatedDocs: any[]
-  auditLogs: any[]
+  doc: ContractDoc
+  relatedDocs: RelatedDoc[]
+  auditLogs: AuditLog[]
   downloadUrl: string | null
-  currentUser: any
   canApprove: boolean
 }
 
-export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, currentUser, canApprove }: Props) {
+function ExpiryDisplay({ expiresAt }: { expiresAt: string | null }) {
+  const td = useTranslations('contracts.detail2')
+
+  if (!expiresAt) return <span className="text-slate-400">—</span>
+
+  const days = differenceInCalendarDays(parseISO(expiresAt), new Date())
+
+  if (days < 0) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
+        <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('expired')})</span>
+      </div>
+    )
+  }
+  if (days <= 30) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
+        <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
+      </div>
+    )
+  }
+  if (days <= 90) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <AlertTriangle size={14} className="text-orange-400 shrink-0" aria-hidden />
+        <span className="text-orange-600 dark:text-orange-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
+      </div>
+    )
+  }
+  return <span className="text-slate-700 dark:text-slate-300">{expiresAt}</span>
+}
+
+export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, canApprove }: Props) {
   const router = useRouter()
   const t = useTranslations('contracts')
   const td = useTranslations('contracts.detail2')
@@ -77,38 +139,6 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
 
   const fileSizeMb = doc.file_size ? (doc.file_size / 1024 / 1024).toFixed(2) : null
 
-  const ExpiryDisplay = ({ expiresAt }: { expiresAt: string | null }) => {
-    if (!expiresAt) return <span className="text-slate-400">—</span>
-
-    const days = differenceInCalendarDays(parseISO(expiresAt), new Date())
-
-    if (days < 0) {
-      return (
-        <div className="flex items-center gap-1.5">
-          <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
-          <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('expired')})</span>
-        </div>
-      )
-    }
-    if (days <= 30) {
-      return (
-        <div className="flex items-center gap-1.5">
-          <AlertTriangle size={14} className="text-red-500 shrink-0" aria-hidden />
-          <span className="text-red-600 dark:text-red-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
-        </div>
-      )
-    }
-    if (days <= 90) {
-      return (
-        <div className="flex items-center gap-1.5">
-          <AlertTriangle size={14} className="text-orange-400 shrink-0" aria-hidden />
-          <span className="text-orange-600 dark:text-orange-400 font-medium">{expiresAt}({td('daysLeft', { days })})</span>
-        </div>
-      )
-    }
-    return <span className="text-slate-700 dark:text-slate-300">{expiresAt}</span>
-  }
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* ── Main column ── */}
@@ -129,7 +159,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                   </span>
                 )}
                 <Badge variant="outline" className="text-xs">
-                  {t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}
+                  {t(`docTypes.${doc.doc_type}`) ?? doc.doc_type}
                 </Badge>
               </div>
             </div>
@@ -179,7 +209,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
               <div>
                 <p className="text-slate-400 text-xs">{td('docType')}</p>
                 <p className="text-slate-700 dark:text-slate-300 mt-0.5">
-                  {t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}
+                  {t(`docTypes.${doc.doc_type}`) ?? doc.doc_type}
                 </p>
               </div>
             </div>
@@ -223,7 +253,7 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                       {rd.title}
                     </span>
                     <Badge variant="outline" className="text-xs shrink-0">
-                      {t(`docTypes.${rd.doc_type}` as any) ?? rd.doc_type}
+                      {t(`docTypes.${rd.doc_type}`) ?? rd.doc_type}
                     </Badge>
                   </div>
                   <StatusBadge status={rd.status} />
@@ -279,11 +309,11 @@ export function ContractDetail({ doc, relatedDocs, auditLogs, downloadUrl, curre
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-700/50">
-                  {auditLogs.map((log: any) => (
+                  {auditLogs.map((log) => (
                     <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
                       <td className="py-2 pr-2">
                         <span className="font-medium text-slate-700 dark:text-slate-300">
-                          {ta(log.action as any) ?? log.action}
+                          {ta(log.action) ?? log.action}
                         </span>
                         {log.detail?.reason && (
                           <p className="text-red-500 mt-0.5">{td('reason', { reason: log.detail.reason })}</p>

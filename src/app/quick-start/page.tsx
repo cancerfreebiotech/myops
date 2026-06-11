@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
 import { Sun, Moon, Globe, ChevronLeft, Smartphone, QrCode, KeyRound, CheckCircle2, Monitor, ShieldCheck } from 'lucide-react'
@@ -208,6 +208,10 @@ const BADGE_COLOR: Record<string, string> = {
   '毎回のログイン': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
 }
 
+function setCookieLocale(lang: Locale) {
+  document.cookie = `${LOCALE_COOKIE}=${lang}; path=/; max-age=31536000; SameSite=Lax`
+}
+
 function getCookieLocale(): Locale {
   if (typeof document === 'undefined') return 'zh-TW'
   const match = document.cookie.match(new RegExp(`${LOCALE_COOKIE}=([^;]+)`))
@@ -215,21 +219,24 @@ function getCookieLocale(): Locale {
   return (LANG_LIST.map(l => l.code) as string[]).includes(val ?? '') ? (val as Locale) : 'zh-TW'
 }
 
+const emptySubscribe = () => () => {}
+const getServerLocale = (): Locale => 'zh-TW'
+const getMountedSnapshot = () => true
+const getMountedServerSnapshot = () => false
+
 export default function QuickStartPage() {
   const { theme, setTheme } = useTheme()
-  const [locale, setLocale] = useState<Locale>('zh-TW')
-  const [mounted, setMounted] = useState(false)
+  const cookieLocale = useSyncExternalStore(emptySubscribe, getCookieLocale, getServerLocale)
+  const [localeOverride, setLocaleOverride] = useState<Locale | null>(null)
+  const mounted = useSyncExternalStore(emptySubscribe, getMountedSnapshot, getMountedServerSnapshot)
 
-  useEffect(() => {
-    setMounted(true)
-    setLocale(getCookieLocale())
-  }, [])
+  const locale = localeOverride ?? cookieLocale
 
   const content = CONTENT[locale]
 
   const handleLanguageChange = (lang: Locale) => {
-    document.cookie = `${LOCALE_COOKIE}=${lang}; path=/; max-age=31536000; SameSite=Lax`
-    setLocale(lang)
+    setCookieLocale(lang)
+    setLocaleOverride(lang)
   }
 
   return (

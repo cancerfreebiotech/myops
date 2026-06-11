@@ -4,14 +4,14 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { TrendingUp, Minus, DollarSign, ChevronDown } from 'lucide-react'
+import { TrendingUp, Minus, DollarSign } from 'lucide-react'
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 const formatCurrency = (n: number | null) =>
   n == null ? '—' : `NT$ ${Number(n).toLocaleString('zh-TW')}`
 
-interface PayrollRecord {
+export interface PayrollRecord {
   id: string
   user_id?: string
   year: number
@@ -24,15 +24,22 @@ interface PayrollRecord {
   status: string
 }
 
-interface User {
+export interface User {
   id: string
   display_name: string
-  department?: { name: string }
+  department?: { name: string } | { name: string }[] | null
   employment_type?: string
 }
 
+interface CurrentUser {
+  id: string
+  role: string
+  display_name: string | null
+  granted_features: string[] | null
+}
+
 interface Props {
-  currentUser: any
+  currentUser: CurrentUser | null
   myAnnualRecords: PayrollRecord[]
   allUsers: User[]
   allAnnualRecords: PayrollRecord[]
@@ -48,7 +55,6 @@ export function AnnualPayrollClient({
   allUsers,
   allAnnualRecords,
   isHR,
-  canViewPayroll,
   initialYear,
   currentYear,
 }: Props) {
@@ -164,7 +170,7 @@ export function AnnualPayrollClient({
         )}
 
         <div className="ml-auto text-sm text-slate-500 dark:text-slate-400">
-          {t('annualYearSummary', { year: selectedYear, name: selectedUserName })}
+          {t('annualYearSummary', { year: selectedYear, name: selectedUserName ?? '' })}
         </div>
       </div>
 

@@ -4,19 +4,22 @@ import { useTheme } from 'next-themes'
 import { useLocale } from 'next-intl'
 import { usePathname } from 'next/navigation'
 import { Sun, Moon, Globe } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useSyncExternalStore } from 'react'
 import { cn } from '@/lib/utils'
 import { LANGUAGES } from '@/i18n/config'
+
+const emptySubscribe = () => () => {}
+const getMountedSnapshot = () => true
+const getMountedServerSnapshot = () => false
 
 export function LoginControls() {
   const { theme, setTheme } = useTheme()
   const activeLocale = useLocale()
   const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
+  const mounted = useSyncExternalStore(emptySubscribe, getMountedSnapshot, getMountedServerSnapshot)
 
   const handleLanguageChange = (lang: string) => {
-    window.location.href = `/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`
+    window.location.assign(`/api/locale?lang=${lang}&redirect=${encodeURIComponent(pathname)}`)
   }
 
   return (

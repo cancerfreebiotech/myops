@@ -1,0 +1,15 @@
+# Normalize line endings: all text files use LF in the repo and on checkout.
+# (2026-06: a Windows tool rewrote 113 files to CRLF in a working tree — this prevents recurrence.)
+* text=auto eol=lf
+
+# Binary files — never touch line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.pdf binary
+*.xlsx binary

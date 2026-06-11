@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/teams/daily-digest", "schedule": "30 0 * * 1-5" },
+    { "path": "/api/teams/clock-reminder", "schedule": "0 23 * * 0-4" },
+    { "path": "/api/teams/clock-reminder", "schedule": "30 9 * * 1-5" }
+  ]
+}

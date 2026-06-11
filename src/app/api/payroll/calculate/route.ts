@@ -3,6 +3,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
 
+interface InsuranceBracket {
+  insured_salary: number
+  employee_share: number
+  employer_share: number
+}
+
+interface PayrollRecordInsert {
+  user_id: string
+  year: number
+  month: number
+  base_salary: number
+  overtime_pay: number
+  bonus: number
+  other_income: number
+  unpaid_leave_deduct: number
+  labor_insurance: number
+  health_insurance: number
+  labor_pension_self: number
+  other_deduction: number
+  gross_pay: number
+  total_deduction: number
+  net_pay: number
+  employer_labor_ins: number
+  employer_health_ins: number
+  employer_pension: number
+  status: string
+}
+
 // T48: Payroll auto-calculation API
 // Generates draft payroll records for all active TW full-time employees
 export async function POST(request: NextRequest) {
@@ -111,7 +139,7 @@ export async function POST(request: NextRequest) {
     .eq('month', month)
 
   // Helper: find bracket
-  function findBracket(brackets: any[] | null, salary: number) {
+  function findBracket(brackets: InsuranceBracket[] | null, salary: number) {
     if (!brackets?.length) return { employee_share: 0, employer_share: 0 }
     for (let i = brackets.length - 1; i >= 0; i--) {
       if (salary >= Number(brackets[i].insured_salary)) return brackets[i]
@@ -120,7 +148,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 8. Build payroll records
-  const records: any[] = []
+  const records: PayrollRecordInsert[] = []
   let generated = 0
 
   for (const emp of employees) {

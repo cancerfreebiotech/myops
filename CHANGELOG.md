@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.50] - 2026-06-11
+
+### Added
+- **平板 Drawer 側欄**：md–lg 區間新增頂部列 + 漢堡選單，點擊滑入完整側欄（遮罩關閉、ESC、路由切換自動收合），桌面與手機行為不變
+- **Vercel Cron 排程**（`vercel.json`）：每日待辦摘要平日 08:30、打卡提醒平日 07:00（上班）/ 17:30（下班）（台北時間）；cron route 補上 GET handler 並依台北時間自動判斷提醒類型
+
+### Changed
+- **程式碼品質**：清除全部 248 個既有 ESLint 問題（`any` 改為實際型別、移除未用變數、effect 內 setState 重構、hook 依賴修正；僅保留 1 處經評估不可安全改動者），並修正公告列表搜尋競態問題
+- **CI**：GitHub Actions 升級 checkout/setup-node v5、Node 24；新增 `.gitattributes` 強制 LF 換行
+
+### Security
+- **Cron 端點改為 fail-closed**：`notify`、`clock-reminder`、`daily-digest` 在 `CRON_SECRET` 未設定時一律拒絕（原為 fail-open）——部署需設定 `CRON_SECRET` 環境變數
+
 ## [0.2.49] - 2026-06-10
 
 ### Fixed

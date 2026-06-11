@@ -21,12 +21,18 @@ const buildSchema = (requiredMsg: string) => z.object({
 })
 type FormValues = z.infer<ReturnType<typeof buildSchema>>
 
-export function CompaniesManager({ companies }: { companies: any[] }) {
+interface Company {
+  id: string
+  name: string
+  aliases: string[] | null
+}
+
+export function CompaniesManager({ companies }: { companies: Company[] }) {
   const router = useRouter()
   const t = useTranslations('admin.companiesMgmt')
   const tc = useTranslations('common')
   const schema = buildSchema(tc('required'))
-  const [editCompany, setEditCompany] = useState<any>(null)
+  const [editCompany, setEditCompany] = useState<Company | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -40,7 +46,7 @@ export function CompaniesManager({ companies }: { companies: any[] }) {
     c.aliases?.some((a: string) => a.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const openEdit = (company: any) => {
+  const openEdit = (company: Company) => {
     setEditCompany(company)
     form.reset({ name: company.name, aliases: (company.aliases ?? []).join(', ') })
     setShowForm(true)

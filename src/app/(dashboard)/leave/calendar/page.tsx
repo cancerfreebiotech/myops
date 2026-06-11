@@ -60,7 +60,21 @@ export default async function LeaveCalendarPage() {
     .select('id, name')
     .order('name')
 
-  const normalised = (leaveRequests ?? []).map((lr: any) => ({
+  // PostgREST returns single objects (not arrays) for these many-to-one FK
+  // embeds at runtime, so we assert the actual row shape here.
+  interface CalendarLeaveRow {
+    id: string
+    user_id: string
+    leave_type_id: string
+    start_date: string
+    end_date: string
+    status: 'approved' | 'pending'
+    reason: string
+    users: { id: string; display_name: string | null; department_id: string | null } | null
+    leave_types: { id: string; name_zh: string | null } | null
+  }
+
+  const normalised = ((leaveRequests ?? []) as unknown as CalendarLeaveRow[]).map((lr) => ({
     id: lr.id,
     user_id: lr.user_id,
     leave_type_id: lr.leave_type_id,

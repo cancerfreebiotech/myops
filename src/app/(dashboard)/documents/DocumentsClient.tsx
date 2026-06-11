@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,17 +16,27 @@ import { StatusBadge } from '@/components/StatusBadge'
 const DOC_TYPE_KEYS = ['ANN', 'REG', 'NDA', 'MOU', 'CONTRACT', 'AMEND', 'INTERNAL'] as const
 const FOLDER_KEYS = ['shared', 'contracts', 'internal', 'archived'] as const
 
+interface DocumentRow {
+  id: string
+  title: string
+  doc_type: string
+  folder: string
+  status: string
+  expires_at: string | null
+  uploaded_by_user: { id: string; display_name: string | null } | null
+}
+
 interface DocumentsClientProps {
-  departments: any[]
-  companies: any[]
-  currentUser: any
+  departments: { id: string; name: string }[]
+  companies: { id: string; name: string }[]
+  currentUser: { role: string; granted_features: string[] | null; department_id: string | null } | null
 }
 
 export function DocumentsClient({ departments, companies, currentUser }: DocumentsClientProps) {
   const router = useRouter()
   const t = useTranslations('documents')
   const tc = useTranslations('common')
-  const [documents, setDocuments] = useState<any[]>([])
+  const [documents, setDocuments] = useState<DocumentRow[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -34,26 +44,32 @@ export function DocumentsClient({ departments, companies, currentUser }: Documen
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [showUpload, setShowUpload] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [refreshTick, setRefreshTick] = useState(0)
+  const queryKey = JSON.stringify([page, search, filterFolder, filterType, filterStatus, refreshTick])
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const loading = loadedKey !== queryKey
 
-  const canPublish = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('publish_announcement')
+  const canPublish = currentUser?.role === 'admin' || (currentUser?.granted_features?.includes('publish_announcement') ?? false)
 
-  const fetchDocuments = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams({ page: String(page) })
-    if (search) params.set('search', search)
-    if (filterFolder) params.set('folder', filterFolder)
-    if (filterType) params.set('doc_type', filterType)
-    if (filterStatus) params.set('status', filterStatus)
+  useEffect(() => {
+    let cancelled = false
+    const fetchDocuments = async () => {
+      const params = new URLSearchParams({ page: String(page) })
+      if (search) params.set('search', search)
+      if (filterFolder) params.set('folder', filterFolder)
+      if (filterType) params.set('doc_type', filterType)
+      if (filterStatus) params.set('status', filterStatus)
 
-    const res = await fetch(`/api/documents?${params}`)
-    const { data, count } = await res.json()
-    setDocuments(data ?? [])
-    setCount(count ?? 0)
-    setLoading(false)
-  }, [page, search, filterFolder, filterType, filterStatus])
-
-  useEffect(() => { fetchDocuments() }, [fetchDocuments])
+      const res = await fetch(`/api/documents?${params}`)
+      const { data, count } = await res.json()
+      if (cancelled) return
+      setDocuments(data ?? [])
+      setCount(count ?? 0)
+      setLoadedKey(queryKey)
+    }
+    fetchDocuments()
+    return () => { cancelled = true }
+  }, [queryKey, page, search, filterFolder, filterType, filterStatus])
 
   const PAGE_SIZE = 20
   const totalPages = Math.ceil(count / PAGE_SIZE)
@@ -158,7 +174,7 @@ export function DocumentsClient({ departments, companies, currentUser }: Documen
             companies={companies}
             canPublish={canPublish}
             currentUser={currentUser}
-            onSuccess={() => { setShowUpload(false); fetchDocuments() }}
+            onSuccess={() => { setShowUpload(false); setRefreshTick(n => n + 1) }}
           />
         </DialogContent>
       </Dialog>

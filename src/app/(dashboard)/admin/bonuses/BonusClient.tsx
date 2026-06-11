@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,15 +10,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner'
 import { Plus, Trash2, Gift } from 'lucide-react'
 
+interface BonusUser {
+  id: string
+  display_name: string | null
+}
+
+interface BonusRecord {
+  id: string
+  month: number | null
+  type: string
+  amount: number | null
+  description: string | null
+  user: BonusUser | BonusUser[] | null
+}
+
 interface Props {
-  initialBonuses: any[]
-  allUsers: any[]
+  initialBonuses: BonusRecord[]
+  allUsers: BonusUser[]
   currentYear: number
   readOnly?: boolean
 }
 
 export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }: Props) {
-  const router = useRouter()
   const t = useTranslations('admin.bonuses')
   const tc = useTranslations('common')
   const tm = useTranslations('admin.bonusMgmt')
@@ -102,7 +114,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
     await fetchBonuses(year)
   }
 
-  const total = bonuses.reduce((sum: number, b: any) => sum + Number(b.amount ?? 0), 0)
+  const total = bonuses.reduce((sum: number, b) => sum + Number(b.amount ?? 0), 0)
 
   return (
     <div className="space-y-4">
@@ -150,7 +162,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
                 </tr>
               ) : (
                 <>
-                  {bonuses.map((b: any) => {
+                  {bonuses.map(b => {
                     const u = Array.isArray(b.user) ? b.user[0] : b.user
                     return (
                       <tr key={b.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
@@ -211,7 +223,7 @@ export function BonusClient({ initialBonuses, allUsers, currentYear, readOnly }:
               <Select value={selUser} onValueChange={v => setSelUser(v ?? '')}>
                 <SelectTrigger className="mt-1"><SelectValue placeholder={tm('selectEmployee')} /></SelectTrigger>
                 <SelectContent>
-                  {allUsers.map((u: any) => (
+                  {allUsers.map(u => (
                     <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>
                   ))}
                 </SelectContent>

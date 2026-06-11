@@ -6,22 +6,44 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { LogIn, LogOut, MapPin, AlertTriangle, Clock } from 'lucide-react'
+import { LogIn, LogOut, MapPin, AlertTriangle } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { MakeupRequestDialog } from './MakeupRequestDialog'
 
+interface CurrentUser {
+  id: string
+  role: string
+  employment_type: string
+  display_name: string | null
+  department_id: string | null
+}
+
+interface Department {
+  id: string
+  name: string
+}
+
+interface AttendanceRecord {
+  id: string
+  clock_date: string
+  clock_in: string | null
+  clock_out: string | null
+  is_auto_in: boolean
+  is_auto_out: boolean
+  user?: { id: string; display_name: string | null } | null
+}
+
 interface Props {
-  currentUser: any
-  departments: any[]
+  currentUser: CurrentUser
+  departments: Department[]
   isHR: boolean
 }
 
 export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   const t = useTranslations('attendance')
-  const tc = useTranslations('common')
   const tx = useTranslations('attendance.clientExtra')
-  const [todayRecord, setTodayRecord] = useState<any>(null)
-  const [records, setRecords] = useState<any[]>([])
+  const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
+  const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [clocking, setClocking] = useState(false)
   const [tab, setTab] = useState<'clock' | 'records' | 'team'>('clock')
@@ -32,17 +54,19 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'getting' | 'ok' | 'denied'>('idle')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
 
-  const fetchTodayRecord = useCallback(async () => {
-    const res = await fetch('/api/attendance/clock')
-    const { data } = await res.json()
-    setTodayRecord(data ?? null)
+  const fetchTodayRecord = useCallback(() => {
+    return fetch('/api/attendance/clock')
+      .then(res => res.json())
+      .then(({ data }) => { setTodayRecord(data ?? null) })
   }, [])
 
-  const fetchRecords = useCallback(async () => {
+  const fetchRecords = useCallback(async (next?: { tab?: 'clock' | 'records' | 'team'; year?: string; month?: string; dept?: string }) => {
     setLoading(true)
-    const params = new URLSearchParams({ year: filterYear, month: filterMonth })
-    if (tab === 'team' && filterDept) params.set('department_id', filterDept)
-    else if (tab === 'records') params.set('user_id', currentUser.id)
+    const activeTab = next?.tab ?? tab
+    const dept = next?.dept ?? filterDept
+    const params = new URLSearchParams({ year: next?.year ?? filterYear, month: next?.month ?? filterMonth })
+    if (activeTab === 'team' && dept) params.set('department_id', dept)
+    else if (activeTab === 'records') params.set('user_id', currentUser.id)
     const res = await fetch(`/api/attendance/records?${params}`)
     const { data } = await res.json()
     setRecords(data ?? [])
@@ -50,9 +74,6 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   }, [filterYear, filterMonth, filterDept, tab, currentUser.id])
 
   useEffect(() => { fetchTodayRecord() }, [fetchTodayRecord])
-  useEffect(() => {
-    if (tab !== 'clock') fetchRecords()
-  }, [tab, fetchRecords])
 
   const getGPS = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise(resolve => {
@@ -93,24 +114,21 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   const years = [String(now.getFullYear()), String(now.getFullYear() - 1)]
   const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
 
-  const workHours = (record: any) => {
-    if (!record.clock_in || !record.clock_out) return null
-    const diff = (new Date(record.clock_out).getTime() - new Date(record.clock_in).getTime()) / 3600000
-    return diff.toFixed(1)
-  }
-
   return (
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {[
-          { key: 'clock', label: t('title') },
-          { key: 'records', label: t('myRecords') },
-          ...(isHR ? [{ key: 'team', label: t('teamOverview') }] : []),
-        ].map((item: any) => (
+          { key: 'clock' as const, label: t('title') },
+          { key: 'records' as const, label: t('myRecords') },
+          ...(isHR ? [{ key: 'team' as const, label: t('teamOverview') }] : []),
+        ].map((item) => (
           <button
             key={item.key}
-            onClick={() => setTab(item.key)}
+            onClick={() => {
+              if (item.key !== 'clock' && item.key !== tab) fetchRecords({ tab: item.key })
+              setTab(item.key)
+            }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === item.key
                 ? 'border-blue-600 text-blue-600'
@@ -201,11 +219,11 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
       {tab === 'records' && (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <Select value={filterYear} onValueChange={v => setFilterYear(v ?? filterYear)}>
+            <Select value={filterYear} onValueChange={v => { const y = v ?? filterYear; if (y !== filterYear) fetchRecords({ year: y }); setFilterYear(y) }}>
               <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={filterMonth} onValueChange={v => setFilterMonth(v ?? filterMonth)}>
+            <Select value={filterMonth} onValueChange={v => { const m = v ?? filterMonth; if (m !== filterMonth) fetchRecords({ month: m }); setFilterMonth(m) }}>
               <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
               <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
             </Select>
@@ -218,15 +236,15 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
       {tab === 'team' && isHR && (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <Select value={filterYear} onValueChange={v => setFilterYear(v ?? filterYear)}>
+            <Select value={filterYear} onValueChange={v => { const y = v ?? filterYear; if (y !== filterYear) fetchRecords({ year: y }); setFilterYear(y) }}>
               <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={filterMonth} onValueChange={v => setFilterMonth(v ?? filterMonth)}>
+            <Select value={filterMonth} onValueChange={v => { const m = v ?? filterMonth; if (m !== filterMonth) fetchRecords({ month: m }); setFilterMonth(m) }}>
               <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
               <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={filterDept} onValueChange={v => setFilterDept(v ?? '')}>
+            <Select value={filterDept} onValueChange={v => { const d = v ?? ''; if (d !== filterDept) fetchRecords({ dept: d }); setFilterDept(d) }}>
               <SelectTrigger className="w-36"><SelectValue placeholder={t('allDepartments')} /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="">{t('allDepartments')}</SelectItem>
@@ -243,10 +261,10 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   )
 }
 
-function RecordsTable({ records, loading, showUser }: { records: any[], loading: boolean, showUser: boolean }) {
+function RecordsTable({ records, loading, showUser }: { records: AttendanceRecord[], loading: boolean, showUser: boolean }) {
   const t = useTranslations('attendance')
   const tc = useTranslations('common')
-  const workHours = (r: any) => {
+  const workHours = (r: AttendanceRecord) => {
     if (!r.clock_in || !r.clock_out) return null
     const diff = (new Date(r.clock_out).getTime() - new Date(r.clock_in).getTime()) / 3600000
     return diff.toFixed(1)
@@ -270,7 +288,7 @@ function RecordsTable({ records, loading, showUser }: { records: any[], loading:
             <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
           ) : records.length === 0 ? (
             <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{t('noRecordsShort')}</td></tr>
-          ) : records.map((r: any) => (
+          ) : records.map((r) => (
             <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
               {showUser && (
                 <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name ?? '—'}</td>

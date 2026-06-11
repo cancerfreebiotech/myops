@@ -13,10 +13,21 @@ import { Search, Pencil, FileUser, UserX, AlertTriangle, Loader2 } from 'lucide-
 import { DialogFooter } from '@/components/ui/dialog'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import type { User } from '@/types'
+
+type UserRow = User & { department: { id: string; name: string; code: string } | null }
+
+interface OffboardData {
+  contracts: { id: string; title: string; status: string }[]
+  projects: { id: string; name: string; status: string }[]
+  pendingLeaves: { id: string; start_date: string; end_date: string; status: string }[]
+  pendingOT: { id: string; ot_date: string; hours: number; status: string }[]
+  unpaidPayroll: { id: string; year: number; month: number; net_pay: number | null; status: string }[]
+}
 
 interface UsersTableProps {
-  users: any[]
-  departments: any[]
+  users: UserRow[]
+  departments: { id: string; name: string; code: string }[]
   isAdmin: boolean
 }
 
@@ -25,14 +36,14 @@ export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
   const tc = useTranslations('common')
   const tt = useTranslations('admin.usersTable')
   const [search, setSearch] = useState('')
-  const [editUser, setEditUser] = useState<any>(null)
-  const [offboardUser, setOffboardUser] = useState<any>(null)
-  const [offboardData, setOffboardData] = useState<any>(null)
+  const [editUser, setEditUser] = useState<UserRow | null>(null)
+  const [offboardUser, setOffboardUser] = useState<UserRow | null>(null)
+  const [offboardData, setOffboardData] = useState<OffboardData | null>(null)
   const [offboardLoading, setOffboardLoading] = useState(false)
   const [deactivating, setDeactivating] = useState(false)
   const router = useRouter()
 
-  const handleOffboard = async (user: any) => {
+  const handleOffboard = async (user: UserRow) => {
     setOffboardUser(user)
     setOffboardLoading(true)
     try {
@@ -181,11 +192,11 @@ export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
             </div>
           ) : offboardData ? (
             <div className="space-y-3 text-sm">
-              <OffboardSection label={t('ownedContracts')} items={offboardData.contracts} renderItem={(c: any) => `${c.title} (${c.status})`} />
-              <OffboardSection label={t('activeProjects')} items={offboardData.projects} renderItem={(p: any) => p.name} />
-              <OffboardSection label={t('pendingLeaves')} items={offboardData.pendingLeaves} renderItem={(l: any) => `${l.start_date} ~ ${l.end_date}`} />
-              <OffboardSection label={t('pendingOT')} items={offboardData.pendingOT} renderItem={(o: any) => `${o.ot_date} ${o.hours}h`} />
-              <OffboardSection label={t('unpaidPayroll')} items={offboardData.unpaidPayroll} renderItem={(p: any) => `${p.year}/${p.month} (${p.status})`} />
+              <OffboardSection label={t('ownedContracts')} items={offboardData.contracts} renderItem={c => `${c.title} (${c.status})`} />
+              <OffboardSection label={t('activeProjects')} items={offboardData.projects} renderItem={p => p.name} />
+              <OffboardSection label={t('pendingLeaves')} items={offboardData.pendingLeaves} renderItem={l => `${l.start_date} ~ ${l.end_date}`} />
+              <OffboardSection label={t('pendingOT')} items={offboardData.pendingOT} renderItem={o => `${o.ot_date} ${o.hours}h`} />
+              <OffboardSection label={t('unpaidPayroll')} items={offboardData.unpaidPayroll} renderItem={p => `${p.year}/${p.month} (${p.status})`} />
 
               {(offboardData.contracts.length + offboardData.projects.length + offboardData.pendingLeaves.length + offboardData.pendingOT.length + offboardData.unpaidPayroll.length) > 0 ? (
                 <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 p-3">
@@ -216,7 +227,7 @@ export function UsersTable({ users, departments, isAdmin }: UsersTableProps) {
   )
 }
 
-function OffboardSection({ label, items, renderItem }: { label: string; items: any[]; renderItem: (item: any) => string }) {
+function OffboardSection<T>({ label, items, renderItem }: { label: string; items: T[]; renderItem: (item: T) => string }) {
   if (items.length === 0) return null
   return (
     <div>

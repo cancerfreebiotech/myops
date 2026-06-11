@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -10,45 +10,58 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Search, FileText, AlertTriangle } from 'lucide-react'
-import { format, parseISO, differenceInDays } from 'date-fns'
+import { parseISO, differenceInDays } from 'date-fns'
 
 const DOC_TYPE_KEYS = ['NDA', 'MOU', 'CONTRACT', 'AMEND'] as const
 
-interface Props {
-  companies: any[]
-  currentUser: any
-  canApprove: boolean
+interface ContractRow {
+  id: string
+  title: string
+  doc_type: string
+  status: string
+  expires_at: string | null
+  company: { id: string; name: string } | null
+  uploaded_by_user: { id: string; display_name: string | null } | null
 }
 
-export function ContractsClient({ companies, currentUser, canApprove }: Props) {
+interface Props {
+  companies: { id: string; name: string }[]
+}
+
+export function ContractsClient({ companies }: Props) {
   const router = useRouter()
   const t = useTranslations('contracts')
   const tc = useTranslations('common')
-  const [contracts, setContracts] = useState<any[]>([])
+  const [contracts, setContracts] = useState<ContractRow[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterCompany, setFilterCompany] = useState('')
-  const [loading, setLoading] = useState(true)
+  const queryKey = JSON.stringify([page, search, filterType, filterStatus, filterCompany])
+  const [loadedKey, setLoadedKey] = useState<string | null>(null)
+  const loading = loadedKey !== queryKey
 
-  const fetchContracts = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams({ folder: 'contracts', page: String(page) })
-    if (search) params.set('search', search)
-    if (filterType) params.set('doc_type', filterType)
-    if (filterStatus) params.set('status', filterStatus)
-    if (filterCompany) params.set('company_id', filterCompany)
+  useEffect(() => {
+    let cancelled = false
+    const fetchContracts = async () => {
+      const params = new URLSearchParams({ folder: 'contracts', page: String(page) })
+      if (search) params.set('search', search)
+      if (filterType) params.set('doc_type', filterType)
+      if (filterStatus) params.set('status', filterStatus)
+      if (filterCompany) params.set('company_id', filterCompany)
 
-    const res = await fetch(`/api/documents?${params}`)
-    const { data, count } = await res.json()
-    setContracts(data ?? [])
-    setCount(count ?? 0)
-    setLoading(false)
-  }, [page, search, filterType, filterStatus, filterCompany])
-
-  useEffect(() => { fetchContracts() }, [fetchContracts])
+      const res = await fetch(`/api/documents?${params}`)
+      const { data, count } = await res.json()
+      if (cancelled) return
+      setContracts(data ?? [])
+      setCount(count ?? 0)
+      setLoadedKey(queryKey)
+    }
+    fetchContracts()
+    return () => { cancelled = true }
+  }, [queryKey, page, search, filterType, filterStatus, filterCompany])
 
   const PAGE_SIZE = 20
   const totalPages = Math.ceil(count / PAGE_SIZE)
@@ -127,7 +140,7 @@ export function ContractsClient({ companies, currentUser, canApprove }: Props) {
                       <span className="font-medium text-sm truncate max-w-[220px]">{doc.title}</span>
                     </div>
                   </TableCell>
-                  <TableCell><Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}`) ?? doc.doc_type}</Badge></TableCell>
                   <TableCell className="text-sm text-slate-500">{doc.company?.name ?? '—'}</TableCell>
                   <TableCell><StatusBadge status={doc.status} /></TableCell>
                   <TableCell>

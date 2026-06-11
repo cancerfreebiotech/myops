@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   return (
     <div>
       <PageHeader title={t('title')} description={t('description')} />
-      <SettingsClient profile={profile} />
+      <SettingsClient profile={profile!} />
     </div>
   )
 }

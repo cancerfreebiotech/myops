@@ -12,7 +12,18 @@ import { format } from 'date-fns'
 import { Image as ImageIcon } from 'lucide-react'
 import Image from 'next/image'
 
-export function FeedbackAdmin({ feedbacks }: { feedbacks: any[] }) {
+interface FeedbackItem {
+  id: string
+  type: string
+  title: string
+  description: string | null
+  status: string
+  screenshot_url: string | null
+  created_at: string
+  user: { id: string; display_name: string | null } | null
+}
+
+export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
   const router = useRouter()
   const t = useTranslations('admin.feedbackAdmin')
   const tc = useTranslations('common')

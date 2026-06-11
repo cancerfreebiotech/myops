@@ -2,11 +2,17 @@
 
 import { useTranslations } from 'next-intl'
 import { AlertTriangle, UserX } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+
+export interface AnomalyUser {
+  id: string
+  display_name: string | null
+  employment_type?: string | null
+  department?: { name: string } | null
+}
 
 interface Props {
-  anomalies: { user: any; auto_days: number; recent_dates: string[] }[]
-  internAnomalies: { user: any; missed: number }[]
+  anomalies: { user: AnomalyUser | null; auto_days: number; recent_dates: string[] }[]
+  internAnomalies: { user: AnomalyUser | null; missed: number }[]
 }
 
 export function AnomaliesClient({ anomalies, internAnomalies }: Props) {

@@ -9,8 +9,9 @@ export async function POST(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
   const authHeader = request.headers.get('authorization')
 
-  // Verify cron or admin
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Verify cron or admin (fail closed: cron path requires CRON_SECRET to be configured)
+  const isCron = !!cronSecret && authHeader === `Bearer ${cronSecret}`
+  if (!isCron) {
     // Fallback: check user auth
     const { createClient } = await import('@/lib/supabase/server')
     const supabase = await createClient()
@@ -100,3 +101,6 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ data: { sent, total: users.length } })
 }
+
+// Vercel Cron invokes via GET
+export const GET = POST

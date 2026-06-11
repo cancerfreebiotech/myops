@@ -37,7 +37,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
   if (!doc) notFound()
 
   // Fetch related documents from the same company
-  let relatedDocs: any[] = []
+  let relatedDocs: { id: string; title: string; doc_type: string; status: string; created_at: string }[] = []
   if (doc.company_id) {
     const { data } = await service
       .from('documents')
@@ -81,7 +81,6 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         relatedDocs={relatedDocs}
         auditLogs={auditLogs ?? []}
         downloadUrl={downloadUrl}
-        currentUser={currentUser}
         canApprove={canApprove}
       />
     </div>

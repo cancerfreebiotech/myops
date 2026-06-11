@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { AnnouncementsClient } from './AnnouncementsClient'
+import { AnnouncementsClient, type ReportDoc } from './AnnouncementsClient'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function AnnouncementsPage() {
@@ -25,7 +25,7 @@ export default async function AnnouncementsPage() {
     currentUser?.granted_features?.includes('publish_announcement')
 
   // Publisher report: unconfirmed counts per announcement
-  let reportData: any[] = []
+  let reportData: ReportDoc[] = []
   if (canPublish) {
     const { data } = await service
       .from('documents')
@@ -48,10 +48,8 @@ export default async function AnnouncementsPage() {
     <div>
       <PageHeader title={t('title')} description={t('description')} />
       <AnnouncementsClient
-        currentUser={currentUser}
         canPublish={canPublish}
         reportData={reportData}
-        userId={user.id}
       />
     </div>
   )

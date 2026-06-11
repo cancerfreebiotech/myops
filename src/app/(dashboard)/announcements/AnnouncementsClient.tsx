@@ -1,24 +1,53 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Search, Users, CheckCircle } from 'lucide-react'
 import { format } from 'date-fns'
 
-interface Props {
-  currentUser: any
-  canPublish: boolean
-  reportData: any[]
-  userId: string
+interface AnnouncementDoc {
+  id: string
+  title: string
+  status: string
+  created_at: string
+  announcement_category: string | null
+  content_zh: string | null
 }
 
-export function AnnouncementsClient({ currentUser, canPublish, reportData, userId }: Props) {
+interface PendingConfirmation {
+  id: string
+  document_id: string
+  created_at: string
+  document: {
+    id: string
+    title: string
+    announcement_category: string | null
+    created_at: string
+    content_zh: string | null
+    status: string
+  } | null
+}
+
+export interface ReportDoc {
+  id: string
+  title: string
+  created_at: string
+  announcement_category: string | null
+  status: string
+  document_recipients: { count: number }[] | null
+}
+
+interface Props {
+  canPublish: boolean
+  reportData: ReportDoc[]
+}
+
+export function AnnouncementsClient({ canPublish, reportData }: Props) {
   const router = useRouter()
   const t = useTranslations('announcements')
   const tx = useTranslations('announcements.listExtra')
@@ -27,29 +56,36 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
   const CATEGORY_LABELS: Record<string, string> = {
     hr: t('categories.hr'), admin: t('categories.admin'), regulation: t('categories.regulation'), urgent: t('categories.urgent'),
   }
-  const [announcements, setAnnouncements] = useState<any[]>([])
-  const [myPending, setMyPending] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [announcements, setAnnouncements] = useState<AnnouncementDoc[]>([])
+  const [myPending, setMyPending] = useState<PendingConfirmation[]>([])
+  const [loadedSearch, setLoadedSearch] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [tab, setTab] = useState<'all' | 'my' | 'report'>('my')
 
-  const fetchAnnouncements = useCallback(async () => {
-    setLoading(true)
-    const params = new URLSearchParams({ doc_type: 'ANN' })
-    if (search) params.set('search', search)
-    const res = await fetch(`/api/documents?${params}`)
-    const { data } = await res.json()
-    setAnnouncements(data ?? [])
+  const loading = loadedSearch !== search
 
-    // My pending confirmations
-    const myRes = await fetch('/api/announcements/my-pending')
-    const myData = await myRes.json()
-    setMyPending(myData.data ?? [])
-    setLoading(false)
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      const params = new URLSearchParams({ doc_type: 'ANN' })
+      if (search) params.set('search', search)
+      const res = await fetch(`/api/documents?${params}`)
+      const { data } = await res.json()
+
+      // My pending confirmations
+      const myRes = await fetch('/api/announcements/my-pending')
+      const myData = await myRes.json()
+      return { data, myData }
+    }
+    let cancelled = false
+    fetchAnnouncements().then(({ data, myData }) => {
+      if (cancelled) return
+      setAnnouncements(data ?? [])
+      setMyPending(myData.data ?? [])
+      setLoadedSearch(search)
+    })
+    return () => { cancelled = true }
   }, [search])
-
-  useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
 
   const filtered = announcements.filter(a =>
     !filterCategory || a.announcement_category === filterCategory
@@ -59,11 +95,11 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
     <div className="space-y-4">
       {/* Tabs */}
       <div className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
-        {[
+        {([
           { key: 'my', label: t('unconfirmed'), badge: myPending.length },
           { key: 'all', label: t('title') },
           ...(canPublish ? [{ key: 'report', label: tx('reportTab') }] : []),
-        ].map((t: any) => (
+        ] as { key: 'all' | 'my' | 'report'; label: string; badge?: number }[]).map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
@@ -74,7 +110,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
             }`}
           >
             {t.label}
-            {t.badge > 0 && (
+            {(t.badge ?? 0) > 0 && (
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs bg-red-500 text-gray-50 rounded-full">{t.badge}</span>
             )}
           </button>
@@ -91,7 +127,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
               <CheckCircle size={32} className="text-green-400 mx-auto mb-2" />
               <p className="text-slate-500">{t('noAnnouncements')}</p>
             </div>
-          ) : myPending.map((item: any) => (
+          ) : myPending.map((item) => (
             <div
               key={item.id}
               className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 cursor-pointer hover:border-blue-300 transition-colors"
@@ -138,7 +174,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
               <p className="text-center py-8 text-slate-400 text-sm">{tc('loading')}</p>
             ) : filtered.length === 0 ? (
               <p className="text-center py-8 text-slate-400 text-sm">{t('noAnnouncements')}</p>
-            ) : filtered.map((doc: any) => (
+            ) : filtered.map((doc) => (
               <div
                 key={doc.id}
                 className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 cursor-pointer hover:border-blue-300 transition-colors"
@@ -185,7 +221,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {reportData.map((doc: any) => {
+                  {reportData.map((doc) => {
                     const total = doc.document_recipients?.length ?? 0
                     return (
                       <tr
@@ -194,7 +230,7 @@ export function AnnouncementsClient({ currentUser, canPublish, reportData, userI
                         onClick={() => router.push(`/documents/${doc.id}`)}
                       >
                         <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 max-w-[260px] truncate">{doc.title}</td>
-                        <td className="px-4 py-3 text-slate-500">{CATEGORY_LABELS[doc.announcement_category] ?? '—'}</td>
+                        <td className="px-4 py-3 text-slate-500">{CATEGORY_LABELS[doc.announcement_category ?? ''] ?? '—'}</td>
                         <td className="px-4 py-3 text-slate-500">{format(new Date(doc.created_at), 'yyyy/MM/dd')}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">

@@ -9,9 +9,33 @@ import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
+interface TargetUser {
+  id: string
+  display_name: string | null
+  email: string
+  employment_type: string | null
+  department: { name: string } | { name: string }[] | null
+}
+
+interface ProfileRow {
+  hire_date: string | null
+  termination_date: string | null
+  birth_date: string | null
+  phone: string | null
+  address: string | null
+  emergency_contact: string | null
+  emergency_phone: string | null
+  monthly_salary: number | null
+  hourly_rate: number | null
+  labor_pension_self: number | null
+  bank_code: string | null
+  bank_account: string | null
+  id_number: string | null
+}
+
 interface Props {
-  targetUser: any
-  initialProfile: any
+  targetUser: TargetUser
+  initialProfile: ProfileRow | null
 }
 
 export function ProfileClient({ targetUser, initialProfile }: Props) {
@@ -24,7 +48,7 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
   const [showId, setShowId] = useState(false)
   const [showBank, setShowBank] = useState(false)
 
-  const p = initialProfile ?? {}
+  const p: Partial<ProfileRow> = initialProfile ?? {}
   const [form, setForm] = useState({
     hire_date: p.hire_date ?? '',
     termination_date: p.termination_date ?? '',

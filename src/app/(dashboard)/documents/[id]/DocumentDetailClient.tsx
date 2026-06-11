@@ -15,15 +15,61 @@ import { useTranslations } from 'next-intl'
 
 const KNOWN_AUDIT_ACTIONS = new Set(['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm'])
 
+interface NamedRef {
+  id: string
+  display_name: string | null
+}
+
+interface DocumentDetail {
+  id: string
+  title: string
+  doc_type: string
+  folder: string
+  status: string
+  created_at: string
+  expires_at: string | null
+  file_name: string | null
+  file_size: number | null
+  content_zh: string | null
+  content_en: string | null
+  content_ja: string | null
+  ai_translated: boolean | null
+  company: { id: string; name: string } | null
+  department: { id: string; name: string } | null
+  uploaded_by_user: NamedRef | null
+  approved_by_user: NamedRef | null
+}
+
+interface AuditLog {
+  id: string
+  action: string
+  created_at: string
+  detail: { reason?: string } | null
+  user: NamedRef | null
+}
+
+interface Recipient {
+  id: string
+  user_id: string
+  confirmed_at: string | null
+  user: NamedRef | null
+}
+
+interface UserOption {
+  id: string
+  display_name: string | null
+  department: { name: string } | null
+}
+
 interface Props {
-  doc: any
-  auditLogs: any[]
-  recipients: any[]
-  currentUser: any
+  doc: DocumentDetail
+  auditLogs: AuditLog[]
+  recipients: Recipient[]
+  currentUser: { id: string } | null
   canApprove: boolean
   canPublish: boolean
   downloadUrl: string | null
-  allUsers?: any[]
+  allUsers?: UserOption[]
 }
 
 export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, canApprove, canPublish, downloadUrl, allUsers = [] }: Props) {
@@ -44,7 +90,6 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
   const [confirming, setConfirming] = useState(false)
 
   const isAnnouncement = ['ANN', 'REG'].includes(doc.doc_type)
-  const isContract = ['NDA', 'MOU', 'CONTRACT', 'AMEND'].includes(doc.doc_type)
 
   const patch = async (body: object) => {
     setLoading(true)
@@ -128,8 +173,8 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
             <div>
               <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{doc.title}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}` as any) ?? doc.doc_type}</Badge>
-                <span className="text-xs text-slate-400">{t(`folders.${doc.folder}` as any) ?? doc.folder}</span>
+                <Badge variant="outline" className="text-xs">{t(`docTypes.${doc.doc_type}`) ?? doc.doc_type}</Badge>
+                <span className="text-xs text-slate-400">{t(`folders.${doc.folder}`) ?? doc.folder}</span>
               </div>
             </div>
             <StatusBadge status={doc.status} />
@@ -226,7 +271,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
             <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">{td('recipientStatus')}</h3>
             <div className="space-y-2">
-              {recipients.map((r: any) => (
+              {recipients.map((r) => (
                 <div key={r.id} className="flex items-center justify-between text-sm">
                   <span className="text-slate-700 dark:text-slate-300">{r.user?.display_name ?? r.user_id}</span>
                   <div className="flex items-center gap-2">
@@ -273,7 +318,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
         )}
         {/* Confirm read button for recipients */}
         {isAnnouncement && doc.status === 'approved' && (() => {
-          const myRecord = recipients.find((r: any) => r.user_id === currentUser?.id)
+          const myRecord = recipients.find((r) => r.user_id === currentUser?.id)
           if (!myRecord) return null
           if (myRecord.confirmed_at) return (
             <div className="rounded-lg border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4 text-center">
@@ -308,10 +353,10 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
             <p className="text-xs text-slate-400">{td('noRecords')}</p>
           ) : (
             <div className="space-y-3">
-              {auditLogs.map((log: any) => (
+              {auditLogs.map((log) => (
                 <div key={log.id} className="text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{KNOWN_AUDIT_ACTIONS.has(log.action) ? ta(log.action as any) : log.action}</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{KNOWN_AUDIT_ACTIONS.has(log.action) ? ta(log.action) : log.action}</span>
                     <span className="text-slate-400">{format(new Date(log.created_at), 'MM/dd HH:mm')}</span>
                   </div>
                   <p className="text-slate-400 mt-0.5">{log.user?.display_name}</p>
@@ -353,7 +398,7 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
               <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{td('selectRecipients')}</label>
               <p className="text-xs text-slate-400 mb-2">{td('selectRecipientsHint')}</p>
               <div className="space-y-1 max-h-48 overflow-y-auto border border-slate-200 dark:border-slate-600 rounded-md p-2">
-                {allUsers.map((u: any) => (
+                {allUsers.map((u) => (
                   <label key={u.id} className="flex items-center gap-2 text-sm cursor-pointer py-1 px-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded">
                     <input
                       type="checkbox"

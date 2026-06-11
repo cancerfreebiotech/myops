@@ -18,17 +18,36 @@ const PAY_RATE_KEYS: Record<string, string> = {
   full: 'payRateFull', half: 'payRateHalf', none: 'payRateNone',
 }
 
-const EMPTY_FORM = {
+interface LeaveTypeForm {
+  name: string
+  applies_to: string
+  pay_rate: string
+  max_days_per_year: string | number
+  advance_days_required: string | number
+  is_active: boolean
+}
+
+const EMPTY_FORM: LeaveTypeForm = {
   name: '', applies_to: 'full_time', pay_rate: 'full',
   max_days_per_year: '', advance_days_required: '1', is_active: true,
 }
 
-export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[]; readOnly?: boolean }) {
+interface LeaveType {
+  id: string
+  name: string
+  applies_to: string
+  pay_rate: string
+  max_days_per_year: number | null
+  advance_days_required: number | null
+  is_active: boolean | null
+}
+
+export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: LeaveType[]; readOnly?: boolean }) {
   const router = useRouter()
   const t = useTranslations('admin.leaveTypesMgmt')
   const tc = useTranslations('common')
   const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<LeaveType | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [loading, setLoading] = useState(false)
 
@@ -38,7 +57,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
     setOpen(true)
   }
 
-  const openEdit = (lt: any) => {
+  const openEdit = (lt: LeaveType) => {
     setEditing(lt)
     setForm({
       name: lt.name,
@@ -105,7 +124,7 @@ export function LeaveTypesManager({ leaveTypes, readOnly }: { leaveTypes: any[];
                 <td className="px-4 py-3 text-slate-500">{APPLIES_TO_KEYS[lt.applies_to] ? t(APPLIES_TO_KEYS[lt.applies_to]) : lt.applies_to}</td>
                 <td className="px-4 py-3 text-slate-500">{PAY_RATE_KEYS[lt.pay_rate] ? t(PAY_RATE_KEYS[lt.pay_rate]) : lt.pay_rate}</td>
                 <td className="px-4 py-3 text-slate-500">{lt.max_days_per_year ?? t('noLimit')}</td>
-                <td className="px-4 py-3 text-slate-500">{t('daysCount', { d: lt.advance_days_required })}</td>
+                <td className="px-4 py-3 text-slate-500">{t('daysCount', { d: lt.advance_days_required as number })}</td>
                 <td className="px-4 py-3">
                   <Badge variant="outline" className={lt.is_active ? 'border-green-300 text-green-700' : 'border-slate-300 text-slate-500'}>
                     {lt.is_active ? tc('active') : tc('inactive')}

@@ -120,6 +120,8 @@
     "cooSettings": "營運管理",
     "expand": "展開選單",
     "collapse": "收合選單",
+    "openMenu": "開啟選單",
+    "closeMenu": "關閉選單",
     "more": "更多",
     "themeLight": "淺色模式",
     "themeDark": "深色模式",

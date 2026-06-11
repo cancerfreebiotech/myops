@@ -58,6 +58,13 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
   const canPublish = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('publish_announcement')
 
+  // Supabase infers the many-to-one `department` join as an array; at runtime it is a single object.
+  const allUserOptions = (allUsers ?? []).map(u => ({
+    id: u.id,
+    display_name: u.display_name,
+    department: Array.isArray(u.department) ? (u.department[0] ?? null) : u.department,
+  }))
+
   // Get signed download URL if there's a file
   let downloadUrl: string | null = null
   if (doc.file_url) {
@@ -81,7 +88,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         canApprove={canApprove}
         canPublish={canPublish}
         downloadUrl={downloadUrl}
-        allUsers={allUsers ?? []}
+        allUsers={allUserOptions}
       />
     </div>
   )

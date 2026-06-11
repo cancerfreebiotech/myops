@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { LeaveClient } from './LeaveClient'
+import { LeaveClient, type LeaveRequest } from './LeaveClient'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 export default async function LeavePage() {
@@ -52,7 +52,7 @@ export default async function LeavePage() {
     .order('display_name')
 
   // For HR: all pending requests to approve
-  let pendingApprovals: any[] = []
+  let pendingApprovals: LeaveRequest[] = []
   if (isHR || currentUser?.role === 'manager') {
     const { data } = await service
       .from('leave_requests')

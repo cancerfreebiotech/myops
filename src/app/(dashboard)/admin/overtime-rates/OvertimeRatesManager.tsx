@@ -10,14 +10,21 @@ import { Save } from 'lucide-react'
 
 const OT_TYPE_KEYS = ['weekday', 'weekend', 'holiday', 'project', 'on_call', 'emergency'] as const
 
-export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOnly?: boolean }) {
+interface OvertimeRate {
+  id: string
+  ot_type: string
+  multiplier: number
+  is_active: boolean
+}
+
+export function OvertimeRatesManager({ rates, readOnly }: { rates: OvertimeRate[]; readOnly?: boolean }) {
   const router = useRouter()
   const t = useTranslations('admin.overtimeRatesMgmt')
   const tc = useTranslations('common')
   const [edits, setEdits] = useState<Record<string, { multiplier: string; is_active: boolean }>>({})
   const [saving, setSaving] = useState<string | null>(null)
 
-  const getVal = (rate: any, field: 'multiplier' | 'is_active') => {
+  const getVal = (rate: OvertimeRate, field: 'multiplier' | 'is_active') => {
     if (rate.id in edits) return edits[rate.id][field]
     return field === 'multiplier' ? String(rate.multiplier) : rate.is_active
   }
@@ -35,7 +42,8 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
     setSaving(null)
     if (error) { toast.error(error); return }
     toast.success(t('updateSuccess'))
-    const { [id]: _, ...rest } = edits
+    const rest = { ...edits }
+    delete rest[id]
     setEdits(rest)
     router.refresh()
   }
@@ -59,7 +67,7 @@ export function OvertimeRatesManager({ rates, readOnly }: { rates: any[]; readOn
               return (
                 <tr key={rate.id} className="bg-white dark:bg-slate-800">
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">
-                    {OT_TYPE_KEYS.includes(rate.ot_type) ? t(`types.${rate.ot_type}`) : rate.ot_type}
+                    {(OT_TYPE_KEYS as readonly string[]).includes(rate.ot_type) ? t(`types.${rate.ot_type}`) : rate.ot_type}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {readOnly ? (

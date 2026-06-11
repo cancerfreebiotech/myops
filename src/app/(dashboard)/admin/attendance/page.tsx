@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { AdminAttendanceClient } from './AdminAttendanceClient'
+import { AdminAttendanceClient, type AttendanceRecord, type User as AttendanceUser } from './AdminAttendanceClient'
 
 interface PageProps {
   searchParams: Promise<{ month?: string; user_id?: string; employment_type?: string }>
@@ -100,8 +100,8 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
         description={t('description')}
       />
       <AdminAttendanceClient
-        attendanceRecords={(attendanceRecords ?? []) as any[]}
-        allUsers={(allUsers ?? []) as any[]}
+        attendanceRecords={(attendanceRecords ?? []) as unknown as AttendanceRecord[]}
+        allUsers={(allUsers ?? []) as unknown as AttendanceUser[]}
         initialMonth={month}
         initialUserId={sp.user_id ?? ''}
         initialEmploymentType={sp.employment_type ?? 'all'}

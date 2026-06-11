@@ -32,7 +32,7 @@ export default async function AttendancePage() {
     <div>
       <PageHeader title={t('title')} description={t('description')} />
       <AttendanceClient
-        currentUser={currentUser}
+        currentUser={currentUser!}
         departments={departments ?? []}
         isHR={isHR}
       />
