@@ -1,6 +1,6 @@
 # PRD：myOPS — 精拓生技營運管理系統
 
-> version: v0.3.6 | updated: 2026-06-12
+> version: v0.3.7 | updated: 2026-06-13
 
 > 供 Claude Code 使用。請先閱讀完整 PRD，理解需求後提出技術架構與任務拆分計畫，確認後再開始實作。
 

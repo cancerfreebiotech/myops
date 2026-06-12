@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { Send, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { DocStatus, DocType } from '@/lib/procurement/doc-types'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
 // 請款三單 — three tabs (deposit / ap / installment payment requests):
 // list + 送簽 (submit for approval); rows navigate to /procurement/payments/[kind]/[id].
@@ -96,8 +97,10 @@ interface Props {
 
 export function PaymentsClient({ initialDeposits, initialAps, initialInstallments }: Props) {
   const t = useTranslations('procurement.payments')
+  const tc = useTranslations('common')
   const router = useRouter()
   const [tab, setTab] = useState<PaymentKind>('deposit')
+  const [search, setSearch] = useState('')
   const [depositRows, setDepositRows] = useState<DepositRow[]>(initialDeposits)
   const [apRows, setApRows] = useState<ApRow[]>(initialAps)
   const [installmentRows, setInstallmentRows] = useState<InstallmentRow[]>(initialInstallments)
@@ -128,27 +131,60 @@ export function PaymentsClient({ initialDeposits, initialAps, initialInstallment
 
   const rows: PaymentRow[] = tab === 'deposit' ? depositRows : tab === 'ap' ? apRows : installmentRows
 
-  const sourceLabel = (r: PaymentRow): string => {
-    if (tab === 'deposit') return one((r as DepositRow).pr)?.doc_no ?? '—'
-    if (tab === 'ap') return one((r as ApRow).gr)?.doc_no ?? '—'
-    return one((r as InstallmentRow).ap)?.doc_no ?? '—'
-  }
-
-  const mainLabel = (r: PaymentRow): string => {
+  const enriched = useMemo(() => rows.map(r => {
+    let source_doc_no: string | null
+    let main_label: string | null
+    let amount_value: number | null
+    let billing_month_value: string | null = null
     if (tab === 'deposit') {
       const d = r as DepositRow
-      return d.vendor_short_name || d.vendor_name || '—'
+      source_doc_no = one(d.pr)?.doc_no ?? null
+      main_label = d.vendor_short_name || d.vendor_name || null
+      amount_value = d.deposit_amount
+    } else if (tab === 'ap') {
+      const a = r as ApRow
+      source_doc_no = one(a.gr)?.doc_no ?? null
+      main_label = a.vendor_name
+      amount_value = a.total_amount
+      billing_month_value = a.billing_month
+    } else {
+      const i = r as InstallmentRow
+      source_doc_no = one(i.ap)?.doc_no ?? null
+      main_label = i.installment_no != null ? t('installmentNoValue', { no: i.installment_no }) : null
+      amount_value = i.amount
+      billing_month_value = i.billing_month
     }
-    if (tab === 'ap') return (r as ApRow).vendor_name ?? '—'
-    const i = r as InstallmentRow
-    return i.installment_no != null ? t('installmentNoValue', { no: i.installment_no }) : '—'
-  }
+    return {
+      ...r,
+      source_doc_no,
+      main_label,
+      amount_value,
+      billing_month_value,
+      status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+      creator_name: one(r.created_by_user)?.display_name ?? null,
+      created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+    }
+  }), [rows, tab, t])
 
-  const amountOf = (r: PaymentRow): number | null => {
-    if (tab === 'deposit') return (r as DepositRow).deposit_amount
-    if (tab === 'ap') return (r as ApRow).total_amount
-    return (r as InstallmentRow).amount
-  }
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return enriched
+    return enriched.filter(r =>
+      [
+        r.doc_no,
+        r.source_doc_no,
+        r.main_label,
+        r.billing_month_value,
+        formatAmount(r.amount_value),
+        r.status_label,
+        r.creator_name,
+        r.created_date,
+      ].some(v => String(v ?? '').toLowerCase().includes(q)),
+    )
+  }, [enriched, search])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'created_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   return (
     <div className="space-y-4">
@@ -161,7 +197,7 @@ export function PaymentsClient({ initialDeposits, initialAps, initialInstallment
         ]).map(item => (
           <button
             key={item.key}
-            onClick={() => setTab(item.key)}
+            onClick={() => { setTab(item.key); setSearch('') }}
             className={cn(
               'px-4 py-2 min-h-[44px] text-sm font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap',
               tab === item.key
@@ -174,35 +210,40 @@ export function PaymentsClient({ initialDeposits, initialAps, initialInstallment
         ))}
       </div>
 
+      <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+
       {/* List */}
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('docNo')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('sourceDoc')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">
-                {tab === 'installment' ? t('installmentNo') : t('vendor')}
-              </th>
+              <SortableHeader label={t('docNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('sourceDoc')} sortKey="source_doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader
+                label={tab === 'installment' ? t('installmentNo') : t('vendor')}
+                sortKey="main_label"
+                currentKey={sortKey}
+                dir={sortDir}
+                onSort={toggleSort}
+              />
               {tab !== 'deposit' && (
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('fields.billing_month')}</th>
+                <SortableHeader label={t('fields.billing_month')} sortKey="billing_month_value" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               )}
-              <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('amount')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('statusColumn')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('creator')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('createdAt')}</th>
+              <SortableHeader label={t('amount')} sortKey="amount_value" currentKey={sortKey} dir={sortDir} onSort={toggleSort} className="[&>button]:justify-end" />
+              <SortableHeader label={t('statusColumn')} sortKey="status_label" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('creator')} sortKey="creator_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('createdAt')} sortKey="created_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={tab === 'deposit' ? 8 : 9} className="text-center py-10 text-slate-400">
-                  {t('noRecords')}
+                  {search.trim() ? tc('noData') : t('noRecords')}
                 </td>
               </tr>
-            ) : rows.map(r => {
-              const creator = one(r.created_by_user)
+            ) : pageRows.map(r => {
               return (
                 <tr
                   key={r.id}
@@ -210,19 +251,19 @@ export function PaymentsClient({ initialDeposits, initialAps, initialInstallment
                   className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
                 >
                   <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{r.doc_no ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{sourceLabel(r)}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{mainLabel(r)}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.source_doc_no ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.main_label ?? '—'}</td>
                   {tab !== 'deposit' && (
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {tab === 'ap' ? (r as ApRow).billing_month ?? '—' : (r as InstallmentRow).billing_month ?? '—'}
+                      {r.billing_month_value ?? '—'}
                     </td>
                   )}
                   <td className="px-4 py-3 text-right text-slate-800 dark:text-slate-200 tabular-nums whitespace-nowrap">
-                    {formatAmount(amountOf(r))}
+                    {formatAmount(r.amount_value)}
                   </td>
                   <td className="px-4 py-3"><PaymentStatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{creator?.display_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(r.created_at), 'yyyy-MM-dd')}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.creator_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.created_date}</td>
                   <td className="px-4 py-3 text-right">
                     {r.status === 'draft' && (
                       <Button
@@ -243,6 +284,8 @@ export function PaymentsClient({ initialDeposits, initialAps, initialInstallment
           </tbody>
         </table>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
     </div>
   )
 }

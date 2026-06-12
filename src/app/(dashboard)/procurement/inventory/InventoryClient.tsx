@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils'
 import { ApprovalTimeline } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
 import BarcodeScanner from '@/components/procurement/BarcodeScanner'
+import {
+  SortableHeader, TablePagination, TableSearch, usePagination, useTableSort,
+} from '@/components/procurement/table-tools'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import {
   STATUS_STYLE,
@@ -86,6 +89,34 @@ type DetailState =
   | { direction: 'inbound'; data: OrderDetail<InboundItemRow> }
   | { direction: 'outbound'; data: OrderDetail<OutboundItemRow> }
 
+/** Flattened sortable/searchable fields shared by the inbound/outbound list tables. */
+type ListRowEnriched = (InboundListRow | OutboundListRow) & {
+  source_no: string | null
+  item_count: number
+  status_label: string
+  posted_label: string | null
+  creator_name: string | null
+  created_date: string
+}
+
+type StockRowEnriched = StockRow & {
+  warehouse_name: string | null
+  warehouse_code: string | null
+}
+
+function matchesQuery(values: Array<string | number | null | undefined>, q: string): boolean {
+  return values.some(v => v != null && String(v).toLowerCase().includes(q))
+}
+
+function filterListRows<T extends ListRowEnriched>(rows: T[], search: string): T[] {
+  const q = search.trim().toLowerCase()
+  if (!q) return rows
+  return rows.filter(r => matchesQuery(
+    [r.doc_no, r.source_no, r.order_date, r.status_label, r.posted_label, r.creator_name, r.created_date],
+    q,
+  ))
+}
+
 interface Props {
   currentUserId: string
   initialInbound: InboundListRow[]
@@ -107,6 +138,8 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
   )
   const [inboundRows, setInboundRows] = useState<InboundListRow[]>(initialInbound)
   const [outboundRows, setOutboundRows] = useState<OutboundListRow[]>(initialOutbound)
+  const [inboundSearch, setInboundSearch] = useState('')
+  const [outboundSearch, setOutboundSearch] = useState('')
 
   // ── detail dialog ──
   const [detailOpen, setDetailOpen] = useState<{ direction: Direction; id: string } | null>(null)
@@ -372,13 +405,60 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
     }
   }
 
+  // ── list tables: search → sort → paginate (20/page) ──
+
+  const inboundEnriched = useMemo<ListRowEnriched[]>(() => inboundRows.map(r => ({
+    ...r,
+    source_no: one(r.gr)?.doc_no ?? null,
+    item_count: one(r.items)?.count ?? 0,
+    status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+    posted_label: r.posted_at ? t('postedBadge') : null,
+    creator_name: one(r.created_by_user)?.display_name ?? null,
+    created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+  })), [inboundRows, t])
+
+  const outboundEnriched = useMemo<ListRowEnriched[]>(() => outboundRows.map(r => ({
+    ...r,
+    source_no: r.shipment_no ?? null,
+    item_count: one(r.items)?.count ?? 0,
+    status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+    posted_label: r.posted_at ? t('postedBadge') : null,
+    creator_name: one(r.created_by_user)?.display_name ?? null,
+    created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+  })), [outboundRows, t])
+
+  const inboundFiltered = useMemo(() => filterListRows(inboundEnriched, inboundSearch), [inboundEnriched, inboundSearch])
+  const outboundFiltered = useMemo(() => filterListRows(outboundEnriched, outboundSearch), [outboundEnriched, outboundSearch])
+
+  const inboundSort = useTableSort(inboundFiltered, 'created_at', 'desc')
+  const outboundSort = useTableSort(outboundFiltered, 'created_at', 'desc')
+  const inboundPag = usePagination(inboundSort.sorted)
+  const outboundPag = usePagination(outboundSort.sorted)
+
+  const listSort = tab === 'outbound' ? outboundSort : inboundSort
+  const listPag = tab === 'outbound' ? outboundPag : inboundPag
+  const listSearch = tab === 'outbound' ? outboundSearch : inboundSearch
+  const setListSearch = tab === 'outbound' ? setOutboundSearch : setInboundSearch
+
+  // ── stock table: search → sort → paginate (20/page) ──
+
+  const stockEnriched = useMemo<StockRowEnriched[]>(() => initialStocks.map(s => ({
+    ...s,
+    warehouse_name: one(s.warehouse)?.name ?? null,
+    warehouse_code: one(s.warehouse)?.code ?? null,
+  })), [initialStocks])
+
   const filteredStocks = useMemo(() => {
     const q = stockFilter.trim().toLowerCase()
-    if (!q) return initialStocks
-    return initialStocks.filter(s =>
-      [s.stock_code, s.lot_no, s.product_code, s.product_name, s.spec, one(s.warehouse)?.name, one(s.warehouse)?.code]
-        .some(v => v && v.toLowerCase().includes(q)))
-  }, [initialStocks, stockFilter])
+    if (!q) return stockEnriched
+    return stockEnriched.filter(s => matchesQuery(
+      [s.stock_code, s.lot_no, s.product_code, s.product_name, s.spec, s.expiry_date, s.warehouse_name, s.warehouse_code],
+      q,
+    ))
+  }, [stockEnriched, stockFilter])
+
+  const stockSort = useTableSort(filteredStocks)
+  const stockPag = usePagination(stockSort.sorted)
 
   const productById = useMemo(() => new Map(products.map(p => [p.id, p])), [products])
   const stockById = useMemo(() => new Map(initialStocks.map(s => [s.id, s])), [initialStocks])
@@ -418,7 +498,8 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
       {/* ── 入庫單 / 出庫單 lists ── */}
       {tab !== 'stock' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <TableSearch value={listSearch} onChange={setListSearch} placeholder={tc('search')} />
             <Button onClick={() => openCreate(tab)} className="min-h-[44px] cursor-pointer">
               <Plus size={16} />
               {tab === 'inbound' ? t('newInbound') : t('newOutbound')}
@@ -429,36 +510,38 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
             <table className="w-full text-sm min-w-[760px]">
               <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.docNo')}</th>
-                  {tab === 'inbound'
-                    ? <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.sourceGr')}</th>
-                    : <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.shipmentNo')}</th>}
-                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.items')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.orderDate')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.status')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.posted')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.creator')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('cols.createdAt')}</th>
+                  <SortableHeader label={t('cols.docNo')} sortKey="doc_no" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
+                  <SortableHeader
+                    label={tab === 'inbound' ? t('cols.sourceGr') : t('cols.shipmentNo')}
+                    sortKey="source_no"
+                    currentKey={listSort.sortKey}
+                    dir={listSort.sortDir}
+                    onSort={listSort.toggleSort}
+                  />
+                  <SortableHeader label={t('cols.items')} sortKey="item_count" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} className="[&>button]:justify-end" />
+                  <SortableHeader label={t('cols.orderDate')} sortKey="order_date" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
+                  <SortableHeader label={t('cols.status')} sortKey="status_label" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
+                  <SortableHeader label={t('cols.posted')} sortKey="posted_at" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
+                  <SortableHeader label={t('cols.creator')} sortKey="creator_name" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
+                  <SortableHeader label={t('cols.createdAt')} sortKey="created_at" currentKey={listSort.sortKey} dir={listSort.sortDir} onSort={listSort.toggleSort} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {(tab === 'inbound' ? inboundRows : outboundRows).length === 0 ? (
+                {listPag.pageRows.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-10 text-slate-400">{t('noRecords')}</td>
+                    <td colSpan={8} className="text-center py-10 text-slate-400">
+                      {listSearch.trim() ? tc('noData') : t('noRecords')}
+                    </td>
                   </tr>
-                ) : (tab === 'inbound' ? inboundRows : outboundRows).map(r => (
+                ) : listPag.pageRows.map(r => (
                   <tr
                     key={r.id}
                     onClick={() => openDetail(tab, r.id)}
                     className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
                   >
                     <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{r.doc_no ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {tab === 'inbound'
-                        ? one((r as InboundListRow).gr)?.doc_no ?? '—'
-                        : (r as OutboundListRow).shipment_no ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 tabular-nums">{one(r.items)?.count ?? 0}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.source_no ?? '—'}</td>
+                    <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 tabular-nums">{r.item_count}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.order_date ?? '—'}</td>
                     <td className="px-4 py-3"><InvStatusBadge status={r.status} /></td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -471,13 +554,14 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{one(r.created_by_user)?.display_name ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(r.created_at), 'yyyy-MM-dd')}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.creator_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.created_date}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <TablePagination page={listPag.page} totalPages={listPag.totalPages} total={listPag.total} onPageChange={listPag.setPage} />
         </div>
       )}
 
@@ -571,35 +655,30 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">{t('stockListTitle')}</h3>
-              <div>
-                <label htmlFor="stock-filter" className="sr-only">{t('stockFilterPlaceholder')}</label>
-                <Input
-                  id="stock-filter"
-                  value={stockFilter}
-                  onChange={e => setStockFilter(e.target.value)}
-                  placeholder={t('stockFilterPlaceholder')}
-                  className="text-base min-h-[44px] w-[240px]"
-                />
-              </div>
+              <TableSearch value={stockFilter} onChange={setStockFilter} placeholder={t('stockFilterPlaceholder')} />
             </div>
             <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
               <table className="w-full text-sm min-w-[820px]">
                 <thead className="bg-slate-50 dark:bg-slate-800">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.stockCode')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.productCode')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.productName')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.spec')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.lotNo')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.expiryDate')}</th>
-                    <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.warehouse')}</th>
-                    <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('itemCols.quantity')}</th>
+                    <SortableHeader label={t('itemCols.stockCode')} sortKey="stock_code" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.productCode')} sortKey="product_code" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.productName')} sortKey="product_name" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.spec')} sortKey="spec" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.lotNo')} sortKey="lot_no" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.expiryDate')} sortKey="expiry_date" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.warehouse')} sortKey="warehouse_name" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} />
+                    <SortableHeader label={t('itemCols.quantity')} sortKey="quantity" currentKey={stockSort.sortKey} dir={stockSort.sortDir} onSort={stockSort.toggleSort} className="[&>button]:justify-end" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {filteredStocks.length === 0 ? (
-                    <tr><td colSpan={8} className="text-center py-10 text-slate-400">{t('noStocks')}</td></tr>
-                  ) : filteredStocks.map(s => (
+                  {stockPag.pageRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-10 text-slate-400">
+                        {stockFilter.trim() ? tc('noData') : t('noStocks')}
+                      </td>
+                    </tr>
+                  ) : stockPag.pageRows.map(s => (
                     <tr key={s.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{s.stock_code ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{s.product_code ?? '—'}</td>
@@ -607,7 +686,7 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{s.spec ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{s.lot_no ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{s.expiry_date ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{one(s.warehouse)?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{s.warehouse_name ?? '—'}</td>
                       <td className="px-4 py-3 text-right text-slate-800 dark:text-slate-200 tabular-nums whitespace-nowrap">
                         {formatQty(s.quantity)} {s.unit ?? ''}
                       </td>
@@ -616,6 +695,7 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
                 </tbody>
               </table>
             </div>
+            <TablePagination page={stockPag.page} totalPages={stockPag.totalPages} total={stockPag.total} onPageChange={stockPag.setPage} />
           </div>
         </div>
       )}

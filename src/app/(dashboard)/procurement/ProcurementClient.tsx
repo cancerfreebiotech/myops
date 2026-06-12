@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
   AlertTriangle,
@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { DOC_TYPE_META, type DocType } from '@/lib/procurement/doc-types'
+import { useTableSort, usePagination, SortableHeader, TablePagination } from '@/components/procurement/table-tools'
 import { cn } from '@/lib/utils'
 
 interface InboxItem {
@@ -112,6 +113,18 @@ export function ProcurementClient() {
     return () => { cancelled = true }
   }, [])
 
+  // Flatten nested/derived display values onto plain keys so sorting works
+  const inboxRows = useMemo(() => (items ?? []).map(item => ({
+    item,
+    doc_no: item.doc_no,
+    type_label: t(DOC_TYPE_META[item.doc_type].labelKey as Parameters<typeof t>[0]),
+    applicant_name: item.applicant.display_name,
+    arrived_at: item.arrived_at,
+  })), [items, t])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(inboxRows, 'arrived_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
+
   // Module cards — label keys reuse the existing per-module namespaces
   const moduleCards: { href: string; icon: LucideIcon; label: string; count: (s: Stats) => number }[] = [
     { href: '/procurement/rfqs', icon: FileSearch, label: t('docTypes.rfq'), count: s => s.rfqs },
@@ -155,16 +168,15 @@ export function ProcurementClient() {
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="text-left text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                  <th scope="col" className="px-4 py-2.5 font-medium">{t('inbox.docNo')}</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">{t('inbox.docType')}</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">{t('inbox.applicant')}</th>
-                  <th scope="col" className="px-4 py-2.5 font-medium">{t('inbox.arrivedAt')}</th>
+                  <SortableHeader label={t('inbox.docNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableHeader label={t('inbox.docType')} sortKey="type_label" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableHeader label={t('inbox.applicant')} sortKey="applicant_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                  <SortableHeader label={t('inbox.arrivedAt')} sortKey="arrived_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>
-                {items.map(item => {
+                {pageRows.map(({ item, type_label: typeLabel }) => {
                   const href = docDetailHref(item)
-                  const typeLabel = t(DOC_TYPE_META[item.doc_type].labelKey as Parameters<typeof t>[0])
                   return (
                     <tr
                       key={`${item.doc_type}:${item.doc_id}`}
@@ -206,6 +218,11 @@ export function ProcurementClient() {
                 })}
               </tbody>
             </table>
+            {totalPages > 1 && (
+              <div className="px-4 pb-4">
+                <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
+              </div>
+            )}
           </div>
         )}
       </section>

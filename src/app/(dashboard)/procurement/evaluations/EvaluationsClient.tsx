@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
 import type { DocStatus, DocType } from '@/lib/procurement/doc-types'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
 // 審核評估單 — two tabs (vendor / product evaluations): list + create form +
 // 送簽 (submit for approval) + detail dialog with the shared approval timeline.
@@ -105,12 +106,20 @@ interface Props {
   initialProductEvaluations: ProductEvalRow[]
 }
 
+/** List row augmented with display-derived fields so sort/search match what the user sees. */
+type EvalListRow = (VendorEvalRow | ProductEvalRow) & {
+  _label: string | null
+  _statusLabel: string
+  _creator: string | null
+}
+
 export function EvaluationsClient({ initialVendorEvaluations, initialProductEvaluations }: Props) {
   const t = useTranslations('procurement.evaluations')
   const tc = useTranslations('common')
   const [tab, setTab] = useState<EvalType>('vendor')
   const [vendorRows, setVendorRows] = useState<VendorEvalRow[]>(initialVendorEvaluations)
   const [productRows, setProductRows] = useState<ProductEvalRow[]>(initialProductEvaluations)
+  const [search, setSearch] = useState('')
 
   // create / edit form
   const [formOpen, setFormOpen] = useState(false)
@@ -231,7 +240,29 @@ export function EvaluationsClient({ initialVendorEvaluations, initialProductEval
     refreshList(detailRef.type)
   }
 
-  const rows = tab === 'vendor' ? vendorRows : productRows
+  const augmented = useMemo<EvalListRow[]>(() => {
+    const source: (VendorEvalRow | ProductEvalRow)[] = tab === 'vendor' ? vendorRows : productRows
+    return source.map(r => ({
+      ...r,
+      _label: tab === 'vendor'
+        ? (r as VendorEvalRow).name ?? null
+        : one((r as ProductEvalRow).rfq)?.doc_no ?? null,
+      _statusLabel: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+      _creator: one(r.created_by_user)?.display_name ?? null,
+    }))
+  }, [tab, vendorRows, productRows, t])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return augmented
+    return augmented.filter(r =>
+      [r.doc_no, r._label, r._statusLabel, r._creator, format(new Date(r.created_at), 'yyyy-MM-dd')]
+        .some(v => v?.toLowerCase().includes(q))
+    )
+  }, [augmented, search])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'created_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   return (
     <div className="space-y-4">
@@ -244,7 +275,7 @@ export function EvaluationsClient({ initialVendorEvaluations, initialProductEval
           ]).map(item => (
             <button
               key={item.key}
-              onClick={() => setTab(item.key)}
+              onClick={() => { setTab(item.key); setSearch('') }}
               className={cn(
                 'px-4 py-2 min-h-[44px] text-sm font-medium border-b-2 transition-colors cursor-pointer',
                 tab === item.key
@@ -262,33 +293,38 @@ export function EvaluationsClient({ initialVendorEvaluations, initialProductEval
         </Button>
       </div>
 
+      {/* Search */}
+      <TableSearch value={search} onChange={setSearch} placeholder={tc('search')} />
+
       {/* List */}
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('docNo')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">
-                {tab === 'vendor' ? t('vendorName') : t('sourceRfq')}
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('statusColumn')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('creator')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('createdAt')}</th>
+              <SortableHeader label={t('docNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader
+                label={tab === 'vendor' ? t('vendorName') : t('sourceRfq')}
+                sortKey="_label"
+                currentKey={sortKey}
+                dir={sortDir}
+                onSort={toggleSort}
+              />
+              <SortableHeader label={t('statusColumn')} sortKey="_statusLabel" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('creator')} sortKey="_creator" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('createdAt')} sortKey="created_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={6} className="text-center py-10 text-slate-400">
-                  {t('noRecords')}
+                  {search.trim() ? tc('noData') : t('noRecords')}
                 </td>
               </tr>
-            ) : rows.map(r => {
+            ) : pageRows.map(r => {
               const creator = one(r.created_by_user)
-              const label = tab === 'vendor'
-                ? (r as VendorEvalRow).name ?? '—'
-                : one((r as ProductEvalRow).rfq)?.doc_no ?? '—'
+              const label = r._label ?? '—'
               return (
                 <tr
                   key={r.id}
@@ -320,6 +356,8 @@ export function EvaluationsClient({ initialVendorEvaluations, initialProductEval
           </tbody>
         </table>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       {/* Create / edit form dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

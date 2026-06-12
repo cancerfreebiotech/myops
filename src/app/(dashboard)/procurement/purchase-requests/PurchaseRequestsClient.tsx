@@ -1,19 +1,21 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Plus, Loader2, Search } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { DocStatus } from '@/lib/procurement/doc-types'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
-// 請採購單 list — status filter + doc_no/vendor search; rows open the [id]
-// detail page. 新增 creates an empty draft and navigates straight to it.
+// 請採購單 list — server-side status filter + keyword search (debounced ?q=
+// against the whole table, plus an instant client-side filter of loaded rows) /
+// sortable headers / pagination; rows open the [id] detail page.
+// 新增 creates an empty draft and navigates straight to it.
 
 interface NamedRef { id: string; display_name: string | null }
 type MaybeArray<T> = T | T[] | null
@@ -68,31 +70,55 @@ interface Props {
 
 export function PurchaseRequestsClient({ initialRows }: Props) {
   const t = useTranslations('procurement.purchaseRequests')
+  const tc = useTranslations('common')
   const router = useRouter()
   const [rows, setRows] = useState<PurchaseRequestRow[]>(initialRows)
   const [statusFilter, setStatusFilter] = useState('')
   const [search, setSearch] = useState('')
-  const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
 
+  const fetchSeq = useRef(0)
   const refresh = useCallback(async (status: string, q: string) => {
-    setLoading(true)
+    const seq = ++fetchSeq.current
     const params = new URLSearchParams()
     if (status) params.set('status', status)
     if (q.trim()) params.set('q', q.trim())
     const res = await fetch(`/api/procurement/purchase-requests?${params.toString()}`)
     const { data, error } = await res.json()
-    setLoading(false)
+    if (seq !== fetchSeq.current) return // a newer request superseded this one
     if (error) { toast.error(error); return }
     setRows(data ?? [])
   }, [])
 
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value)
-    refresh(value, search)
-  }
+  const handleStatusChange = (value: string) => setStatusFilter(value)
 
-  const handleSearch = () => refresh(statusFilter, search)
+  // Debounced server-side ?q= search so keywords match the whole table, not
+  // just the rows already loaded (list queries are capped at 200 rows).
+  const skipInitialFetch = useRef(true)
+  useEffect(() => {
+    if (skipInitialFetch.current) { skipInitialFetch.current = false; return }
+    const handle = setTimeout(() => { refresh(statusFilter, search) }, 300)
+    return () => clearTimeout(handle)
+  }, [statusFilter, search, refresh])
+
+  // Flatten nested/derived display values so search + sort work on plain keys
+  const enriched = useMemo(() => rows.map(r => ({
+    ...r,
+    purchaser_name: (one(r.purchaser) ?? one(r.created_by_user))?.display_name ?? null,
+    status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+    created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+  })), [rows, t])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return enriched
+    return enriched.filter(r =>
+      [r.doc_no, r.vendor_name, formatAmount(r.total_amount), r.status_label, r.purchaser_name, r.purchase_date, r.created_date]
+        .some(v => String(v ?? '').toLowerCase().includes(q)))
+  }, [enriched, search])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'created_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   const handleCreate = async () => {
     setCreating(true)
@@ -124,20 +150,7 @@ export function PurchaseRequestsClient({ initialRows }: Props) {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-1">
-            <label htmlFor="pr-search" className="sr-only">{t('searchPlaceholder')}</label>
-            <Input
-              id="pr-search"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleSearch() }}
-              placeholder={t('searchPlaceholder')}
-              className="text-base w-[220px] min-h-[44px]"
-            />
-            <Button variant="outline" onClick={handleSearch} disabled={loading} aria-label={t('searchPlaceholder')} className="min-h-[44px] min-w-[44px] cursor-pointer">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-            </Button>
-          </div>
+          <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         </div>
         <Button onClick={handleCreate} disabled={creating} className="min-h-[44px] cursor-pointer">
           {creating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
@@ -150,43 +163,42 @@ export function PurchaseRequestsClient({ initialRows }: Props) {
         <table className="w-full text-sm min-w-[760px]">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.docNo')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.vendor')}</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.totalAmount')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.statusColumn')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.purchaser')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.purchaseDate')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('list.createdAt')}</th>
+              <SortableHeader label={t('list.docNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('list.vendor')} sortKey="vendor_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('list.totalAmount')} sortKey="total_amount" currentKey={sortKey} dir={sortDir} onSort={toggleSort} className="[&>button]:justify-end" />
+              <SortableHeader label={t('list.statusColumn')} sortKey="status_label" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('list.purchaser')} sortKey="purchaser_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('list.purchaseDate')} sortKey="purchase_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('list.createdAt')} sortKey="created_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-10 text-slate-400">
-                  {t('list.noRecords')}
+                  {search.trim() ? tc('noData') : t('list.noRecords')}
                 </td>
               </tr>
-            ) : rows.map(r => {
-              const purchaser = one(r.purchaser) ?? one(r.created_by_user)
-              return (
-                <tr
-                  key={r.id}
-                  onClick={() => router.push(`/procurement/purchase-requests/${r.id}`)}
-                  className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{r.doc_no ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.vendor_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">{formatAmount(r.total_amount)}</td>
-                  <td className="px-4 py-3"><PrStatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{purchaser?.display_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.purchase_date ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(r.created_at), 'yyyy-MM-dd')}</td>
-                </tr>
-              )
-            })}
+            ) : pageRows.map(r => (
+              <tr
+                key={r.id}
+                onClick={() => router.push(`/procurement/purchase-requests/${r.id}`)}
+                className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+              >
+                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{r.doc_no ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.vendor_name ?? '—'}</td>
+                <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300 whitespace-nowrap tabular-nums">{formatAmount(r.total_amount)}</td>
+                <td className="px-4 py-3"><PrStatusBadge status={r.status} /></td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.purchaser_name ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.purchase_date ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.created_date}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
     </div>
   )
 }

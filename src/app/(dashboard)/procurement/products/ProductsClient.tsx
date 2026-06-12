@@ -10,9 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
-import { Plus, Pencil, Search, HelpCircle, ChevronLeft, ChevronRight, Trash2, PackageOpen } from 'lucide-react'
-
-const PAGE_SIZE = 20
+import { Plus, Pencil, HelpCircle, Trash2, PackageOpen } from 'lucide-react'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
 export interface Product {
   id: string
@@ -117,7 +116,6 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
   const tc = useTranslations('common')
 
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -130,18 +128,26 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
   const [quotes, setQuotes] = useState<VendorQuote[] | null>(null)
   const [quotesLoading, setQuotesLoading] = useState(false)
 
+  // _units mirrors the displayed dual-unit column; _stock is the numeric stock qty (display shows 0 for null)
+  const augmented = useMemo(
+    () => products.map(p => {
+      const stock = Number(p.current_stock_qty ?? 0)
+      return { ...p, _units: unitsDisplay(p), _stock: Number.isFinite(stock) ? stock : 0 }
+    }),
+    [products],
+  )
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return products
-    return products.filter(p =>
+    if (!q) return augmented
+    return augmented.filter(p =>
       [p.product_code, p.name, p.spec, p.category, p.brand, p.item_code]
         .some(v => v?.toLowerCase().includes(q))
     )
-  }, [products, search])
+  }, [augmented, search])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const safePage = Math.min(page, totalPages)
-  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'product_code', 'asc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   const openCreate = () => {
     setEditing(null)
@@ -248,16 +254,7 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
-          <Input
-            aria-label={tc('search')}
-            placeholder={t('searchPlaceholder')}
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="pl-8 min-h-[44px] sm:min-h-0"
-          />
-        </div>
+        <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         {canManage && (
           <Button onClick={openCreate} className="min-h-[44px] sm:ml-auto">
             <Plus size={16} className="mr-1" /> {t('addProduct')}
@@ -270,17 +267,17 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
           <table className="w-full text-sm min-w-[720px]">
             <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colCode')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colName')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colCategory')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colBrand')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colUnits')}</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colStock')}</th>
+                <SortableHeader label={t('colCode')} sortKey="product_code" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('colName')} sortKey="name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('colCategory')} sortKey="category" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('colBrand')} sortKey="brand" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('colUnits')} sortKey="_units" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('colStock')} sortKey="_stock" currentKey={sortKey} dir={sortDir} onSort={toggleSort} className="[&>button]:justify-end" />
                 {canManage && <th className="px-4 py-3"><span className="sr-only">{tc('actions')}</span></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {pageItems.length === 0 && (
+              {pageRows.length === 0 && (
                 <tr>
                   <td colSpan={canManage ? 7 : 6} className="px-4 py-12 text-center text-slate-500 dark:text-slate-400">
                     <PackageOpen size={24} className="mx-auto mb-2 text-slate-400" aria-hidden />
@@ -288,7 +285,7 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
                   </td>
                 </tr>
               )}
-              {pageItems.map(p => (
+              {pageRows.map(p => (
                 <tr
                   key={p.id}
                   onClick={() => openDetail(p)}
@@ -328,29 +325,9 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
             </tbody>
           </table>
         </div>
-
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {t('pageInfo', { page: safePage, pages: totalPages, total: filtered.length })}
-          </p>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline" size="sm" aria-label={t('prevPage')}
-              disabled={safePage <= 1}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-            >
-              <ChevronLeft size={14} />
-            </Button>
-            <Button
-              variant="outline" size="sm" aria-label={t('nextPage')}
-              disabled={safePage >= totalPages}
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            >
-              <ChevronRight size={14} />
-            </Button>
-          </div>
-        </div>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       {/* ── Create / Edit dialog ── */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

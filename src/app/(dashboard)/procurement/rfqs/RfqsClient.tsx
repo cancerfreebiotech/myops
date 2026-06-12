@@ -1,20 +1,22 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Plus, Send, Loader2, Search } from 'lucide-react'
+import { Plus, Send, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { DOC_STATUSES, type DocStatus } from '@/lib/procurement/doc-types'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 import { RfqForm, RfqStatusBadge, one, type RfqListRow, type UserOption } from './shared'
 
-// 詢價單 list: status / keyword filters + create dialog (sectioned form) +
-// quick 送簽 on draft rows. Row click navigates to the detail page.
+// 詢價單 list: server-side status filter + keyword search (debounced ?q=
+// against the whole table, plus an instant client-side filter of loaded rows) /
+// sortable headers / pagination. Create dialog (sectioned form) + quick 送簽
+// on draft rows. Row click navigates to the detail page.
 
 const ALL = '__all'
 
@@ -32,7 +34,6 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
   const [rows, setRows] = useState<RfqListRow[]>(initialRfqs)
   const [statusFilter, setStatusFilter] = useState<string>(ALL)
   const [search, setSearch] = useState('')
-  const [listLoading, setListLoading] = useState(false)
   const [submittingId, setSubmittingId] = useState<string | null>(null)
 
   // create dialog
@@ -40,23 +41,49 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
   const [form, setForm] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState(false)
 
+  const fetchSeq = useRef(0)
   const refreshList = useCallback(async (status: string, q: string) => {
-    setListLoading(true)
+    const seq = ++fetchSeq.current
     const params = new URLSearchParams()
     if (status !== ALL) params.set('status', status)
     if (q.trim()) params.set('q', q.trim())
     const qs = params.toString()
     const res = await fetch(`/api/procurement/rfqs${qs ? `?${qs}` : ''}`)
     const { data, error } = await res.json()
-    setListLoading(false)
+    if (seq !== fetchSeq.current) return // a newer request superseded this one
     if (error) { toast.error(error); return }
     setRows(data ?? [])
   }, [])
 
-  const onStatusChange = (value: string) => {
-    setStatusFilter(value)
-    refreshList(value, search)
-  }
+  const onStatusChange = (value: string) => setStatusFilter(value)
+
+  // Debounced server-side ?q= search so keywords match the whole table, not
+  // just the rows already loaded (list queries are capped at 200 rows).
+  const skipInitialFetch = useRef(true)
+  useEffect(() => {
+    if (skipInitialFetch.current) { skipInitialFetch.current = false; return }
+    const handle = setTimeout(() => { refreshList(statusFilter, search) }, 300)
+    return () => clearTimeout(handle)
+  }, [statusFilter, search, refreshList])
+
+  // Flatten nested/derived display values so search + sort work on plain keys
+  const enriched = useMemo(() => rows.map(r => ({
+    ...r,
+    inquirer_name: one(r.inquirer)?.display_name ?? null,
+    status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+    created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+  })), [rows, t])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return enriched
+    return enriched.filter(r =>
+      [r.doc_no, r.request_date, r.requesting_department, r.department, r.inquirer_name, r.status_label, r.created_date]
+        .some(v => String(v ?? '').toLowerCase().includes(q)))
+  }, [enriched, search])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'created_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   const openCreate = () => {
     setForm({
@@ -111,20 +138,7 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
               ))}
             </SelectContent>
           </Select>
-          <form
-            onSubmit={e => { e.preventDefault(); refreshList(statusFilter, search) }}
-            className="flex items-center gap-2"
-          >
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder={t('searchPlaceholder')}
-              className="text-base min-h-[44px] w-[200px]"
-            />
-            <Button type="submit" variant="outline" disabled={listLoading} className="min-h-[44px] cursor-pointer" aria-label={tc('search')}>
-              {listLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-            </Button>
-          </form>
+          <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         </div>
         <Button onClick={openCreate} className="min-h-[44px] cursor-pointer">
           <Plus size={16} />
@@ -137,24 +151,24 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
         <table className="w-full text-sm min-w-[760px]">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('docNo')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('fields.request_date')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('fields.requesting_department')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('fields.inquirer_id')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('statusColumn')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('prCount')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('createdAt')}</th>
+              <SortableHeader label={t('docNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('fields.request_date')} sortKey="request_date" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('fields.requesting_department')} sortKey="requesting_department" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('fields.inquirer_id')} sortKey="inquirer_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('statusColumn')} sortKey="status_label" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('prCount')} sortKey="pr_count" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('createdAt')} sortKey="created_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="text-center py-10 text-slate-400">
-                  {t('noRecords')}
+                  {search.trim() ? tc('noData') : t('noRecords')}
                 </td>
               </tr>
-            ) : rows.map(r => (
+            ) : pageRows.map(r => (
               <tr
                 key={r.id}
                 onClick={() => router.push(`/procurement/rfqs/${r.id}`)}
@@ -163,10 +177,10 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
                 <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{r.doc_no ?? '—'}</td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.request_date ?? '—'}</td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.requesting_department ?? '—'}</td>
-                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{one(r.inquirer)?.display_name ?? '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.inquirer_name ?? '—'}</td>
                 <td className="px-4 py-3"><RfqStatusBadge status={r.status as DocStatus} /></td>
                 <td className="px-4 py-3 text-slate-600 dark:text-slate-400 tabular-nums">{r.pr_count ?? 0}</td>
-                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(r.created_at), 'yyyy-MM-dd')}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.created_date}</td>
                 <td className="px-4 py-3 text-right">
                   {r.status === 'draft' && (
                     <Button
@@ -186,6 +200,8 @@ export function RfqsClient({ initialRfqs, users, meId }: Props) {
           </tbody>
         </table>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       {/* Create dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>

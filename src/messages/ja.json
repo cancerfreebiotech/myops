@@ -1513,7 +1513,8 @@
         "prNotFound": "該当する購買依頼番号が見つかりません",
         "onlyDraftEditable": "下書き状態の伝票のみ編集できます",
         "vendorCodeReadonly": "仕入先コードを変更する権限がありません（購買担当または購買管理権限が必要です）"
-      }
+      },
+      "searchPlaceholder": "伝票番号・購買依頼・仕入先・ステータスで検索…"
     },
     "inbox": {
       "title": "承認待ち受信箱",
@@ -1794,7 +1795,8 @@
         "sourceNotFound": "元伝票が見つかりません",
         "vendorNotFound": "仕入先が見つかりません",
         "onlyDraftEditable": "下書きのみ編集できます"
-      }
+      },
+      "searchPlaceholder": "伝票番号・元伝票・仕入先・ステータスで検索…"
     },
     "products": {
       "title": "商品マスタ",
@@ -2047,6 +2049,12 @@
       "submit": "確認",
       "cameraError": "カメラを起動できません。カメラの権限を確認するか手動入力をご利用ください",
       "lastScanned": "スキャン済み：{code}"
+    },
+    "table": {
+      "pageInfo": "{page} / {totalPages} ページ・全 {total} 件",
+      "prevPage": "前のページ",
+      "nextPage": "次のページ",
+      "clearSearch": "検索をクリア"
     },
     "vendors": {
       "title": "仕入先マスタ",

@@ -8,9 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Plus, Pencil, Search, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react'
-
-const PAGE_SIZE = 20
+import { Plus, Pencil, ExternalLink } from 'lucide-react'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
 interface UserJoin { display_name: string | null }
 
@@ -113,22 +112,26 @@ export function VendorsClient({ vendors, canManage }: { vendors: Vendor[]; canMa
   const tc = useTranslations('common')
 
   const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
   const [detail, setDetail] = useState<Vendor | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Vendor | null>(null)
   const [form, setForm] = useState<Record<string, string>>(emptyForm())
   const [saving, setSaving] = useState(false)
 
+  // _phone mirrors the displayed phone column (contact_phone falling back to phone) for sorting
+  const augmented = useMemo<(Vendor & { _phone: string | null })[]>(
+    () => vendors.map(v => ({ ...v, _phone: text(v.contact_phone) || text(v.phone) || null })),
+    [vendors],
+  )
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return vendors
-    return vendors.filter(v => SEARCH_FIELDS.some(f => text(v[f]).toLowerCase().includes(q)))
-  }, [vendors, search])
+    if (!q) return augmented
+    return augmented.filter(v => SEARCH_FIELDS.some(f => text(v[f]).toLowerCase().includes(q)))
+  }, [augmented, search])
 
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(page, pages)
-  const pageRows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'vendor_code', 'asc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   const openCreate = () => {
     setEditing(null)
@@ -185,16 +188,7 @@ export function VendorsClient({ vendors, canManage }: { vendors: Vendor[]; canMa
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search size={16} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden />
-          <Input
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            placeholder={t('searchPlaceholder')}
-            aria-label={t('searchPlaceholder')}
-            className="pl-8"
-          />
-        </div>
+        <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         <p className="text-sm text-slate-500 dark:text-slate-400 sm:ml-auto">{t('totalCount', { count: filtered.length })}</p>
         {canManage && (
           <Button onClick={openCreate} className="min-h-[44px]">
@@ -208,12 +202,12 @@ export function VendorsClient({ vendors, canManage }: { vendors: Vendor[]; canMa
           <table className="w-full text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('codeHeader')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('shortNameHeader')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('nameHeader')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('categoryHeader')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('contactHeader')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">{t('phoneHeader')}</th>
+                <SortableHeader label={t('codeHeader')} sortKey="vendor_code" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('shortNameHeader')} sortKey="short_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('nameHeader')} sortKey="name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('categoryHeader')} sortKey="vendor_category" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('contactHeader')} sortKey="contact_person" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+                <SortableHeader label={t('phoneHeader')} sortKey="_phone" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
                 {canManage && <th className="px-4 py-3"><span className="sr-only">{tc('actions')}</span></th>}
               </tr>
             </thead>
@@ -264,31 +258,7 @@ export function VendorsClient({ vendors, canManage }: { vendors: Vendor[]; canMa
         </div>
       </div>
 
-      {pages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t('pageInfo', { page: currentPage, pages, total: filtered.length })}</p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage <= 1}
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              aria-label={t('prevPage')}
-            >
-              <ChevronLeft size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage >= pages}
-              onClick={() => setPage(p => Math.min(pages, p + 1))}
-              aria-label={t('nextPage')}
-            >
-              <ChevronRight size={16} />
-            </Button>
-          </div>
-        </div>
-      )}
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       {/* Detail dialog — all 37 fields, grouped */}
       <Dialog open={!!detail} onOpenChange={open => { if (!open) setDetail(null) }}>

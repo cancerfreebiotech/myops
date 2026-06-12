@@ -1513,7 +1513,8 @@
         "prNotFound": "找不到此採購單號",
         "onlyDraftEditable": "只有草稿狀態可以編輯",
         "vendorCodeReadonly": "你沒有修改廠商編號的權限（需採購單位或採購管理權限）"
-      }
+      },
+      "searchPlaceholder": "搜尋單號、採購單、廠商或狀態…"
     },
     "inbox": {
       "title": "待簽收件匣",
@@ -1794,7 +1795,8 @@
         "sourceNotFound": "找不到來源單據",
         "vendorNotFound": "找不到此廠商",
         "onlyDraftEditable": "只有草稿狀態可以編輯"
-      }
+      },
+      "searchPlaceholder": "搜尋單號、來源單據、廠商或狀態…"
     },
     "products": {
       "title": "商品主檔",
@@ -2047,6 +2049,12 @@
       "submit": "確認",
       "cameraError": "無法啟動相機，請確認相機權限或改用手動輸入",
       "lastScanned": "已掃描：{code}"
+    },
+    "table": {
+      "pageInfo": "第 {page} / {totalPages} 頁・共 {total} 筆",
+      "prevPage": "上一頁",
+      "nextPage": "下一頁",
+      "clearSearch": "清除搜尋"
     },
     "vendors": {
       "title": "廠商主檔",

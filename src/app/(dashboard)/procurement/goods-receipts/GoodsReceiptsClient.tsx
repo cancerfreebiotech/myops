@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { Plus, Loader2, HandCoins } from 'lucide-react'
 import { format } from 'date-fns'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import { GrStatusBadge } from './StatusBadge'
+import { useTableSort, usePagination, SortableHeader, TableSearch, TablePagination } from '@/components/procurement/table-tools'
 
 // 進貨驗收單 list: table of goods receipts + 新增 dialog (optional 來源採購單號).
 // Row click navigates to the [id] detail page.
@@ -46,6 +47,34 @@ export function GoodsReceiptsClient({ initialRows }: Props) {
   const tc = useTranslations('common')
   const router = useRouter()
   const [rows, setRows] = useState<GoodsReceiptRow[]>(initialRows)
+  const [search, setSearch] = useState('')
+
+  const enriched = useMemo(() => rows.map(r => ({
+    ...r,
+    pr_doc_no: one(r.pr)?.doc_no ?? null,
+    creator_name: one(r.created_by_user)?.display_name ?? null,
+    status_label: t(`statusLabels.${r.status}` as Parameters<typeof t>[0]),
+    created_date: format(new Date(r.created_at), 'yyyy-MM-dd'),
+  })), [rows, t])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return enriched
+    return enriched.filter(r =>
+      [
+        r.doc_no,
+        r.pr_doc_no,
+        r.vendor_name,
+        r.total_amount !== null ? r.total_amount.toLocaleString() : null,
+        r.status_label,
+        r.creator_name,
+        r.created_date,
+      ].some(v => String(v ?? '').toLowerCase().includes(q)),
+    )
+  }, [enriched, search])
+
+  const { sorted, sortKey, sortDir, toggleSort } = useTableSort(filtered, 'created_at', 'desc')
+  const { pageRows, page, setPage, totalPages, total } = usePagination(sorted)
 
   // create dialog
   const [createOpen, setCreateOpen] = useState(false)
@@ -78,7 +107,8 @@ export function GoodsReceiptsClient({ initialRows }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+        <TableSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         <Button onClick={() => setCreateOpen(true)} className="min-h-[44px] cursor-pointer">
           <Plus size={16} />
           {t('newButton')}
@@ -89,25 +119,23 @@ export function GoodsReceiptsClient({ initialRows }: Props) {
         <table className="w-full text-sm min-w-[760px]">
           <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colDocNo')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colSourcePr')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colVendor')}</th>
-              <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colTotalAmount')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colStatus')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colCreator')}</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('colCreatedAt')}</th>
+              <SortableHeader label={t('colDocNo')} sortKey="doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('colSourcePr')} sortKey="pr_doc_no" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('colVendor')} sortKey="vendor_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('colTotalAmount')} sortKey="total_amount" currentKey={sortKey} dir={sortDir} onSort={toggleSort} className="[&>button]:justify-end" />
+              <SortableHeader label={t('colStatus')} sortKey="status_label" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('colCreator')} sortKey="creator_name" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
+              <SortableHeader label={t('colCreatedAt')} sortKey="created_at" currentKey={sortKey} dir={sortDir} onSort={toggleSort} />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-            {rows.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center py-10 text-slate-400">
-                  {t('noRecords')}
+                  {search.trim() ? tc('noData') : t('noRecords')}
                 </td>
               </tr>
-            ) : rows.map(r => {
-              const creator = one(r.created_by_user)
-              const pr = one(r.pr)
+            ) : pageRows.map(r => {
               return (
                 <tr
                   key={r.id}
@@ -122,20 +150,22 @@ export function GoodsReceiptsClient({ initialRows }: Props) {
                       )}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{pr?.doc_no ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.pr_doc_no ?? '—'}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.vendor_name ?? '—'}</td>
                   <td className="px-4 py-3 text-right text-slate-600 dark:text-slate-400 whitespace-nowrap tabular-nums">
                     {r.total_amount !== null ? r.total_amount.toLocaleString() : '—'}
                   </td>
                   <td className="px-4 py-3"><GrStatusBadge status={r.status} /></td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{creator?.display_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{format(new Date(r.created_at), 'yyyy-MM-dd')}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.creator_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{r.created_date}</td>
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
+
+      <TablePagination page={page} totalPages={totalPages} total={total} onPageChange={setPage} />
 
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

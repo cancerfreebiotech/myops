@@ -1513,7 +1513,8 @@
         "prNotFound": "Purchase request not found for that doc no.",
         "onlyDraftEditable": "Only draft documents can be edited",
         "vendorCodeReadonly": "You do not have permission to change the vendor code (requires the procurement unit or procurement management feature)"
-      }
+      },
+      "searchPlaceholder": "Search doc no., source PR, vendor, or status…"
     },
     "inbox": {
       "title": "Approval inbox",
@@ -1794,7 +1795,8 @@
         "sourceNotFound": "Source document not found",
         "vendorNotFound": "Vendor not found",
         "onlyDraftEditable": "Only drafts can be edited"
-      }
+      },
+      "searchPlaceholder": "Search doc no., source doc, vendor, or status…"
     },
     "products": {
       "title": "Products",
@@ -2047,6 +2049,12 @@
       "submit": "Confirm",
       "cameraError": "Could not start the camera. Check camera permissions or use manual entry",
       "lastScanned": "Scanned: {code}"
+    },
+    "table": {
+      "pageInfo": "Page {page} / {totalPages} — {total} total",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "clearSearch": "Clear search"
     },
     "vendors": {
       "title": "Vendors",
