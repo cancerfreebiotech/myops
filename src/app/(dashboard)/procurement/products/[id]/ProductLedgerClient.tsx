@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, Undo2, PackageOpen, Boxes } from 'lucide-react'
+import { ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, Undo2, PackageOpen, Boxes } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { BackLink } from '@/components/procurement/BackLink'
 
 // 商品出入庫分類帳 — info card + year flow table (running balance) + lots in stock.
 // All quantities are in the product's stock unit (庫存單位).
@@ -193,12 +194,7 @@ export function ProductLedgerClient({ product }: { product: LedgerProduct }) {
 
   return (
     <div className="space-y-6">
-      <Link
-        href="/procurement/products"
-        className="inline-flex items-center gap-1 min-h-[44px] text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
-      >
-        <ArrowLeft size={16} aria-hidden /> {t('backToProducts')}
-      </Link>
+      <BackLink fallbackHref="/procurement/products" />
 
       {/* ── Product info card: dual units + current total ── */}
       <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-5">

@@ -1313,6 +1313,12 @@
       "rejectReasonRequired": "Please enter a reject reason",
       "mfaRequired": "Two-factor verification required — please verify first"
     },
+    "dashboard": {
+      "modules": "Modules",
+      "expiringTitle": "Expiry alert",
+      "expiringDesc": "{count} lots expire within 60 days",
+      "expiringAction": "View stock"
+    },
     "docTypes": {
       "rfq": "RFQ",
       "purchase_request": "Purchase Request",

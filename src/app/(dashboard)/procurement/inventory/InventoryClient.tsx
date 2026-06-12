@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,8 +99,12 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
   const t = useTranslations('procurement.inventory')
   const tc = useTranslations('common')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const [tab, setTab] = useState<Tab>('inbound')
+  const initialTab = searchParams.get('tab')
+  const [tab, setTab] = useState<Tab>(
+    initialTab === 'outbound' || initialTab === 'stock' ? initialTab : 'inbound'
+  )
   const [inboundRows, setInboundRows] = useState<InboundListRow[]>(initialInbound)
   const [outboundRows, setOutboundRows] = useState<OutboundListRow[]>(initialOutbound)
 

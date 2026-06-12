@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Save, Send, Loader2, PackagePlus, Receipt, CopyX,
+  Save, Send, Loader2, PackagePlus, Receipt, CopyX,
   ExternalLink, AlertTriangle, Ban, HandCoins,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
+import { BackLink } from '@/components/procurement/BackLink'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import { GrStatusBadge } from '../StatusBadge'
 
@@ -351,13 +352,7 @@ export function GoodsReceiptDetailClient({ id }: { id: string }) {
     <div className="space-y-6 max-w-4xl">
       {/* Header row: back link + doc no + status */}
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/procurement/goods-receipts"
-          className="inline-flex items-center gap-1 min-h-[44px] text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-        >
-          <ArrowLeft size={16} aria-hidden />
-          {t('backToList')}
-        </Link>
+        <BackLink fallbackHref="/procurement/goods-receipts" />
         <span className="font-semibold text-lg text-slate-900 dark:text-slate-100">{doc.doc_no ?? '—'}</span>
         <GrStatusBadge status={doc.status} />
       </div>

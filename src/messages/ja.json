@@ -1313,6 +1313,12 @@
       "rejectReasonRequired": "却下理由を入力してください",
       "mfaRequired": "二要素認証が必要です。先に認証を完了してください"
     },
+    "dashboard": {
+      "modules": "購買モジュール",
+      "expiringTitle": "使用期限アラート",
+      "expiringDesc": "{count} 件のロットが60日以内に期限切れになります",
+      "expiringAction": "在庫を確認"
+    },
     "docTypes": {
       "rfq": "見積依頼書",
       "purchase_request": "購買依頼書",

@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { SidebarDrawer } from '@/components/layout/SidebarDrawer'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { Footer } from '@/components/layout/Footer'
 import { LocaleSync } from '@/components/LocaleSync'
 import { LOCALE_COOKIE } from '@/i18n/config'
 import { getFeatureFlags } from '@/lib/feature-flags'
@@ -41,7 +40,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <SidebarDrawer user={dbUser as User} features={featureFlags} />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 md:pb-6">
           {children}
-          <Footer />
         </main>
       </div>
       <BottomNav userId={dbUser.id} isAdmin={dbUser.role === 'admin'} features={featureFlags} />

@@ -1313,6 +1313,12 @@
       "rejectReasonRequired": "請輸入拒簽原因",
       "mfaRequired": "需要雙重驗證，請先完成驗證"
     },
+    "dashboard": {
+      "modules": "採購模組",
+      "expiringTitle": "近效期警示",
+      "expiringDesc": "{count} 筆批號將於 60 天內到期",
+      "expiringAction": "查看庫存"
+    },
     "docTypes": {
       "rfq": "詢價單",
       "purchase_request": "請採購單",

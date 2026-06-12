@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -9,11 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, FileText, Landmark, Loader2, Paperclip, Pencil, Plus, Send } from 'lucide-react'
+import { FileText, Landmark, Loader2, Paperclip, Pencil, Plus, Send } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
+import { BackLink } from '@/components/procurement/BackLink'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import { PAYMENT_DOC_TYPE, PaymentStatusBadge, formatAmount, type PaymentKind } from '../../PaymentsClient'
 
@@ -288,13 +288,7 @@ export function PaymentDetailClient({ kind, id }: Props) {
 
   return (
     <div className="max-w-7xl space-y-4">
-      <Link
-        href="/procurement/payments"
-        className="inline-flex items-center gap-1.5 min-h-[44px] text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer"
-      >
-        <ArrowLeft size={16} aria-hidden />
-        {t('backToList')}
-      </Link>
+      <BackLink fallbackHref="/procurement/payments" />
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 space-y-5">
         {/* Header */}

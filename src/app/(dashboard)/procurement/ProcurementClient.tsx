@@ -3,7 +3,20 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { Building2, Package, ClipboardCheck, Inbox, ChevronRight } from 'lucide-react'
+import {
+  AlertTriangle,
+  Building2,
+  ChevronRight,
+  ClipboardCheck,
+  FileSearch,
+  Inbox,
+  Package,
+  PackageCheck,
+  Receipt,
+  ShoppingCart,
+  Warehouse,
+  type LucideIcon,
+} from 'lucide-react'
 import { DOC_TYPE_META, type DocType } from '@/lib/procurement/doc-types'
 import { cn } from '@/lib/utils'
 
@@ -14,6 +27,20 @@ interface InboxItem {
   step_no: number
   applicant: { id: string | null; display_name: string | null }
   arrived_at: string
+}
+
+/** GET /api/procurement/stats response */
+interface Stats {
+  vendors: number
+  products: number
+  rfqs: number
+  purchase_requests: number
+  goods_receipts: number
+  inbound_orders: number
+  outbound_orders: number
+  payments: number
+  evaluations: number
+  expiring_lots: number
 }
 
 /**
@@ -46,10 +73,13 @@ export function ProcurementClient() {
   const t = useTranslations('procurement')
   const [items, setItems] = useState<InboxItem[] | null>(null)
   const [error, setError] = useState(false)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [statsFailed, setStatsFailed] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    const load = async () => {
+
+    const loadInbox = async () => {
       try {
         const res = await fetch('/api/procurement/inbox')
         if (res.status === 403) {
@@ -64,41 +94,39 @@ export function ProcurementClient() {
         if (!cancelled) setError(true)
       }
     }
-    load()
+
+    const loadStats = async () => {
+      try {
+        const res = await fetch('/api/procurement/stats')
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json = await res.json()
+        if (!cancelled) setStats(json.data ?? null)
+      } catch {
+        // Cards stay visible as plain links with an em dash instead of a count
+        if (!cancelled) setStatsFailed(true)
+      }
+    }
+
+    loadInbox()
+    loadStats()
     return () => { cancelled = true }
   }, [])
 
-  const quickLinks = [
-    { href: '/procurement/vendors', icon: Building2, label: t('nav.vendors'), desc: t('nav.vendorsDesc') },
-    { href: '/procurement/products', icon: Package, label: t('nav.products'), desc: t('nav.productsDesc') },
-    { href: '/procurement/evaluations', icon: ClipboardCheck, label: t('nav.evaluations'), desc: t('nav.evaluationsDesc') },
+  // Module cards — label keys reuse the existing per-module namespaces
+  const moduleCards: { href: string; icon: LucideIcon; label: string; count: (s: Stats) => number }[] = [
+    { href: '/procurement/rfqs', icon: FileSearch, label: t('docTypes.rfq'), count: s => s.rfqs },
+    { href: '/procurement/purchase-requests', icon: ShoppingCart, label: t('docTypes.purchase_request'), count: s => s.purchase_requests },
+    { href: '/procurement/goods-receipts', icon: PackageCheck, label: t('docTypes.goods_receipt'), count: s => s.goods_receipts },
+    { href: '/procurement/inventory', icon: Warehouse, label: t('inventory.title'), count: s => s.inbound_orders + s.outbound_orders },
+    { href: '/procurement/payments', icon: Receipt, label: t('payments.title'), count: s => s.payments },
+    { href: '/procurement/vendors', icon: Building2, label: t('nav.vendors'), count: s => s.vendors },
+    { href: '/procurement/products', icon: Package, label: t('nav.products'), count: s => s.products },
+    { href: '/procurement/evaluations', icon: ClipboardCheck, label: t('nav.evaluations'), count: s => s.evaluations },
   ]
 
   return (
     <div className="space-y-6">
-      {/* Quick entry cards */}
-      <section aria-label={t('nav.quickLinks')}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {quickLinks.map(({ href, icon: Icon, label, desc }) => (
-            <Link
-              key={href}
-              href={href}
-              className="flex items-center gap-3 p-4 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors duration-150 active:scale-[0.97] cursor-pointer"
-            >
-              <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
-                <Icon size={20} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{desc}</p>
-              </div>
-              <ChevronRight size={16} className="ml-auto shrink-0 text-slate-400" aria-hidden="true" />
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Approval inbox */}
+      {/* Approval inbox (我的待簽) */}
       <section className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
           <Inbox size={20} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
@@ -180,6 +208,60 @@ export function ProcurementClient() {
             </table>
           </div>
         )}
+      </section>
+
+      {/* Module cards */}
+      <section aria-label={t('dashboard.modules')}>
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-3">
+          {t('dashboard.modules')}
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          {/* Expiry alert card — only when lots expire within 60 days */}
+          {stats !== null && stats.expiring_lots > 0 && (
+            <Link
+              href="/procurement/inventory?tab=stock"
+              className="col-span-full flex items-center gap-3 p-4 min-h-[44px] rounded-xl border border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/40 hover:border-yellow-300 dark:hover:border-yellow-800 transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              <div className="shrink-0 w-10 h-10 rounded-lg bg-yellow-100 dark:bg-yellow-900/60 flex items-center justify-center">
+                <AlertTriangle size={20} className="text-yellow-700 dark:text-yellow-400" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">{t('dashboard.expiringTitle')}</p>
+                <p className="text-xs text-yellow-800/80 dark:text-yellow-400/90">
+                  {t('dashboard.expiringDesc', { count: stats.expiring_lots })}
+                </p>
+              </div>
+              <span className="ml-auto shrink-0 inline-flex items-center gap-1 text-xs font-medium text-yellow-800 dark:text-yellow-300">
+                <span className="hidden sm:inline">{t('dashboard.expiringAction')}</span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </span>
+            </Link>
+          )}
+
+          {moduleCards.map(({ href, icon: Icon, label, count }) => (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col gap-2 p-4 min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors duration-150 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600"
+            >
+              <div className="flex items-center justify-between">
+                <div className="shrink-0 w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
+                  <Icon size={20} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-slate-400" aria-hidden="true" />
+              </div>
+              {stats === null && !statsFailed ? (
+                <div className="h-8 w-14 rounded-md bg-slate-100 dark:bg-slate-700 animate-pulse" aria-hidden="true" />
+              ) : (
+                <p className="text-2xl sm:text-3xl font-bold leading-none tabular-nums text-slate-900 dark:text-slate-100">
+                  {stats !== null ? count(stats) : '—'}
+                </p>
+              )}
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{label}</p>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   )

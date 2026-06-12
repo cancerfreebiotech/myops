@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -11,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
-  ArrowLeft, Save, Send, Loader2, Plus, Trash2, PackagePlus,
+  Save, Send, Loader2, Plus, Trash2, PackagePlus,
   Banknote, Ban, Copy,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
+import { BackLink } from '@/components/procurement/BackLink'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import { PrStatusBadge, formatAmount } from '../PurchaseRequestsClient'
 
@@ -389,10 +389,7 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
     return (
       <div className="py-16 text-center space-y-4">
         <p className="text-slate-500 dark:text-slate-400">{t('loadFailed')}</p>
-        <Link href="/procurement/purchase-requests" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
-          <ArrowLeft size={16} />
-          {t('backToList')}
-        </Link>
+        <BackLink fallbackHref="/procurement/purchase-requests" />
       </div>
     )
   }
@@ -410,13 +407,7 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="space-y-1">
-          <Link
-            href="/procurement/purchase-requests"
-            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          >
-            <ArrowLeft size={16} />
-            {t('backToList')}
-          </Link>
+          <BackLink fallbackHref="/procurement/purchase-requests" />
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{doc.doc_no ?? t('detailTitle')}</h1>
             <PrStatusBadge status={doc.status} />

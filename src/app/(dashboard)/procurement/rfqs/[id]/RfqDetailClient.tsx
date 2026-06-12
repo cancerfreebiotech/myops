@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowRightLeft, CopyX, Loader2, Pencil, Send } from 'lucide-react'
+import { ArrowRightLeft, CopyX, Loader2, Pencil, Send } from 'lucide-react'
 import { format } from 'date-fns'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
+import { BackLink } from '@/components/procurement/BackLink'
 import type { DocStatus } from '@/lib/procurement/doc-types'
 import {
   RFQ_FORM_FIELDS,
@@ -197,15 +198,7 @@ export function RfqDetailClient({ rfqId, users }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3 flex-wrap">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push('/procurement/rfqs')}
-            className="min-h-[44px] cursor-pointer"
-          >
-            <ArrowLeft size={16} />
-            {tc('back')}
-          </Button>
+          <BackLink fallbackHref="/procurement/rfqs" />
           <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">
             {t('detailTitle')} {doc.doc_no ?? ''}
           </h1>
