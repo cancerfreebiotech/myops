@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ComponentProps, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -295,7 +296,13 @@ export function ProductsClient({ products, canManage }: { products: Product[]; c
                 >
                   <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">{p.product_code ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <div className="font-medium text-slate-800 dark:text-slate-200">{p.name}</div>
+                    <Link
+                      href={`/procurement/products/${p.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="font-medium text-blue-600 dark:text-blue-400 hover:underline focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
+                    >
+                      {p.name}
+                    </Link>
                     {p.spec && <div className="text-xs text-slate-500 dark:text-slate-400">{p.spec}</div>}
                   </td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">{p.category ?? '—'}</td>

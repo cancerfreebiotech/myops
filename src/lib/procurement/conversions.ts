@@ -1,11 +1,17 @@
-// Document conversion (轉單) skeleton — types + field mapping tables.
+// Server-only: document conversion (轉單) for the six procurement chains.
 //
-// Phase B implements convertDocument() fully (insert target draft, copy mapped
-// fields, build line items, run post-processing like deposit auto-fill and
-// purchase→stock unit conversion). This file fixes the shapes and the
-// source→target column maps so form/UI/API work can proceed against them.
+// convertDoc(fromType, fromId, toType, userId) creates a *draft* target
+// document from an approved source document: copies the mapped columns, sets
+// the single-direction FK (e.g. purchase_requests.rfq_id), runs post-process
+// steps (deposit auto-fill, inbound item building with purchase→stock unit
+// conversion, vendor bank info completion, installment numbering) and bumps
+// the source-side counters (pr_count, gr_count, deposit_request_count).
+//
+// The source must be status='approved' (簽核完成). For the RFQ chain that is
+// the same single notification step finishing, per spec §三-1.
 
-import type { DocType } from './doc-types'
+import { createServiceClient } from '@/lib/supabase/server'
+import { DOC_TYPE_META, type DocType } from './doc-types'
 
 export type ConversionKey =
   | 'rfq_to_pr'
@@ -15,17 +21,15 @@ export type ConversionKey =
   | 'gr_to_ap'
   | 'ap_to_ins'
 
-/** Extra server-side steps that run after the plain column copy */
+/** Extra server-side steps that run around the plain column copy */
 export type ConversionPostProcess =
   /** PR→GR: look up approved deposit_requests of the source PR and fill has_deposit / deposit_doc_no / deposit_paid_amount */
   | 'autofillDeposit'
   /** GR→INB: build inbound_items from pr_items of gr.pr_id, converting purchase units → stock units via products.units_per_purchase */
   | 'buildInboundItems'
-  /** PR→GR: copy pr_items snapshots for receiving reference (Phase B decides target shape) */
-  | 'copyPrItems'
-  /** *_to_dep / gr_to_ap: complete vendor bank/payment columns from the vendors master */
+  /** pr_to_dep / gr_to_ap: complete vendor bank/payment columns from the vendors master */
   | 'fillVendorBankInfo'
-  /** AP→INS: assign next installment_no and verify installment totals */
+  /** AP→INS: assign the next installment_no among the AP's non-voided installments */
   | 'assignInstallmentNo'
 
 export interface ConversionDef {
@@ -35,6 +39,8 @@ export interface ConversionDef {
   fkField: string
   /** target column ← source column (verbatim copy) */
   fieldMap: Record<string, string>
+  /** Source column counting created targets (incremented after a successful conversion) */
+  counterField?: string
   postProcess?: ConversionPostProcess[]
 }
 
@@ -47,13 +53,15 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
     fieldMap: {
       requesting_department: 'requesting_department',
       urgency: 'urgency',
-      // RFQ 預計到貨日 becomes the PR 請購要求到貨日
+      // RFQ 預計到貨日 becomes the PR 請購期望日
       request_expected_date: 'expected_delivery_date',
       notes: 'notes',
     },
+    counterField: 'pr_count',
   },
 
   // 請採購單 → 進貨驗收單 (轉進貨單)
+  // GR has no own line-item table: receiving lines are read from pr_items via gr.pr_id.
   pr_to_gr: {
     source: 'purchase_request',
     target: 'goods_receipt',
@@ -75,9 +83,9 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
       shipping_fee: 'shipping_fee',
       total_amount: 'total_amount',
     },
-    // 訂金自動帶入: query approved deposit_requests for this PR and fill
-    // has_deposit / deposit_doc_no / deposit_paid_amount automatically
-    postProcess: ['autofillDeposit', 'copyPrItems'],
+    counterField: 'gr_count',
+    // 訂金自動帶入 (決策 11)
+    postProcess: ['autofillDeposit'],
   },
 
   // 請採購單 → 訂金請款單 (訂金請款)
@@ -91,11 +99,11 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
       vendor_name: 'vendor_name',
       total_amount: 'total_amount',
     },
-    // vendor_short_name + bank_* / closing_day come from the vendors master
+    counterField: 'deposit_request_count',
     postProcess: ['fillVendorBankInfo'],
   },
 
-  // 進貨驗收單 → 入庫單 (轉入庫單; is_new_lot decided per line by lot lookup)
+  // 進貨驗收單 → 入庫單 (轉入庫單; is_new_lot decided per line at posting time)
   gr_to_inb: {
     source: 'goods_receipt',
     target: 'inbound_order',
@@ -119,7 +127,6 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
       ap_total_amount: 'total_amount',
       total_amount: 'total_amount',
     },
-    // country / payment_method / payment_terms / closing_day / bank_* from vendors master
     postProcess: ['fillVendorBankInfo'],
   },
 
@@ -135,20 +142,215 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
   },
 }
 
+export type ConversionErrorCode =
+  | 'invalidConversion'
+  | 'docNotFound'
+  | 'sourceNotApproved'
+
+export class ConversionError extends Error {
+  constructor(public code: ConversionErrorCode, message?: string) {
+    super(message ?? code)
+    this.name = 'ConversionError'
+  }
+}
+
 export interface ConvertResult {
-  targetId: string
-  targetDocNo: string
+  /** id of the newly created draft target document */
+  newId: string
+  /** auto-assigned doc_no of the target (PREFIX-YYMM-NNN) */
+  docNo: string
+  toType: DocType
+}
+
+type Service = Awaited<ReturnType<typeof createServiceClient>>
+type Row = Record<string, unknown>
+
+/** Vendor master columns copied per target table by fillVendorBankInfo (target column ← vendors column) */
+const VENDOR_INFO_BY_TARGET: Partial<Record<DocType, Record<string, string>>> = {
+  deposit_request: {
+    vendor_short_name: 'short_name',
+    closing_day: 'closing_day',
+    bank_name: 'bank_name',
+    bank_branch: 'bank_branch',
+    bank_swift_code: 'bank_swift_code',
+    bank_account_no: 'bank_account_no',
+    bank_account_name: 'bank_account_name',
+  },
+  ap_request: {
+    country: 'country',
+    payment_method: 'payment_method',
+    payment_terms: 'payment_terms',
+    closing_day: 'closing_day',
+    bank_name: 'bank_name',
+    bank_branch: 'bank_branch',
+    bank_swift_code: 'bank_swift_code',
+    bank_account_no: 'bank_account_no',
+    bank_account_name: 'bank_account_name',
+  },
+}
+
+function findConversion(fromType: DocType, toType: DocType): ConversionDef | null {
+  for (const def of Object.values(CONVERSIONS)) {
+    if (def.source === fromType && def.target === toType) return def
+  }
+  return null
+}
+
+/** PR→GR: fill 是否已付訂金/已付訂金單號/已付訂金 from the PR's approved deposit_requests */
+async function autofillDeposit(service: Service, prId: string, payload: Row): Promise<void> {
+  const { data } = await service
+    .from('deposit_requests')
+    .select('doc_no, deposit_amount')
+    .eq('pr_id', prId)
+    .eq('status', 'approved')
+  const deposits = (data as { doc_no: string; deposit_amount: number | null }[] | null) ?? []
+  if (deposits.length === 0) return
+  payload.has_deposit = true
+  payload.deposit_doc_no = deposits.map(d => d.doc_no).join(', ')
+  payload.deposit_paid_amount = deposits.reduce((sum, d) => sum + (Number(d.deposit_amount) || 0), 0)
+}
+
+/** pr_to_dep / gr_to_ap: complete bank/payment columns from the vendors master */
+async function fillVendorBankInfo(service: Service, target: DocType, payload: Row): Promise<void> {
+  const map = VENDOR_INFO_BY_TARGET[target]
+  if (!map || !payload.vendor_id) return
+  const { data: vendor } = await service.from('vendors').select('*').eq('id', payload.vendor_id).maybeSingle()
+  if (!vendor) return
+  const v = vendor as Row
+  for (const [targetCol, vendorCol] of Object.entries(map)) {
+    if (payload[targetCol] == null) payload[targetCol] = v[vendorCol] ?? null
+  }
+}
+
+/** AP→INS: next installment_no among the AP's non-voided installment requests */
+async function assignInstallmentNo(service: Service, apId: string, payload: Row): Promise<void> {
+  const { count } = await service
+    .from('installment_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('ap_id', apId)
+    .neq('status', 'voided')
+  payload.installment_no = (count ?? 0) + 1
 }
 
 /**
- * Create a draft target document from an approved source document.
- * Phase B: copy fieldMap columns, insert target as 'draft' (doc_no via trigger),
- * run postProcess steps, and bump source counters (pr_count, gr_count, …).
+ * GR→INB: scaffold inbound_items from the upstream PR's pr_items,
+ * converting purchase-unit quantities into stock units
+ * (qty × products.units_per_purchase). lot_no / expiry / warehouse are left
+ * for the user (lot existence decides 增加 vs 新增 at posting time).
  */
-export async function convertDocument(
-  _key: ConversionKey,
-  _sourceId: string,
-  _userId: string
+async function buildInboundItems(service: Service, gr: Row, inboundOrderId: string): Promise<void> {
+  if (!gr.pr_id) return
+  const { data: itemsData } = await service
+    .from('pr_items')
+    .select('*')
+    .eq('pr_id', gr.pr_id)
+    .order('line_no', { ascending: true, nullsFirst: false })
+  const prItems = (itemsData as Row[] | null) ?? []
+  if (prItems.length === 0) return
+
+  const productIds = [...new Set(prItems.map(i => i.product_id).filter((v): v is string => typeof v === 'string'))]
+  const productById = new Map<string, Row>()
+  if (productIds.length > 0) {
+    const { data: products } = await service
+      .from('products')
+      .select('id, product_code, name, spec, stock_unit, units_per_purchase')
+      .in('id', productIds)
+    for (const p of (products as Row[] | null) ?? []) productById.set(p.id as string, p)
+  }
+
+  const rows = prItems.map((item, index) => {
+    const product = item.product_id ? productById.get(item.product_id as string) : undefined
+    const ratio = Number(product?.units_per_purchase ?? 1) || 1
+    const purchaseQty = Number(item.quantity ?? 0) || 0
+    return {
+      inbound_order_id: inboundOrderId,
+      line_no: (item.line_no as number | null) ?? index + 1,
+      product_id: item.product_id ?? null,
+      product_code: item.product_code ?? product?.product_code ?? null,
+      product_name: item.product_name ?? product?.name ?? null,
+      spec: item.spec ?? product?.spec ?? null,
+      unit: product?.stock_unit ?? item.unit ?? null, // stock unit (庫存單位)
+      quantity: purchaseQty * ratio, // 採購數量 × 換算率 = 庫存單位數量
+    }
+  })
+
+  const { error } = await service.from('inbound_items').insert(rows)
+  if (error) throw new Error(`inbound_items insert failed: ${error.message}`)
+}
+
+/**
+ * Convert an approved source document into a new draft target document.
+ * Returns the new target id + doc_no. Throws ConversionError for caller-level
+ * problems (unknown pair / source missing / source not approved).
+ */
+export async function convertDoc(
+  fromType: DocType,
+  fromId: string,
+  toType: DocType,
+  userId: string
 ): Promise<ConvertResult> {
-  throw new Error('convertDocument is not implemented yet (Phase B)')
+  const def = findConversion(fromType, toType)
+  if (!def) throw new ConversionError('invalidConversion', `no conversion ${fromType} → ${toType}`)
+
+  const service = await createServiceClient()
+  const { data: sourceData } = await service
+    .from(DOC_TYPE_META[fromType].table)
+    .select('*')
+    .eq('id', fromId)
+    .maybeSingle()
+  const source = sourceData as Row | null
+  if (!source) throw new ConversionError('docNotFound')
+  // Source must have finished its approval chain (RFQ included — its single
+  // notification step completing also lands on 'approved').
+  if (source.status !== 'approved') throw new ConversionError('sourceNotApproved')
+
+  const payload: Row = {
+    status: 'draft',
+    [def.fkField]: fromId,
+    created_by: userId,
+    updated_by: userId,
+  }
+  for (const [targetCol, sourceCol] of Object.entries(def.fieldMap)) {
+    payload[targetCol] = source[sourceCol] ?? null
+  }
+
+  // pre-insert post-processing (column completion)
+  for (const step of def.postProcess ?? []) {
+    if (step === 'autofillDeposit') await autofillDeposit(service, fromId, payload)
+    if (step === 'fillVendorBankInfo') await fillVendorBankInfo(service, toType, payload)
+    if (step === 'assignInstallmentNo') await assignInstallmentNo(service, fromId, payload)
+  }
+
+  const { data: created, error: insertError } = await service
+    .from(DOC_TYPE_META[toType].table)
+    .insert(payload)
+    .select('id, doc_no')
+    .single()
+  if (insertError || !created) {
+    throw new Error(`conversion insert failed: ${insertError?.message ?? 'no row returned'}`)
+  }
+  const newId = created.id as string
+  const docNo = created.doc_no as string
+
+  // post-insert post-processing (line items)
+  if ((def.postProcess ?? []).includes('buildInboundItems')) {
+    try {
+      await buildInboundItems(service, source, newId)
+    } catch (e) {
+      // keep the conversion atomic: remove the orphan draft before bubbling up
+      await service.from(DOC_TYPE_META[toType].table).delete().eq('id', newId)
+      throw e
+    }
+  }
+
+  // bump the source-side counter (e.g. rfqs.pr_count) — best effort
+  if (def.counterField) {
+    const current = Number(source[def.counterField] ?? 0) || 0
+    await service
+      .from(DOC_TYPE_META[fromType].table)
+      .update({ [def.counterField]: current + 1, updated_at: new Date().toISOString() })
+      .eq('id', fromId)
+  }
+
+  return { newId, docNo, toType }
 }
