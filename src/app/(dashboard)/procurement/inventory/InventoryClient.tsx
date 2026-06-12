@@ -764,7 +764,7 @@ export function InventoryClient({ initialInbound, initialOutbound, warehouses, p
               </section>
 
               {/* approval */}
-              <ApprovalTimeline docType={detailDocType} steps={detail.data.steps} />
+              <ApprovalTimeline docType={detailDocType} steps={detail.data.steps} docStatus={detail.data.doc.status} />
               {detail.data.can_act && detail.data.current_step_kind && detailOpen && (
                 <ApprovalActions
                   docType={detailDocType}

@@ -630,7 +630,7 @@ export function GoodsReceiptDetailClient({ id }: { id: string }) {
 
       {/* Approval timeline + actions (確認 by 最後修改人員 → 確認 by anyone) */}
       <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-        <ApprovalTimeline docType="goods_receipt" steps={detail.steps} />
+        <ApprovalTimeline docType="goods_receipt" steps={detail.steps} docStatus={doc.status} />
       </section>
 
       {detail.can_act && detail.current_step_kind && (

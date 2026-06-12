@@ -1268,6 +1268,7 @@
     "approval": {
       "timelineTitle": "簽核流程",
       "notSubmitted": "尚未送簽",
+      "historicalDoc": "Ragic 歷史單據（簽核紀錄保留於舊系統）",
       "stepLabel": "第 {no} 關",
       "stepFallback": "關卡 {no}",
       "approverLine": "簽核人：{name}",

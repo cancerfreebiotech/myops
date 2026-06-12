@@ -485,7 +485,7 @@ export function PaymentDetailClient({ kind, id }: Props) {
         )}
 
         {/* Approval timeline + actions (single finance step for all three kinds) */}
-        <ApprovalTimeline docType={PAYMENT_DOC_TYPE[kind]} steps={detail?.steps ?? []} />
+        <ApprovalTimeline docType={PAYMENT_DOC_TYPE[kind]} steps={detail?.steps ?? []} docStatus={doc.status} />
 
         {detail?.can_act && detail.current_step_kind && (
           <ApprovalActions

@@ -51,17 +51,20 @@ const BADGE_STYLE: Record<TimelineStepStatus, string> = {
 interface Props {
   docType: DocType
   steps: TimelineStep[]
+  /** Document status — used to distinguish imported historical docs (approved with no steps) from drafts. */
+  docStatus?: string
 }
 
-export function ApprovalTimeline({ docType, steps }: Props) {
+export function ApprovalTimeline({ docType, steps, docStatus }: Props) {
   const t = useTranslations('procurement.approval')
   const flow = APPROVAL_FLOWS[docType]
 
   if (steps.length === 0) {
+    const isHistorical = docStatus && docStatus !== 'draft'
     return (
       <div>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">{t('timelineTitle')}</h3>
-        <p className="text-sm text-slate-400">{t('notSubmitted')}</p>
+        <p className="text-sm text-slate-400">{isHistorical ? t('historicalDoc') : t('notSubmitted')}</p>
       </div>
     )
   }

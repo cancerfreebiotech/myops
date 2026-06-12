@@ -485,7 +485,7 @@ export function EvaluationsClient({ initialVendorEvaluations, initialProductEval
               )}
 
               {detailRef && (
-                <ApprovalTimeline docType={EVAL_DOC_TYPE[detailRef.type]} steps={detail.steps} />
+                <ApprovalTimeline docType={EVAL_DOC_TYPE[detailRef.type]} steps={detail.steps} docStatus={detail.doc.status} />
               )}
 
               {detailRef && detail.can_act && detail.current_step_kind && (

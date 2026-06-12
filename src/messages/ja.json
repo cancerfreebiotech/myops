@@ -1268,6 +1268,7 @@
     "approval": {
       "timelineTitle": "承認フロー",
       "notSubmitted": "まだ承認申請されていません",
+      "historicalDoc": "Ragicからの移行済み履歴（承認履歴は旧システムに保存）",
       "stepLabel": "第{no}ステップ",
       "stepFallback": "ステップ{no}",
       "approverLine": "承認者：{name}",

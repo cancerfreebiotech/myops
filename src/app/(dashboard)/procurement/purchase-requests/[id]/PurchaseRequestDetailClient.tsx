@@ -794,7 +794,7 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
         {/* ── Right: approval ── */}
         <div className="space-y-6">
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
-            <ApprovalTimeline docType="purchase_request" steps={detail.steps} />
+            <ApprovalTimeline docType="purchase_request" steps={detail.steps} docStatus={doc.status} />
           </div>
           {detail.can_act && detail.current_step_kind && (
             <ApprovalActions

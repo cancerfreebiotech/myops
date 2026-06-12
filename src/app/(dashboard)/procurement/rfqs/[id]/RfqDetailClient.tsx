@@ -305,7 +305,7 @@ export function RfqDetailClient({ rfqId, users }: Props) {
 
       {/* Approval timeline + actions */}
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 space-y-5">
-        <ApprovalTimeline docType="rfq" steps={steps} />
+        <ApprovalTimeline docType="rfq" steps={steps} docStatus={doc.status} />
         {can_act && current_step_kind && (
           <ApprovalActions docType="rfq" docId={rfqId} stepKind={current_step_kind} onActed={load} />
         )}
