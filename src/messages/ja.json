@@ -126,7 +126,8 @@
     "more": "その他",
     "themeLight": "ライトモード",
     "themeDark": "ダークモード",
-    "help": "ヘルプ"
+    "help": "ヘルプ",
+    "adminBotPolicy": "Teams 承認ポリシー"
   },
   "dashboard": {
     "welcome": "おかえりなさい",
@@ -1141,6 +1142,20 @@
     },
     "usersTable": {
       "name": "氏名"
+    },
+    "botPolicy": {
+      "title": "Teams ワンタップ承認ポリシー",
+      "description": "各書類タイプを Teams カードから直接承認できるか設定します",
+      "howItWorks": "仕組み",
+      "howItWorksBody": "オフ（既定・安全）：Teams カードは「承認画面を開く」ディープリンクのみを表示し、myOPS 内で MFA 認証後に承認します。オン：承認／差戻ボタンが Teams カードに直接表示され、ワンタップで承認され MFA を経由しません。金額型の書類は金額しきい値を設定でき、それ未満のみワンタップになります。",
+      "docTypesTitle": "承認対象の書類",
+      "docTypesDesc": "書類タイプごとに Teams ワンタップ承認を切り替えます",
+      "modeOneTap": "ワンタップ（カード上で承認／差戻）",
+      "modeDeepLink": "ディープリンク + MFA（既定・安全）",
+      "toggleAria": "{doc} の Teams ワンタップ承認を切り替え",
+      "thresholdLabel": "金額しきい値",
+      "thresholdHelp": "書類金額がこのしきい値未満の場合のみワンタップを許可します。空欄の場合は制限なし。",
+      "thresholdPlaceholder": "例：50000"
     }
   },
   "tooltips": {
@@ -1236,6 +1251,11 @@
     },
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot が設定されていません"
+    },
+    "botApprove": {
+      "rejected": "この書類を差し戻しました。",
+      "approvedFinal": "承認しました。この書類の承認が完了しました。",
+      "approvedAdvanced": "承認しました。次の承認者に送りました。"
     }
   },
   "teamsMessages": {
@@ -1262,7 +1282,26 @@
     "procurementDocAp": "購買支払依頼書",
     "procurementDocIns": "分割支払依頼書",
     "procurementDocVe": "仕入先審査評価",
-    "procurementDocPe": "商品審査評価"
+    "procurementDocPe": "商品審査評価",
+    "procurementApprovalCardTitle": "📝 {docType} {docNo}",
+    "procurementApprovalCardBody": "{docType} {docNo} があなたの承認待ちです",
+    "procurementApprovalCardBodyAmount": "{docType} {docNo}　金額 NT${amount, number} があなたの承認待ちです",
+    "approvalCardApprove": "承認",
+    "approvalCardReject": "却下",
+    "approvalCardOpen": "承認画面へ",
+    "botQueryPending": "📝 承認待ちの書類が {count} 件あります。",
+    "botQueryLeaveHeader": "🌴 残りの休暇：",
+    "botQueryLeaveLine": "・{type}：残り {remaining} 日",
+    "botQueryLeaveNone": "🌴 今年の休暇残数データが見つかりません。",
+    "botQueryPayroll": "💰 {year}年{month}月の給与ステータス：{status}",
+    "botQueryPayrollNone": "💰 {year}年{month}月の給与はまだ発行されていません。",
+    "botQueryPayrollStatus_draft": "下書き",
+    "botQueryPayrollStatus_hr_reviewed": "人事確認済み",
+    "botQueryPayrollStatus_finance_confirmed": "経理確認済み",
+    "botQueryPayrollStatus_coo_approved": "COO承認済み",
+    "botQueryPayrollStatus_paid": "支払済み",
+    "botQueryPayrollStatus_rejected": "却下",
+    "botQueryUnknown": "🤔 そのコマンドが分かりませんでした。「待簽」「請假（休暇）」「薪資（給与）」と聞いてみてください。"
   },
   "procurement": {
     "approval": {

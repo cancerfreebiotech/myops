@@ -12,12 +12,14 @@
 //   anyone     → the notifyFeature FeatureKey
 
 import { createServiceClient } from '@/lib/supabase/server'
-import { sendProactiveMessage } from '@/lib/teams-bot'
+import { sendProactiveCard, sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
+import { getBotApprovalPolicy, shouldOneTap } from '@/lib/bot-approval-policy'
+import { buildApprovalCard } from '@/lib/drava-card'
 import { JOB_ROLE_DEFAULT_FEATURES } from '@/lib/job-role-features'
 import type { JobRole } from '@/types'
 import { APPROVAL_FLOWS, type ApproverSpec } from './approval-flows'
-import { DOC_TYPE_META, type DocStatus, type DocType } from './doc-types'
+import { DOC_AMOUNT_FIELD, DOC_TYPE_META, type DocStatus, type DocType } from './doc-types'
 
 export type ApprovalAction = 'approve' | 'reject' | 'ack'
 
@@ -188,14 +190,51 @@ async function stepRecipients(service: Service, step: Pick<StepRow, 'approver_ki
 
 type TeamsKey = Parameters<typeof teamsText>[1]
 
-/** Notify a step's approver(s) that the document awaits their approval. Never throws. */
-async function notifyStepApprovers(service: Service, docType: DocType, doc: DocRow, step: Pick<StepRow, 'approver_kind' | 'approver_value' | 'resolved_user_id'>): Promise<void> {
+/** Read the document's monetary amount (if any) for one-tap threshold checks. */
+function docAmount(docType: DocType, doc: DocRow): number | undefined {
+  const field = DOC_AMOUNT_FIELD[docType]
+  if (!field) return undefined
+  const raw = doc[field]
+  const n = typeof raw === 'number' ? raw : Number(raw)
+  return Number.isFinite(n) ? n : undefined
+}
+
+/**
+ * Notify a step's approver(s) that the document awaits their approval, as an
+ * actionable Dr.Ave card. Per recipient: getBotApprovalPolicy() + shouldOneTap()
+ * decide one-tap (approve/reject buttons) vs deep-link (前往簽核). Never throws.
+ */
+async function notifyStepApprovers(service: Service, docType: DocType, doc: DocRow, step: Pick<StepRow, 'step_no' | 'approver_kind' | 'approver_value' | 'resolved_user_id'>): Promise<void> {
   try {
     const recipients = await stepRecipients(service, step)
+    if (recipients.length === 0) return
+
+    const policy = await getBotApprovalPolicy()
+    const amount = docAmount(docType, doc)
+    const oneTap = shouldOneTap(policy, docType, amount)
+
     for (const r of recipients) {
       const label = teamsText(r.language, DOC_TYPE_META[docType].teamsLabelKey as TeamsKey)
-      const text = teamsText(r.language, 'procurementApprovalRequested', { docNo: doc.doc_no, docType: label })
-      await sendProactiveMessage(r.id, text)
+      // New teamsMessages keys (added separately; cast like teamsLabelKey above).
+      const title = teamsText(r.language, 'procurementApprovalCardTitle' as TeamsKey, { docType: label, docNo: doc.doc_no })
+      const summary = amount === undefined
+        ? teamsText(r.language, 'procurementApprovalCardBody' as TeamsKey, { docType: label, docNo: doc.doc_no })
+        : teamsText(r.language, 'procurementApprovalCardBodyAmount' as TeamsKey, { docType: label, docNo: doc.doc_no, amount })
+      const card = buildApprovalCard({
+        docType,
+        docId: doc.id,
+        stepNo: step.step_no,
+        title,
+        summary,
+        amount,
+        oneTap,
+        labels: {
+          approve: teamsText(r.language, 'approvalCardApprove' as TeamsKey),
+          reject: teamsText(r.language, 'approvalCardReject' as TeamsKey),
+          open: teamsText(r.language, 'approvalCardOpen' as TeamsKey),
+        },
+      })
+      await sendProactiveCard(r.id, card)
     }
   } catch (e) {
     console.error('[procurement] step notification failed:', e)

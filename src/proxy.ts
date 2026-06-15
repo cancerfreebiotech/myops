@@ -33,9 +33,11 @@ export default async function proxy(request: NextRequest) {
   }
 
   // Cron endpoints — Vercel Cron has no session cookie; these routes enforce
-  // their own fail-closed CRON_SECRET bearer check internally
-  // /api/teams/bot enforces its own Bot Framework JWT validation internally
-  const cronRoutes = ['/api/teams/clock-reminder', '/api/teams/daily-digest', '/api/teams/notify', '/api/teams/bot']
+  // their own fail-closed CRON_SECRET bearer check internally.
+  // /api/bot/* are Dr.Ave inbound callbacks (card buttons / commands) that
+  // authenticate with Bearer BOT_GATEWAY_TOKEN, not a user session, so they must
+  // bypass the session gate here.
+  const cronRoutes = ['/api/teams/clock-reminder', '/api/teams/daily-digest', '/api/teams/notify', '/api/bot/']
   if (cronRoutes.some(r => pathname.startsWith(r))) {
     return supabaseResponse
   }

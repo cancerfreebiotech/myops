@@ -126,7 +126,8 @@
     "more": "更多",
     "themeLight": "淺色模式",
     "themeDark": "深色模式",
-    "help": "說明文件"
+    "help": "說明文件",
+    "adminBotPolicy": "Teams 簽核政策"
   },
   "dashboard": {
     "welcome": "歡迎回來",
@@ -1141,6 +1142,20 @@
     },
     "usersTable": {
       "name": "姓名"
+    },
+    "botPolicy": {
+      "title": "Teams 一鍵簽核政策",
+      "description": "設定各類單據是否允許在 Teams 卡片上一鍵直接簽核",
+      "howItWorks": "運作方式",
+      "howItWorksBody": "關閉（預設、較安全）：Teams 卡片只提供「前往簽核」深連結，於 myOPS 內完成 MFA 驗證後才能簽核。開啟：核准／退回按鈕直接顯示在 Teams 卡片上，點擊即完成簽核，不經過 MFA。金額型單據可設金額門檻，僅低於門檻者一鍵直簽。",
+      "docTypesTitle": "可簽核單據",
+      "docTypesDesc": "逐項設定是否允許 Teams 一鍵直簽",
+      "modeOneTap": "一鍵直簽（卡片上核准／退回）",
+      "modeDeepLink": "深連結 + MFA（預設、較安全）",
+      "toggleAria": "切換 {doc} 的 Teams 一鍵直簽",
+      "thresholdLabel": "金額門檻",
+      "thresholdHelp": "僅當單據金額低於此門檻時才允許一鍵直簽；留空表示不限金額。",
+      "thresholdPlaceholder": "例如 50000"
     }
   },
   "tooltips": {
@@ -1236,6 +1251,11 @@
     },
     "teamsDailyDigest": {
       "botNotConfigured": "尚未設定 Teams Bot"
+    },
+    "botApprove": {
+      "rejected": "已退回此單據。",
+      "approvedFinal": "已核准，此單據已完成簽核。",
+      "approvedAdvanced": "已核准，已送交下一關簽核。"
     }
   },
   "teamsMessages": {
@@ -1262,7 +1282,26 @@
     "procurementDocAp": "採購請款單",
     "procurementDocIns": "分期請款單",
     "procurementDocVe": "廠商審核評估",
-    "procurementDocPe": "商品審核評估"
+    "procurementDocPe": "商品審核評估",
+    "procurementApprovalCardTitle": "📝 {docType} {docNo}",
+    "procurementApprovalCardBody": "{docType} {docNo} 等待你簽核",
+    "procurementApprovalCardBodyAmount": "{docType} {docNo}　金額 NT${amount, number} 等待你簽核",
+    "approvalCardApprove": "核准",
+    "approvalCardReject": "退回",
+    "approvalCardOpen": "前往簽核",
+    "botQueryPending": "📝 你目前有 {count} 件待簽核單據。",
+    "botQueryLeaveHeader": "🌴 你的剩餘假期：",
+    "botQueryLeaveLine": "・{type}：剩餘 {remaining} 天",
+    "botQueryLeaveNone": "🌴 查無你今年的假期額度資料。",
+    "botQueryPayroll": "💰 {year} 年 {month} 月薪資狀態：{status}",
+    "botQueryPayrollNone": "💰 {year} 年 {month} 月薪資尚未產生。",
+    "botQueryPayrollStatus_draft": "草稿",
+    "botQueryPayrollStatus_hr_reviewed": "人資已審核",
+    "botQueryPayrollStatus_finance_confirmed": "財務已確認",
+    "botQueryPayrollStatus_coo_approved": "營運長已核准",
+    "botQueryPayrollStatus_paid": "已發放",
+    "botQueryPayrollStatus_rejected": "已退回",
+    "botQueryUnknown": "🤔 我看不懂這個指令。你可以問我「我的待簽」「請假」或「薪資」。"
   },
   "procurement": {
     "approval": {

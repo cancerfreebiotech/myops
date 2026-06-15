@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, Megaphone, FileSignature,
   Clock, CalendarDays, Timer, DollarSign, FolderKanban,
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
-  Users, Building2, BookOpen, ShoppingCart,
+  Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -133,6 +133,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     { href: '/admin/hr-settings',      label: t('hrSettings'),       icon: SlidersHorizontal },
     { href: '/admin/finance-settings', label: t('financeSettings'),  icon: DollarSign },
     { href: '/admin/coo-settings',     label: t('cooSettings'),      icon: SlidersHorizontal },
+    { href: '/admin/bot-policy',       label: t('adminBotPolicy'),   icon: ShieldCheck },
     { href: '/admin/settings',         label: t('adminSettings'),    icon: Settings },
   ] : []
 

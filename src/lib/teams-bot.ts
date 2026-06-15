@@ -1,106 +1,123 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-// T65: Bot Framework utility functions (no botbuilder SDK — direct REST calls)
+// Dr.Ave gateway client (T8). myOPS no longer talks to the Bot Framework directly —
+// the shared Dr.Ave gateway (FlightPath) owns the Azure bot, conversation
+// references and JWT verification. We just POST notifications / actionable cards
+// to Dr.Ave's /api/notify and let it route to Teams.
 //
-// getBotToken()            — client-credentials token for the Bot Framework API,
-//                            cached at module level until ~5 minutes before expiry
-// sendProactiveMessage()   — look up the user's conversation reference and send a
-//                            proactive Teams message; skip + log when missing, never throw
-// sendProactiveMessages()  — sequential batch send with per-item error isolation
+// Contract (POST ${DRAVA_NOTIFY_URL}, Authorization: Bearer ${DRAVA_NOTIFY_API_KEY}):
+//   body { to: email, source: 'myops', message?: string, card?: DravaCard }
+//   → { ok: true, method: 'teams' | 'skipped' }
+//   method === 'skipped' = recipient has no conversation reference (never DM'd
+//   DrAva yet) → graceful degrade, NOT an error, NOT counted as sent.
+//
+// Recipients are identified by EMAIL, not myOPS user_id — callers still pass a
+// myOPS userId, we resolve it to users.email via the service client.
+//
+// Public surface (unchanged signatures so callers don't churn):
+//   sendProactiveMessage(userId, text)        → boolean (delivered?)
+//   sendProactiveMessages(msgs)               → { sent, failed }
+//   sendProactiveCard(userId, card)           → boolean (delivered?)
 
-const TOKEN_URL =
-  'https://login.microsoftonline.com/botframework.com/oauth2/v2.0/token'
-const TOKEN_SCOPE = 'https://api.botframework.com/.default'
-
-// Refresh this long (ms) before the token actually expires
-const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000
-
-let cachedToken: { token: string; expiresAt: number } | null = null
-
-export async function getBotToken(): Promise<string> {
-  if (cachedToken && Date.now() < cachedToken.expiresAt - TOKEN_REFRESH_MARGIN_MS) {
-    return cachedToken.token
-  }
-
-  const appId = process.env.TEAMS_BOT_APP_ID
-  const appSecret = process.env.TEAMS_BOT_APP_SECRET
-  if (!appId || !appSecret) {
-    throw new Error('TEAMS_BOT_APP_ID / TEAMS_BOT_APP_SECRET not configured')
-  }
-
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: appId,
-      client_secret: appSecret,
-      scope: TOKEN_SCOPE,
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`Bot token request failed (${res.status}): ${body}`)
-  }
-
-  const data = (await res.json()) as { access_token: string; expires_in: number }
-  cachedToken = {
-    token: data.access_token,
-    expiresAt: Date.now() + data.expires_in * 1000,
-  }
-  return cachedToken.token
+export interface DravaCardAction {
+  label: string
+  action_type: string
+  payload: Record<string, unknown>
+  style?: string
 }
 
-export async function sendProactiveMessage(
+export interface DravaCard {
+  title: string
+  body: string
+  actions: DravaCardAction[]
+}
+
+interface NotifyResponse {
+  ok: boolean
+  method?: 'teams' | 'skipped'
+}
+
+/** Resolve a myOPS user_id to the email Dr.Ave identifies recipients by. */
+async function resolveEmail(
+  service: Awaited<ReturnType<typeof createServiceClient>>,
   userId: string,
-  text: string
+): Promise<string | null> {
+  const { data, error } = await service
+    .from('users')
+    .select('email')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) {
+    console.error(`[teams-bot] email lookup failed for ${userId}:`, error.message)
+    return null
+  }
+  return (data?.email as string | undefined) ?? null
+}
+
+/**
+ * POST a notification (text and/or card) to Dr.Ave for one recipient email.
+ * Returns true only when Dr.Ave actually delivered (method === 'teams').
+ * method === 'skipped' (no conversation ref) returns false but is not an error.
+ * Never throws.
+ */
+async function postNotify(
+  email: string,
+  payload: { message?: string; card?: DravaCard },
 ): Promise<boolean> {
+  const url = process.env.DRAVA_NOTIFY_URL
+  const apiKey = process.env.DRAVA_NOTIFY_API_KEY
+  if (!url || !apiKey) {
+    console.error('[teams-bot] DRAVA_NOTIFY_URL / DRAVA_NOTIFY_API_KEY not configured')
+    return false
+  }
+
   try {
-    const service = await createServiceClient()
-    const { data: ref, error } = await service
-      .from('teams_conversation_references')
-      .select('service_url, conversation_id')
-      .eq('user_id', userId)
-      .maybeSingle()
-
-    if (error) {
-      console.error(`[teams-bot] reference lookup failed for ${userId}:`, error.message)
-      return false
-    }
-    if (!ref) {
-      console.log(`[teams-bot] no conversation reference for user ${userId}, skipping`)
-      return false
-    }
-
-    const token = await getBotToken()
-    const serviceUrl = (ref.service_url as string).replace(/\/+$/, '')
-    const url = `${serviceUrl}/v3/conversations/${encodeURIComponent(ref.conversation_id as string)}/activities`
-
     const res = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ type: 'message', text }),
+      body: JSON.stringify({ to: email, source: 'myops', ...payload }),
     })
 
     if (!res.ok) {
       const body = await res.text().catch(() => '')
-      console.error(`[teams-bot] send failed for ${userId} (${res.status}): ${body}`)
+      console.error(`[teams-bot] Dr.Ave notify failed for ${email} (${res.status}): ${body}`)
       return false
     }
 
+    const data = (await res.json().catch(() => null)) as NotifyResponse | null
+    if (!data?.ok) {
+      console.error(`[teams-bot] Dr.Ave notify returned not-ok for ${email}`)
+      return false
+    }
+    if (data.method === 'skipped') {
+      console.log(`[teams-bot] Dr.Ave skipped ${email} (no conversation reference)`)
+      return false
+    }
     return true
   } catch (e) {
-    console.error(`[teams-bot] send error for ${userId}:`, e)
+    console.error(`[teams-bot] Dr.Ave notify error for ${email}:`, e)
     return false
   }
 }
 
+export async function sendProactiveMessage(
+  userId: string,
+  text: string,
+): Promise<boolean> {
+  const service = await createServiceClient()
+  const email = await resolveEmail(service, userId)
+  if (!email) {
+    console.log(`[teams-bot] no email for user ${userId}, skipping`)
+    return false
+  }
+  return postNotify(email, { message: text })
+}
+
 export async function sendProactiveMessages(
-  messages: { userId: string; text: string }[]
+  messages: { userId: string; text: string }[],
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0
   let failed = 0
@@ -113,4 +130,17 @@ export async function sendProactiveMessages(
   }
 
   return { sent, failed }
+}
+
+export async function sendProactiveCard(
+  userId: string,
+  card: DravaCard,
+): Promise<boolean> {
+  const service = await createServiceClient()
+  const email = await resolveEmail(service, userId)
+  if (!email) {
+    console.log(`[teams-bot] no email for user ${userId}, skipping card`)
+    return false
+  }
+  return postNotify(email, { card })
 }

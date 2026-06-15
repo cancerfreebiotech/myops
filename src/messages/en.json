@@ -126,7 +126,8 @@
     "more": "More",
     "themeLight": "Light Mode",
     "themeDark": "Dark Mode",
-    "help": "Help"
+    "help": "Help",
+    "adminBotPolicy": "Teams Approval Policy"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -1141,6 +1142,20 @@
     },
     "usersTable": {
       "name": "Name"
+    },
+    "botPolicy": {
+      "title": "Teams One-Tap Approval Policy",
+      "description": "Configure which document types may be approved directly from a Teams card",
+      "howItWorks": "How it works",
+      "howItWorksBody": "Off (default, safer): the Teams card only shows an \"Open to approve\" deep link, and approval requires MFA inside myOPS. On: Approve/Reject buttons appear directly on the Teams card and act on one tap, bypassing MFA. Money documents can set an amount threshold so only items below it are one-tap.",
+      "docTypesTitle": "Approvable documents",
+      "docTypesDesc": "Toggle Teams one-tap approval per document type",
+      "modeOneTap": "One-tap (approve/reject on the card)",
+      "modeDeepLink": "Deep link + MFA (default, safer)",
+      "toggleAria": "Toggle Teams one-tap approval for {doc}",
+      "thresholdLabel": "Amount threshold",
+      "thresholdHelp": "One-tap is allowed only when the document amount is below this threshold; leave blank for no limit.",
+      "thresholdPlaceholder": "e.g. 50000"
     }
   },
   "tooltips": {
@@ -1236,6 +1251,11 @@
     },
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot not configured"
+    },
+    "botApprove": {
+      "rejected": "Document rejected.",
+      "approvedFinal": "Approved. This document is now fully approved.",
+      "approvedAdvanced": "Approved. Sent to the next approver."
     }
   },
   "teamsMessages": {
@@ -1262,7 +1282,26 @@
     "procurementDocAp": "AP Payment Request",
     "procurementDocIns": "Installment Payment Request",
     "procurementDocVe": "Vendor Evaluation",
-    "procurementDocPe": "Product Evaluation"
+    "procurementDocPe": "Product Evaluation",
+    "procurementApprovalCardTitle": "📝 {docType} {docNo}",
+    "procurementApprovalCardBody": "{docType} {docNo} is awaiting your approval",
+    "procurementApprovalCardBodyAmount": "{docType} {docNo} — amount NT${amount, number} awaiting your approval",
+    "approvalCardApprove": "Approve",
+    "approvalCardReject": "Reject",
+    "approvalCardOpen": "Open to approve",
+    "botQueryPending": "📝 You have {count} document(s) awaiting your approval.",
+    "botQueryLeaveHeader": "🌴 Your remaining leave:",
+    "botQueryLeaveLine": "- {type}: {remaining} day(s) left",
+    "botQueryLeaveNone": "🌴 No leave balance found for this year.",
+    "botQueryPayroll": "💰 Payroll status for {month}/{year}: {status}",
+    "botQueryPayrollNone": "💰 No payroll record yet for {month}/{year}.",
+    "botQueryPayrollStatus_draft": "Draft",
+    "botQueryPayrollStatus_hr_reviewed": "HR reviewed",
+    "botQueryPayrollStatus_finance_confirmed": "Finance confirmed",
+    "botQueryPayrollStatus_coo_approved": "COO approved",
+    "botQueryPayrollStatus_paid": "Paid",
+    "botQueryPayrollStatus_rejected": "Rejected",
+    "botQueryUnknown": "🤔 I didn't understand that. Try asking about your \"pending\" approvals, \"leave\", or \"payroll\"."
   },
   "procurement": {
     "approval": {

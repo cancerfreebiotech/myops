@@ -2,7 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.3.7] - 2026-06-13
+## [0.3.8] - 2026-06-15
+
+### Changed
+- **Teams 通知改走 Dr.Ave Gateway**：myOPS 不再各自直連 Bot Framework，所有通知（請假結果、採購簽核、打卡提醒、每日摘要、公告、薪資單）改呼叫共用閘道 `drava.cancerfree.io/api/notify`；收件人以 email 識別、查無 conversation reference 時優雅略過
+
+### Added
+- **Teams 可操作簽核卡片**：簽核請求以帶按鈕的卡片送出，主管可直接在 Teams 核准/退回
+- **一鍵簽核政策後台**（`/admin/bot-policy`）：管理員逐功能開關「Teams 一鍵直簽」、金額型單據設門檻；預設全關（走深連結 + MFA，最安全）
+- **bot-facing API**：`/api/bot/approve`、`/api/bot/query`（Dr.Ave 以 `BOT_GATEWAY_TOKEN` 回呼）；一鍵簽核執行前再驗政策門檻，audit 標記 `via=teams_one_tap`
+
+### Removed
+- myOPS 自有 Teams webhook（`/api/teams/bot`）— 已由 Dr.Ave 集中承載
+
+
 
 ### Changed
 - **採購列表全面強化**：9 個列表（詢價/請採購/進貨驗收/出入庫×3/請款×3/廠商/商品/評估×2/待簽收件匣）統一加上

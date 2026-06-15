@@ -49,6 +49,37 @@ export const DOC_TYPE_META: Record<DocType, DocTypeMeta> = {
   product_evaluation: { prefix: 'PE', table: 'product_evaluations', teamsLabelKey: 'procurementDocPe', labelKey: 'docTypes.product_evaluation' },
 }
 
+/**
+ * Single source of truth: the document column carrying the monetary total per
+ * doc type, used to drive the one-tap amount threshold (bot-approval-policy).
+ * Doc types with no monetary amount map to undefined.
+ *
+ * IMPORTANT: this must be the ONLY amount-field map. The one-tap card is built
+ * (approval-engine) and re-validated (api/bot/approve) and configured
+ * (admin/bot-policy) off this same map — divergent copies would let a card pass
+ * shouldOneTap at build but be refused at re-validate (or vice versa).
+ *
+ * `rfq` (詢價單) has NO total_amount column by design (it is a quote request,
+ * not a money document) → undefined → it can never carry an amount threshold.
+ */
+export const DOC_AMOUNT_FIELD: Record<DocType, string | undefined> = {
+  rfq: undefined,
+  purchase_request: 'total_amount',
+  goods_receipt: 'total_amount',
+  inbound_order: undefined,
+  outbound_order: undefined,
+  deposit_request: 'total_amount',
+  ap_request: 'total_amount',
+  installment_request: 'amount',
+  vendor_evaluation: undefined,
+  product_evaluation: undefined,
+}
+
+/** True when the doc type carries a monetary amount (→ supports amount thresholds). */
+export function hasAmountField(docType: DocType): boolean {
+  return DOC_AMOUNT_FIELD[docType] !== undefined
+}
+
 /** i18n keys (procurement namespace) for the shared document statuses, for UI use */
 export const STATUS_LABEL_KEYS: Record<DocStatus, string> = {
   draft: 'status.draft',
