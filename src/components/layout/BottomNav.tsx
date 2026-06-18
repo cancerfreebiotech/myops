@@ -45,13 +45,13 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
   ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
   const MORE_ITEMS = [
+    show('daily_report')  && { href: '/daily-report',  label: t('dailyReport'),   icon: ClipboardList },
     show('overtime')      && { href: '/overtime',      label: t('overtime'),      icon: Timer },
     show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
     show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
     show('payroll')       && { href: '/payroll',       label: t('payroll'),       icon: DollarSign },
     show('projects')      && { href: '/projects',      label: t('projects'),      icon: FolderKanban },
     show('procurement')   && { href: '/procurement',   label: t('procurement'),   icon: ShoppingCart },
-    show('daily_report')  && { href: '/daily-report',  label: t('dailyReport'),   icon: ClipboardList },
     show('feedback')      && { href: '/feedback/new',  label: t('feedback'),      icon: MessageSquarePlus },
     { href: '/settings', label: t('settings'), icon: Settings },
     { href: '/help',     label: t('help'),     icon: HelpCircle },
