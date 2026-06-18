@@ -10,6 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
+  ClipboardList, CheckSquare, UsersRound,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
@@ -124,6 +125,11 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('procurement') && { href: '/procurement', label: t('procurement'), icon: ShoppingCart },
   ].filter(Boolean) as NavItem[]
 
+  const dailyReportItems: NavItem[] = show('daily_report') ? [
+    { href: '/daily-report', label: t('dailyReport'), icon: ClipboardList },
+    { href: '/daily-report/tasks', label: t('dailyReportTasks'), icon: CheckSquare },
+  ].filter(Boolean) as NavItem[] : []
+
   const adminItems: NavItem[] = isAdmin ? [
     { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
     { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
@@ -133,8 +139,9 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     { href: '/admin/hr-settings',      label: t('hrSettings'),       icon: SlidersHorizontal },
     { href: '/admin/finance-settings', label: t('financeSettings'),  icon: DollarSign },
     { href: '/admin/coo-settings',     label: t('cooSettings'),      icon: SlidersHorizontal },
-    { href: '/admin/bot-policy',       label: t('adminBotPolicy'),   icon: ShieldCheck },
-    { href: '/admin/settings',         label: t('adminSettings'),    icon: Settings },
+    { href: '/admin/bot-policy',               label: t('adminBotPolicy'),        icon: ShieldCheck },
+    { href: '/admin/settings',                 label: t('adminSettings'),         icon: Settings },
+    { href: '/admin/daily-report/groups',      label: t('adminDailyReportGroups'), icon: UsersRound },
   ] : []
 
   return (
@@ -202,6 +209,18 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
             {procurementItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
+          </>
+        )}
+
+        {dailyReportItems.length > 0 && (
+          <>
+            <SectionHeader label={t('dailyReportSection')} collapsed={collapsed} />
+            {dailyReportItems.map(item => (
+              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
+            ))}
+            {show('daily_report') && (
+              <NavLink href="/daily-report/team" label={t('dailyReportTeam')} icon={UsersRound} collapsed={collapsed} active={isActive('/daily-report/team')} />
+            )}
           </>
         )}
 

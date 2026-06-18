@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
-  FolderKanban, Settings, ShoppingCart,
+  FolderKanban, Settings, ShoppingCart, ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
@@ -51,6 +51,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('payroll')       && { href: '/payroll',       label: t('payroll'),       icon: DollarSign },
     show('projects')      && { href: '/projects',      label: t('projects'),      icon: FolderKanban },
     show('procurement')   && { href: '/procurement',   label: t('procurement'),   icon: ShoppingCart },
+    show('daily_report')  && { href: '/daily-report',  label: t('dailyReport'),   icon: ClipboardList },
     show('feedback')      && { href: '/feedback/new',  label: t('feedback'),      icon: MessageSquarePlus },
     { href: '/settings', label: t('settings'), icon: Settings },
     { href: '/help',     label: t('help'),     icon: HelpCircle },
