@@ -184,6 +184,18 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
       <nav className="flex-1 overflow-y-auto py-3" aria-label="Navigation">
         <NavLink href="/" label={t('dashboard')} icon={LayoutDashboard} collapsed={collapsed} active={isActive('/')} />
 
+        {dailyReportItems.length > 0 && (
+          <>
+            <SectionHeader label={t('dailyReportSection')} collapsed={collapsed} />
+            {dailyReportItems.map(item => (
+              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
+            ))}
+            {show('daily_report') && (
+              <NavLink href="/daily-report/team" label={t('dailyReportTeam')} icon={UsersRound} collapsed={collapsed} active={isActive('/daily-report/team')} />
+            )}
+          </>
+        )}
+
         <SectionHeader label={t('dms')} collapsed={collapsed} />
         {dmsItems.map(item => (
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
@@ -209,18 +221,6 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
             {procurementItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
-          </>
-        )}
-
-        {dailyReportItems.length > 0 && (
-          <>
-            <SectionHeader label={t('dailyReportSection')} collapsed={collapsed} />
-            {dailyReportItems.map(item => (
-              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
-            ))}
-            {show('daily_report') && (
-              <NavLink href="/daily-report/team" label={t('dailyReportTeam')} icon={UsersRound} collapsed={collapsed} active={isActive('/daily-report/team')} />
-            )}
           </>
         )}
 
