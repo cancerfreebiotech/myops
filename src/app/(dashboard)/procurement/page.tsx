@@ -17,7 +17,7 @@ export default async function ProcurementPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'procurement')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'procurement')) redirect('/no-permission')
 
   const t = await getTranslations('procurement')
 

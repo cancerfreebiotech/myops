@@ -10,7 +10,7 @@ export default async function AdminCompaniesPage() {
   if (!authUser) redirect('/login')
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', authUser.id).single()
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const { data: companies } = await supabase
     .from('companies')

@@ -19,7 +19,7 @@ export default async function InsuranceBracketsPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isFinance = currentUser?.job_role === 'finance'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isFinance && !isCOO) redirect('/')
+  if (!isAdmin && !isFinance && !isCOO) redirect('/no-permission')
 
   const { data: laborBrackets } = await service
     .from('labor_insurance_brackets')

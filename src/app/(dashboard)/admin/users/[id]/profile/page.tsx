@@ -22,7 +22,7 @@ export default async function UserProfilePage({
     .eq('id', user.id)
     .single()
 
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const { data: targetUser } = await service
     .from('users')

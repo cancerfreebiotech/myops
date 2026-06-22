@@ -18,7 +18,7 @@ export default async function AttendanceAnomaliesPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isHR = currentUser?.job_role === 'hr_manager'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isHR && !isCOO) redirect('/')
+  if (!isAdmin && !isHR && !isCOO) redirect('/no-permission')
 
   // Full-time users with 3+ consecutive auto-clock days in last 30 days
   const thirtyDaysAgo = getThirtyDaysAgoStr()

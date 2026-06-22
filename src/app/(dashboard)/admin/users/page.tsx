@@ -12,7 +12,7 @@ export default async function AdminUsersPage() {
   const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', authUser.id).single()
   const isAdmin = currentUser?.role === 'admin'
   const isHR = currentUser?.job_role === 'hr_manager'
-  if (!isAdmin && !isHR) redirect('/')
+  if (!isAdmin && !isHR) redirect('/no-permission')
 
   const service = await createServiceClient()
 

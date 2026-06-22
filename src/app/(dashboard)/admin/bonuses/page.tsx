@@ -20,7 +20,7 @@ export default async function AdminBonusesPage() {
   const isHR = currentUser?.job_role === 'hr_manager'
   const isCOO = currentUser?.job_role === 'coo'
   const hasFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !isHR && !isCOO && !hasFinance) redirect('/')
+  if (!isAdmin && !isHR && !isCOO && !hasFinance) redirect('/no-permission')
 
   const currentYear = new Date().getFullYear()
 

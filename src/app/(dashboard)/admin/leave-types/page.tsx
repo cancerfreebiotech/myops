@@ -14,7 +14,7 @@ export default async function LeaveTypesPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isHR = currentUser?.job_role === 'hr_manager'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isHR && !isCOO) redirect('/')
+  if (!isAdmin && !isHR && !isCOO) redirect('/no-permission')
 
   const { data: leaveTypes } = await service
     .from('leave_types')

@@ -24,13 +24,13 @@ export default async function PurchaseRequestsPage() {
   if (!currentUser) redirect('/login')
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser.role, featureFlags, 'procurement')) redirect('/')
+  if (!canAccessFeature(currentUser.role, featureFlags, 'procurement')) redirect('/no-permission')
 
   const granted = (currentUser.granted_features as string[] | null) ?? []
   const hasAccess =
     userHasFeature(currentUser.role, currentUser.job_role, granted, 'procurement_unit') ||
     userHasFeature(currentUser.role, currentUser.job_role, granted, 'procurement_manage')
-  if (!hasAccess) redirect('/')
+  if (!hasAccess) redirect('/no-permission')
 
   const { data: purchaseRequests } = await service
     .from('purchase_requests')

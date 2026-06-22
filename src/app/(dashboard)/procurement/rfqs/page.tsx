@@ -30,12 +30,12 @@ export default async function RfqsPage() {
   const granted = (currentUser.granted_features as string[] | null) ?? []
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(role, featureFlags, 'procurement')) redirect('/')
+  if (!canAccessFeature(role, featureFlags, 'procurement')) redirect('/no-permission')
 
   const canRead =
     userHasFeature(role, jobRole, granted, 'procurement_unit') ||
     userHasFeature(role, jobRole, granted, 'procurement_manage')
-  if (!canRead) redirect('/')
+  if (!canRead) redirect('/no-permission')
 
   const [{ data: rfqs }, { data: users }] = await Promise.all([
     service

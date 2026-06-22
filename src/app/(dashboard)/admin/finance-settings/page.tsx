@@ -26,7 +26,7 @@ export default async function FinanceSettingsPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isFinance = currentUser?.job_role === 'finance'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isFinance && !isCOO) redirect('/')
+  if (!isAdmin && !isFinance && !isCOO) redirect('/no-permission')
 
   const editable = isAdmin || isFinance
 

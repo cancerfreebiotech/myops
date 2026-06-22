@@ -12,7 +12,7 @@ export default async function FeedbackPage() {
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'feedback')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'feedback')) redirect('/no-permission')
 
   const t = await getTranslations('feedback')
 

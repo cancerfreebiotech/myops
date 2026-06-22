@@ -18,7 +18,7 @@ export default async function DailyReportTeamPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'daily_report')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'daily_report')) redirect('/no-permission')
 
   const isAdmin = currentUser?.role === 'admin'
 

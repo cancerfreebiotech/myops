@@ -18,7 +18,7 @@ export default async function PayrollPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'payroll')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'payroll')) redirect('/no-permission')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
   const canViewPayroll = isHR || currentUser?.granted_features?.includes('view_payroll')

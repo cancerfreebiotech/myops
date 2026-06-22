@@ -19,7 +19,7 @@ export default async function LeavePage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'leave')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'leave')) redirect('/no-permission')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

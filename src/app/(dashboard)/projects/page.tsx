@@ -18,7 +18,7 @@ export default async function ProjectsPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'projects')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'projects')) redirect('/no-permission')
 
   const isAdmin = currentUser?.role === 'admin'
 

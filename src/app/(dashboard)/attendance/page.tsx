@@ -24,7 +24,7 @@ export default async function AttendancePage() {
     .order('code')
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'attendance')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'attendance')) redirect('/no-permission')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

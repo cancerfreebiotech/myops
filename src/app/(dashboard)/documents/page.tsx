@@ -13,7 +13,7 @@ export default async function DocumentsPage() {
   const { data: currentUser } = await supabase.from('users').select('role, granted_features, department_id').eq('id', user.id).single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'documents')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'documents')) redirect('/no-permission')
 
   const { data: departments } = await supabase.from('departments').select('id, name').is('deleted_at', null).order('code')
   const { data: companies } = await supabase.from('companies').select('id, name').is('deleted_at', null).order('name')

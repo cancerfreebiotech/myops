@@ -11,7 +11,7 @@ export default async function FeedbackAdminPage() {
   if (!user) redirect('/login')
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const { data: feedbacks } = await service
     .from('feedback')

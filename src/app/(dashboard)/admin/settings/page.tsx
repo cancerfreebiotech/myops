@@ -13,7 +13,7 @@ export default async function SettingsPage() {
   if (!user) redirect('/login')
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const { data: allSettings } = await service
     .from('system_settings')

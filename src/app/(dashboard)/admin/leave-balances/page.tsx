@@ -14,7 +14,7 @@ export default async function LeaveBalancesPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isHR = currentUser?.job_role === 'hr_manager'
   const isCOO = currentUser?.job_role === 'coo'
-  if (!isAdmin && !isHR && !isCOO) redirect('/')
+  if (!isAdmin && !isHR && !isCOO) redirect('/no-permission')
 
   const currentYear = new Date().getFullYear()
 

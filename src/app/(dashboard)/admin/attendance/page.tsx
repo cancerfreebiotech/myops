@@ -22,7 +22,7 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
     .single()
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr_manager' || currentUser?.role === 'hr'
-  if (!isAdmin) redirect('/')
+  if (!isAdmin) redirect('/no-permission')
 
   const sp = await searchParams
   const now = new Date()

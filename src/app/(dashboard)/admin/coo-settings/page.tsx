@@ -16,7 +16,7 @@ export default async function COOSettingsPage() {
   const isAdmin = currentUser?.role === 'admin'
   const isCOO = currentUser?.job_role === 'coo'
   const isHR = currentUser?.job_role === 'hr_manager'
-  if (!isAdmin && !isCOO && !isHR) redirect('/')
+  if (!isAdmin && !isCOO && !isHR) redirect('/no-permission')
 
   const editable = isAdmin || isCOO
 

@@ -20,7 +20,7 @@ export default async function PayrollAnomaliesPage() {
   const isCOO = currentUser?.job_role === 'coo'
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !isFinanceJobRole && !isCOO && !isHR && !isFinance) redirect('/')
+  if (!isAdmin && !isFinanceJobRole && !isCOO && !isHR && !isFinance) redirect('/no-permission')
 
   const t = await getTranslations('payroll.anomalies')
 

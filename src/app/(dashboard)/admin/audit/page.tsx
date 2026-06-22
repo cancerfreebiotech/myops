@@ -10,7 +10,7 @@ export default async function AuditPage() {
   if (!user) redirect('/login')
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (!['admin', 'hr'].includes(currentUser?.role ?? '')) redirect('/')
+  if (!['admin', 'hr'].includes(currentUser?.role ?? '')) redirect('/no-permission')
 
   const t = await getTranslations('admin.audit')
 

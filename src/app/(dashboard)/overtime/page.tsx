@@ -18,7 +18,7 @@ export default async function OvertimePage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'overtime')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'overtime')) redirect('/no-permission')
 
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 

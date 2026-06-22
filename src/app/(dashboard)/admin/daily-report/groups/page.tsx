@@ -16,7 +16,7 @@ export default async function DailyReportGroupsPage() {
     .eq('id', user.id)
     .single()
 
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const { data: groups } = await service
     .from('daily_report_groups')

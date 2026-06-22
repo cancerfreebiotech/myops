@@ -19,7 +19,7 @@ export default async function AnnouncementsPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'announcements')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'announcements')) redirect('/no-permission')
 
   const canPublish = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('publish_announcement')

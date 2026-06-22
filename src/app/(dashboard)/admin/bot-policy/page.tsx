@@ -11,7 +11,7 @@ export default async function BotPolicyPage() {
   if (!user) redirect('/login')
 
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (currentUser?.role !== 'admin') redirect('/')
+  if (currentUser?.role !== 'admin') redirect('/no-permission')
 
   const policy = await getBotApprovalPolicy()
   const t = await getTranslations('admin.botPolicy')

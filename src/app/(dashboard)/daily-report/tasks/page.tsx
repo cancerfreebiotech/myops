@@ -18,7 +18,7 @@ export default async function DailyReportTasksPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'daily_report')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'daily_report')) redirect('/no-permission')
 
   const { data: viewerMembership } = await service
     .from('daily_report_group_members')

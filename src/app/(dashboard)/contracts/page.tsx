@@ -23,7 +23,7 @@ export default async function ContractsPage() {
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'contracts')) redirect('/')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'contracts')) redirect('/no-permission')
 
   const t = await getTranslations('contracts')
 
