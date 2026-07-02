@@ -190,7 +190,6 @@ async function main() {
 
     // ── parse all CSVs ─────────────────────────────────────
     const parsed = new Map() // file → rows
-    const counts = []
     let allMatch = true
     for (const m of MAPPINGS) {
       const { rows } = parseCsv(fs.readFileSync(path.join(DATA_DIR, m.file), 'utf8'))

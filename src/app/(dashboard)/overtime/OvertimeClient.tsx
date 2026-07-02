@@ -62,7 +62,7 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const [tab, setTab] = useState<'apply' | 'records' | 'approve'>('records')
   const [records, setRecords] = useState<OvertimeRequest[]>([])
   const [approvals, setApprovals] = useState(pendingApprovals)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [applyOpen, setApplyOpen] = useState(false)
 
   // Form state
@@ -74,14 +74,16 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const [reason, setReason] = useState('')
 
   const fetchRecords = useCallback(async () => {
-    setLoading(true)
     const res = await fetch('/api/overtime/requests?view=mine')
     const { data } = await res.json()
     setRecords(data ?? [])
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchRecords() }, [fetchRecords])
+  useEffect(() => {
+    const load = async () => { await fetchRecords() }
+    load()
+  }, [fetchRecords])
 
   const hours = startTime && endTime ? (() => {
     const s = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])

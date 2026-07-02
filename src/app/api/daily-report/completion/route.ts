@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { isValidDateString } from '@/lib/taipei-date'
 
 // GET /api/daily-report/completion?date=YYYY-MM-DD&userId=xxx
 export async function GET(request: NextRequest) {
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const { date, items } = body
+
+  if (!isValidDateString(date)) {
+    return NextResponse.json({ error: 'Invalid date format (YYYY-MM-DD)' }, { status: 400 })
+  }
 
   if (!date || !Array.isArray(items)) {
     return NextResponse.json({ error: 'Missing date or items' }, { status: 400 })

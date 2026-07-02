@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { isValidDateString } from '@/lib/taipei-date'
 
 // GET /api/daily-report/kpi?date=YYYY-MM-DD&userId=xxx
 export async function GET(request: NextRequest) {
@@ -31,6 +32,10 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
   const { date, kpi_def_id, value } = body
+
+  if (!isValidDateString(date)) {
+    return NextResponse.json({ error: 'Invalid date format (YYYY-MM-DD)' }, { status: 400 })
+  }
 
   if (!date || !kpi_def_id || value === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })

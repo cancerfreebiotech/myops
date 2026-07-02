@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // PM 原始碼參考檔與本機暫存，不納入 lint
+    "docs/reference/**",
+    "tmp/**",
   ]),
 ]);
 

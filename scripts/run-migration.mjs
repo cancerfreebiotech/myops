@@ -1,7 +1,6 @@
 // Run a migration SQL file against the Supabase database
 // Usage: node scripts/run-migration.mjs <sql-file>
 import { readFileSync } from 'fs'
-import { createConnection } from 'net'
 import pg from 'pg'
 import { config } from 'dotenv'
 

@@ -37,12 +37,13 @@ export default async function DailyReportTeamPage() {
       .select('group_id, daily_report_groups(id, name)')
       .eq('user_id', user.id)
       .eq('role', 'viewer')
-    groups = (data ?? [])
-      .map((m: any) => m.daily_report_groups)
+    // supabase-js 將 many-to-one 關聯推斷為陣列，runtime 實為單一物件
+    groups = ((data ?? []) as unknown as { daily_report_groups: { id: string; name: string } | null }[])
+      .map(m => m.daily_report_groups)
       .filter(Boolean) as { id: string; name: string }[]
   }
 
-  if (!groups.length) redirect('/daily-report')
+  if (!groups.length) redirect('/no-permission')
 
   const t = await getTranslations('dailyReport')
 

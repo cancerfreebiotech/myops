@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
+import { taipeiToday } from '@/lib/taipei-date'
 import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,7 +31,7 @@ interface TeamData {
 export function TeamViewClient({ groups }: Props) {
   const t = useTranslations('dailyReport')
   const [groupId, setGroupId] = useState(groups[0]?.id ?? '')
-  const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [date, setDate] = useState(() => taipeiToday())
   const [data, setData] = useState<TeamData | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -82,7 +83,7 @@ export function TeamViewClient({ groups }: Props) {
         <Button variant="ghost" size="icon" onClick={() => shiftDate(1)}>
           <ChevronRight size={18} />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setDate(format(new Date(), 'yyyy-MM-dd'))}>
+        <Button variant="outline" size="sm" onClick={() => setDate(taipeiToday())}>
           {t('today')}
         </Button>
       </div>

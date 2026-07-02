@@ -39,7 +39,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const isMember = project.members?.some((m: { user_id: string }) => m.user_id === currentUser?.id)
   const isProjectLead = project.project_lead_id === currentUser?.id
   if (currentUser?.role !== 'admin' && !isProjectLead && !isMember) {
-    redirect('/projects')
+    redirect('/no-permission')
   }
 
   const { data: overtimeRequests } = await service

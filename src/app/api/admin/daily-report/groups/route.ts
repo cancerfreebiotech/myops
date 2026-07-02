@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/admin/daily-report/groups
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const supabase = await createClient()
   const service = await createServiceClient()
   const { data: { user } } = await supabase.auth.getUser()

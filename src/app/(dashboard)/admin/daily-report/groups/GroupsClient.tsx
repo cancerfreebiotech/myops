@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import type { DrGroup, DrGroupMember } from '@/lib/daily-report/types'
 
-type GroupWithMembers = DrGroup & {
+export type GroupWithMembers = DrGroup & {
   members: (DrGroupMember & { user: { id: string; display_name: string | null; email: string } | null })[]
 }
 

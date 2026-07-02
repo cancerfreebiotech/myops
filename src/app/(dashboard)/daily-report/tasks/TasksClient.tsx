@@ -28,7 +28,10 @@ const STATUS_COLORS: Record<DrTaskStatus, string> = {
   done: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300',
 }
 
-export function TasksClient({ userId, isViewer, allUsers }: Props) {
+const PRIORITY_LABEL_KEYS = { high: 'priorityHigh', med: 'priorityMed', low: 'priorityLow' } as const
+const STATUS_LABEL_KEYS = { active: 'statusActive', pending: 'statusPending', done: 'statusDone' } as const
+
+export function TasksClient({ isViewer, allUsers }: Props) {
   const t = useTranslations('dailyReport')
   const [tasks, setTasks] = useState<DrTask[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,7 +59,12 @@ export function TasksClient({ userId, isViewer, allUsers }: Props) {
   useEffect(() => { loadTasks() }, [loadTasks])
 
   const toggleExpand = (id: string) =>
-    setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+    setExpanded(prev => {
+      const s = new Set(prev)
+      if (s.has(id)) s.delete(id)
+      else s.add(id)
+      return s
+    })
 
   const toggleSubtask = async (taskId: string, subtaskId: string, done: boolean) => {
     const res = await fetch(`/api/daily-report/tasks`, {
@@ -204,10 +212,10 @@ export function TasksClient({ userId, isViewer, allUsers }: Props) {
                         {task.title}
                       </span>
                       <Badge className={`text-xs border ${PRIORITY_COLORS[task.priority]}`}>
-                        <Flag size={10} className="mr-1" />{t(`priority${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}` as any)}
+                        <Flag size={10} className="mr-1" />{t(PRIORITY_LABEL_KEYS[task.priority])}
                       </Badge>
                       <Badge className={`text-xs border ${STATUS_COLORS[task.status]}`}>
-                        {t(`status${task.status.charAt(0).toUpperCase() + task.status.slice(1)}` as any)}
+                        {t(STATUS_LABEL_KEYS[task.status])}
                       </Badge>
                       {task.member_done && (
                         <Badge className="text-xs border bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950 dark:text-yellow-300">

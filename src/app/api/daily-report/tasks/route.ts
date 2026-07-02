@@ -47,10 +47,13 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const tasks = (data ?? []).map((t: any) => ({
+  type AssigneeRow = { user: { id: string; display_name: string | null; email: string } | null }
+  type SubtaskRow = { sort_order: number }
+  type TaskRow = Record<string, unknown> & { assignees: AssigneeRow[] | null; subtasks: SubtaskRow[] | null }
+  const tasks = ((data ?? []) as TaskRow[]).map(t => ({
     ...t,
-    assignees: (t.assignees ?? []).map((a: any) => a.user).filter(Boolean),
-    subtasks: (t.subtasks ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
+    assignees: (t.assignees ?? []).map(a => a.user).filter(Boolean),
+    subtasks: (t.subtasks ?? []).sort((a, b) => a.sort_order - b.sort_order),
   }))
 
   return NextResponse.json({ data: tasks })

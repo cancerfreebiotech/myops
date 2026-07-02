@@ -49,7 +49,10 @@ export async function GET(request: NextRequest) {
     .eq('group_id', groupId)
     .eq('role', 'member')
 
-  const memberIds = (members ?? []).map((m: any) => m.user_id)
+  type MemberRow = { user_id: string; users: { id: string; display_name: string | null; email: string } | null }
+  // supabase-js 將 many-to-one 關聯推斷為陣列，runtime 實為單一物件
+  const memberRows = (members ?? []) as unknown as MemberRow[]
+  const memberIds = memberRows.map(m => m.user_id)
   if (!memberIds.length) return NextResponse.json({ data: { members: [], schedules: [], completions: [], kpiEntries: [], kpiDefs: [] } })
 
   const [schedules, completions, kpiEntries, kpiDefs] = await Promise.all([
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({
     data: {
-      members: (members ?? []).map((m: any) => ({ user_id: m.user_id, ...m.users })),
+      members: memberRows.map(m => ({ user_id: m.user_id, ...m.users })),
       schedules: schedules.data ?? [],
       completions: completions.data ?? [],
       kpiEntries: kpiEntries.data ?? [],

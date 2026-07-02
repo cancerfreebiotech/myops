@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
+import { taipeiToday } from '@/lib/taipei-date'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Circle, ClipboardList, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -18,10 +19,10 @@ interface Props {
 
 type Tab = 'schedule' | 'completion' | 'kpi'
 
-export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
+export function DailyReportClient({ userId }: Props) {
   const t = useTranslations('dailyReport')
   const [tab, setTab] = useState<Tab>('schedule')
-  const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [date, setDate] = useState(() => taipeiToday())
   const [saving, setSaving] = useState(false)
 
   // Schedule state
@@ -57,6 +58,7 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
         setScheduleItems(sch.data?.items ?? [])
         setCompletionItems(comp.data?.items ?? [])
         setKpiEntries(kpi.data ?? [])
+        setKpiDrafts({})
         setKpiDefs(entries.data ?? [])
         setSchTemplates(schT.data ?? [])
         setWorkTemplates(workT.data ?? [])
@@ -139,14 +141,15 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
 
   // 每個 KPI 各自 debounce，避免每個按鍵都打一次 API（舊值可能晚到蓋掉新值）
   const kpiTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  // 輸入中的原始字串（允許清空欄位而不誤存 0）
+  const [kpiDrafts, setKpiDrafts] = useState<Record<string, string>>({})
 
-  const setKpiValue = (defId: string, value: number) => {
-    setKpiEntries(prev => {
-      const existing = prev.findIndex(e => e.kpi_def_id === defId)
-      if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
-      return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
-    })
+  const setKpiValue = (defId: string, raw: string) => {
+    setKpiDrafts(prev => ({ ...prev, [defId]: raw }))
     clearTimeout(kpiTimers.current[defId])
+    if (raw === '') return
+    const value = Number(raw)
+    if (Number.isNaN(value)) return
     kpiTimers.current[defId] = setTimeout(async () => {
       try {
         const res = await fetch('/api/daily-report/kpi', {
@@ -155,6 +158,11 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
           body: JSON.stringify({ date, kpi_def_id: defId, value }),
         })
         if (!res.ok) throw new Error()
+        setKpiEntries(prev => {
+          const existing = prev.findIndex(e => e.kpi_def_id === defId)
+          if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
+          return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
+        })
       } catch {
         toast.error(t('saveFailed'))
       }
@@ -186,7 +194,7 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
         <Button variant="ghost" size="icon" onClick={() => shiftDate(1)}>
           <ChevronRight size={18} />
         </Button>
-        <Button variant="outline" size="sm" onClick={() => setDate(format(new Date(), 'yyyy-MM-dd'))}>
+        <Button variant="outline" size="sm" onClick={() => setDate(taipeiToday())}>
           {t('today')}
         </Button>
       </div>
@@ -344,8 +352,8 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Input
                       type="number"
-                      value={getKpiValue(def.kpi_id)}
-                      onChange={e => setKpiValue(def.kpi_id, parseFloat(e.target.value) || 0)}
+                      value={kpiDrafts[def.kpi_id] ?? getKpiValue(def.kpi_id)}
+                      onChange={e => setKpiValue(def.kpi_id, e.target.value)}
                       className="w-24 text-right tabular-nums"
                       placeholder="0"
                     />

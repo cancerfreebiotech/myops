@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { GroupsClient } from './GroupsClient'
+import { GroupsClient, type GroupWithMembers } from './GroupsClient'
 
 export default async function DailyReportGroupsPage() {
   const supabase = await createClient()
@@ -42,7 +42,7 @@ export default async function DailyReportGroupsPage() {
     <div>
       <PageHeader title={t('groupsTitle')} description={t('groupsDescription')} />
       <GroupsClient
-        initialGroups={(groups ?? []) as any}
+        initialGroups={(groups ?? []) as unknown as GroupWithMembers[]}
         allUsers={allUsers ?? []}
       />
     </div>
