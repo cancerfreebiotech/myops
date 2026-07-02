@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.4.8 — 權限系統重大修復（2026-07-02）
+## v0.4.9 — 權限系統重大修復（2026-07-02）
 
 ### Fixed
 - **一般員工看不到任何功能**：修正 feature flags 讀取權限問題 — 非管理員登入後所有模組（打卡、請假、文件、每日報告等）都無法使用、被導向無權限頁面。現在所有員工都能正常看到已開啟的功能模組
