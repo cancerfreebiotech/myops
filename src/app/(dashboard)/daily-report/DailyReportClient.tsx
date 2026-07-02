@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { format } from 'date-fns'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Circle, ClipboardList, BarChart3 } from 'lucide-react'
@@ -36,24 +36,37 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
   const [kpiDefs, setKpiDefs] = useState<DrKpiDefinition[]>([])
   const [kpiEntries, setKpiEntries] = useState<DrKpiEntry[]>([])
 
-  const loadAll = useCallback(async () => {
-    const [sch, comp, kpi, entries, schT, workT] = await Promise.all([
-      fetch(`/api/daily-report/schedule?date=${date}`).then(r => r.json()),
-      fetch(`/api/daily-report/completion?date=${date}`).then(r => r.json()),
-      fetch(`/api/daily-report/kpi?date=${date}`).then(r => r.json()),
-      fetch(`/api/daily-report/kpi-definitions?userId=${userId}`).then(r => r.json()),
-      fetch(`/api/daily-report/sch-items`).then(r => r.json()),
-      fetch(`/api/daily-report/work-items`).then(r => r.json()),
-    ])
-    setScheduleItems(sch.data?.items ?? [])
-    setCompletionItems(comp.data?.items ?? [])
-    setKpiEntries(kpi.data ?? [])
-    setKpiDefs(entries.data ?? [])
-    setSchTemplates(schT.data ?? [])
-    setWorkTemplates(workT.data ?? [])
-  }, [date, userId])
-
-  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => {
+    // cancelled 防止快速切換日期時，較慢的舊回應覆蓋新日期的資料
+    let cancelled = false
+    const loadAll = async () => {
+      try {
+        const okJson = (r: Response) => {
+          if (!r.ok) throw new Error(String(r.status))
+          return r.json()
+        }
+        const [sch, comp, kpi, entries, schT, workT] = await Promise.all([
+          fetch(`/api/daily-report/schedule?date=${date}`).then(okJson),
+          fetch(`/api/daily-report/completion?date=${date}`).then(okJson),
+          fetch(`/api/daily-report/kpi?date=${date}`).then(okJson),
+          fetch(`/api/daily-report/kpi-definitions?userId=${userId}`).then(okJson),
+          fetch(`/api/daily-report/sch-items`).then(okJson),
+          fetch(`/api/daily-report/work-items`).then(okJson),
+        ])
+        if (cancelled) return
+        setScheduleItems(sch.data?.items ?? [])
+        setCompletionItems(comp.data?.items ?? [])
+        setKpiEntries(kpi.data ?? [])
+        setKpiDefs(entries.data ?? [])
+        setSchTemplates(schT.data ?? [])
+        setWorkTemplates(workT.data ?? [])
+      } catch {
+        if (!cancelled) toast.error(t('loadFailed'))
+      }
+    }
+    loadAll()
+    return () => { cancelled = true }
+  }, [date, userId, t])
 
   const shiftDate = (days: number) => {
     const d = new Date(date)
@@ -124,21 +137,28 @@ export function DailyReportClient({ userId, isViewer: _isViewer }: Props) {
   const getKpiValue = (defId: string) =>
     kpiEntries.find(e => e.kpi_def_id === defId)?.value ?? ''
 
-  const setKpiValue = async (defId: string, value: number) => {
-    try {
-      await fetch('/api/daily-report/kpi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, kpi_def_id: defId, value }),
-      })
-      setKpiEntries(prev => {
-        const existing = prev.findIndex(e => e.kpi_def_id === defId)
-        if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
-        return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
-      })
-    } catch {
-      toast.error(t('saveFailed'))
-    }
+  // 每個 KPI 各自 debounce，避免每個按鍵都打一次 API（舊值可能晚到蓋掉新值）
+  const kpiTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  const setKpiValue = (defId: string, value: number) => {
+    setKpiEntries(prev => {
+      const existing = prev.findIndex(e => e.kpi_def_id === defId)
+      if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
+      return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
+    })
+    clearTimeout(kpiTimers.current[defId])
+    kpiTimers.current[defId] = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/daily-report/kpi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date, kpi_def_id: defId, value }),
+        })
+        if (!res.ok) throw new Error()
+      } catch {
+        toast.error(t('saveFailed'))
+      }
+    }, 600)
   }
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [

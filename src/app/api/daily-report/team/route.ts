@@ -16,6 +16,15 @@ export async function GET(request: NextRequest) {
 
   if (!date || !groupId) return NextResponse.json({ error: 'Missing date or groupId' }, { status: 400 })
 
+  // 已刪除（soft-delete）的群組不再提供資料
+  const { data: group } = await service
+    .from('daily_report_groups')
+    .select('id')
+    .eq('id', groupId)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 })
+
   // Verify requester is viewer of this group or admin
   const { data: userRow } = await service.from('users').select('role').eq('id', user.id).single()
   const isAdmin = userRow?.role === 'admin'

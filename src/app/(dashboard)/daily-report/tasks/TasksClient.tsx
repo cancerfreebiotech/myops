@@ -43,12 +43,15 @@ export function TasksClient({ userId, isViewer, allUsers }: Props) {
     setLoading(true)
     try {
       const res = await fetch(`/api/daily-report/tasks?mine=${!isViewer}`)
+      if (!res.ok) throw new Error()
       const json = await res.json()
       setTasks(json.data ?? [])
+    } catch {
+      toast.error(t('loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [isViewer])
+  }, [isViewer, t])
 
   useEffect(() => { loadTasks() }, [loadTasks])
 
@@ -56,11 +59,12 @@ export function TasksClient({ userId, isViewer, allUsers }: Props) {
     setExpanded(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
 
   const toggleSubtask = async (taskId: string, subtaskId: string, done: boolean) => {
-    await fetch(`/api/daily-report/tasks`, {
+    const res = await fetch(`/api/daily-report/tasks`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: subtaskId, done }),
+      body: JSON.stringify({ subtask_id: subtaskId, done }),
     })
+    if (!res.ok) { toast.error(t('saveFailed')); return }
     setTasks(prev => prev.map(task => {
       if (task.id !== taskId) return task
       return {
@@ -71,28 +75,31 @@ export function TasksClient({ userId, isViewer, allUsers }: Props) {
   }
 
   const markMemberDone = async (taskId: string) => {
-    await fetch('/api/daily-report/tasks', {
+    const res = await fetch('/api/daily-report/tasks', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: taskId, member_done: true }),
     })
+    if (!res.ok) { toast.error(t('saveFailed')); return }
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, member_done: true } : t))
     toast.success(t('markedDone'))
   }
 
   const confirmDone = async (taskId: string) => {
-    await fetch('/api/daily-report/tasks', {
+    const res = await fetch('/api/daily-report/tasks', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: taskId, status: 'done' }),
     })
+    if (!res.ok) { toast.error(t('saveFailed')); return }
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'done' } : t))
     toast.success(t('taskConfirmedDone'))
   }
 
   const deleteTask = async (taskId: string) => {
     if (!confirm(t('confirmDeleteTask'))) return
-    await fetch(`/api/daily-report/tasks?id=${taskId}`, { method: 'DELETE' })
+    const res = await fetch(`/api/daily-report/tasks?id=${taskId}`, { method: 'DELETE' })
+    if (!res.ok) { toast.error(t('saveFailed')); return }
     setTasks(prev => prev.filter(t => t.id !== taskId))
   }
 

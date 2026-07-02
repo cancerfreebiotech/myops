@@ -146,6 +146,7 @@
     "saving": "Saving...",
     "saved": "Saved",
     "saveFailed": "Save failed",
+    "loadFailed": "Failed to load",
     "cancel": "Cancel",
     "loading": "Loading...",
     "scheduleTitle": "Today's Schedule",
