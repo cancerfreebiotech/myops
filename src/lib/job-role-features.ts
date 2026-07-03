@@ -18,7 +18,7 @@ export const JOB_ROLE_DEFAULT_FEATURES: Record<JobRole, string[]> = {
   ],
   finance: [
     'view_internal_dept',
-    'payroll_view',
+    'view_payroll',
     'reports_view',
     'procurement_payment_approve',
   ],
@@ -28,7 +28,7 @@ export const JOB_ROLE_DEFAULT_FEATURES: Record<JobRole, string[]> = {
     'view_internal_dept',
     'manage_projects',
     'overtime_approve',
-    'payroll_view',
+    'view_payroll',
     'reports_view',
   ],
   ceo: [
@@ -37,7 +37,7 @@ export const JOB_ROLE_DEFAULT_FEATURES: Record<JobRole, string[]> = {
     'view_internal_dept',
     'manage_projects',
     'overtime_approve',
-    'payroll_view',
+    'view_payroll',
     'reports_view',
     'procurement_unit',
     'procurement_manage',

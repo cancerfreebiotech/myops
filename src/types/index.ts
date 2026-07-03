@@ -6,22 +6,9 @@ export type EmploymentType = 'full_time' | 'intern'
 
 export type WorkRegion = 'TW' | 'JP' | 'US' | 'OTHER'
 
-export type FeatureKey =
-  | 'publish_announcement'
-  | 'approve_contract'
-  | 'export_signatures'
-  | 'view_internal_dept'
-  | 'manage_projects'
-  | 'attendance_manage'
-  | 'leave_approve'
-  | 'overtime_approve'
-  | 'payroll_view'
-  | 'bonuses_manage'
-  | 'reports_view'
-  | 'feedback_admin'
-  | 'procurement_unit'
-  | 'procurement_manage'
-  | 'procurement_payment_approve'
+// Single source of truth for assignable feature keys lives in @/lib/features.
+import type { FeatureKey } from '@/lib/features'
+export type { FeatureKey }
 
 export interface User {
   id: string

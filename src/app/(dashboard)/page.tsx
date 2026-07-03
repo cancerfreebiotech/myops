@@ -115,12 +115,22 @@ export default async function DashboardPage() {
     .order('expires_at')
     .limit(5)
 
+  // Assets with calibration/maintenance due (for asset managers)
+  const isAssetManager = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('asset_manage')
+  const { data: dueAssets } = isAssetManager ? await service
+    .from('assets')
+    .select('id')
+    .is('deleted_at', null)
+    .neq('status', 'retired')
+    .or(`next_calibration_date.lte.${in30Days},next_maintenance_date.lte.${in30Days}`) : { data: [] }
+
   const counts = {
     pendingLeave: pendingLeave?.length ?? 0,
     pendingOT: pendingOT?.length ?? 0,
     pendingAnnouncements: pendingAnnouncements.length,
     pendingDocs: pendingDocs?.length ?? 0,
     pendingExpenses: pendingExpenses?.length ?? 0,
+    dueAssets: dueAssets?.length ?? 0,
   }
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0)
 
@@ -200,6 +210,14 @@ export default async function DashboardPage() {
                 <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 hover:border-emerald-300 transition-colors">
                   <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{counts.pendingExpenses}</p>
                   <p className="text-sm text-emerald-600 dark:text-emerald-500 mt-0.5">{t('pendingExpenses')}</p>
+                </div>
+              </Link>
+            )}
+            {counts.dueAssets > 0 && (
+              <Link href="/assets">
+                <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 p-4 hover:border-orange-300 transition-colors">
+                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{counts.dueAssets}</p>
+                  <p className="text-sm text-orange-600 dark:text-orange-500 mt-0.5">{t('dueAssets')}</p>
                 </div>
               </Link>
             )}

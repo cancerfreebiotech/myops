@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -125,6 +125,10 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('procurement') && { href: '/procurement', label: t('procurement'), icon: ShoppingCart },
   ].filter(Boolean) as NavItem[]
 
+  const assetItems: NavItem[] = [
+    show('assets') && { href: '/assets', label: t('assets'), icon: Package },
+  ].filter(Boolean) as NavItem[]
+
   const dailyReportItems: NavItem[] = show('daily_report') ? [
     { href: '/daily-report', label: t('dailyReport'), icon: ClipboardList },
     { href: '/daily-report/tasks', label: t('dailyReportTasks'), icon: CheckSquare },
@@ -222,6 +226,15 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
           <>
             <SectionHeader label={t('procurement')} collapsed={collapsed} />
             {procurementItems.map(item => (
+              <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
+            ))}
+          </>
+        )}
+
+        {assetItems.length > 0 && (
+          <>
+            <SectionHeader label={t('assets')} collapsed={collapsed} />
+            {assetItems.map(item => (
               <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
             ))}
           </>
