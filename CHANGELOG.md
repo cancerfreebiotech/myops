@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.1 — 員工報帳模組（2026-07-03）
+
+### Added
+- **員工報帳**：代墊費用線上申請 — 選類別（交通/差旅/誤餐/用品/其他）、上傳發票照片或 PDF、送出後由具審批權限的同仁核准與撥付；申請人可隨時查看進度、取消待審核的申請；財務可一鍵匯出 Excel 明細
+- 新增可指派權限「報帳審批與撥付」（expense_approve），審批動作需完成 MFA 驗證
+
 ## v0.5.0 — 品質修正與細節優化（2026-07-03）
 
 ### Fixed
