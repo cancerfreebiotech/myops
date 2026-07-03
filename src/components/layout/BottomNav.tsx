@@ -7,8 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
-  FolderKanban, Settings, ShoppingCart, ClipboardList,
-} from 'lucide-react'
+  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -50,6 +49,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },
     show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
     show('payroll')       && { href: '/payroll',       label: t('payroll'),       icon: DollarSign },
+    show('expenses')      && { href: '/expenses',      label: t('expenses'),      icon: Receipt },
     show('projects')      && { href: '/projects',      label: t('projects'),      icon: FolderKanban },
     show('procurement')   && { href: '/procurement',   label: t('procurement'),   icon: ShoppingCart },
     show('feedback')      && { href: '/feedback/new',  label: t('feedback'),      icon: MessageSquarePlus },

@@ -16,6 +16,7 @@ export const FEATURE_KEYS = [
   'procurement_unit',
   'procurement_manage',
   'procurement_payment_approve',
+  'expense_approve',
 ] as const
 
 export type FeatureKey = typeof FEATURE_KEYS[number]
