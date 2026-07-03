@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
-  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt } from 'lucide-react'
+  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt, CheckSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -44,6 +44,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
   ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]
 
   const MORE_ITEMS = [
+    show('approvals')     && { href: '/approvals',     label: t('approvals'),     icon: CheckSquare },
     show('daily_report')  && { href: '/daily-report',  label: t('dailyReport'),   icon: ClipboardList },
     show('overtime')      && { href: '/overtime',      label: t('overtime'),      icon: Timer },
     show('announcements') && { href: '/announcements', label: t('announcements'), icon: Megaphone },

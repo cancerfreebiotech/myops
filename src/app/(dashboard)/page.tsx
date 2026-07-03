@@ -96,6 +96,12 @@ export default async function DashboardPage() {
     .eq('status', 'pending')
     .is('deleted_at', null) : { data: [] }
 
+  const isExpenseApprover = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('expense_approve')
+  const { data: pendingExpenses } = isExpenseApprover ? await service
+    .from('expense_claims')
+    .select('id')
+    .eq('status', 'pending') : { data: [] }
+
   // Expiring contracts (30 days)
   const in30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const { data: expiringContracts } = await service
@@ -114,6 +120,7 @@ export default async function DashboardPage() {
     pendingOT: pendingOT?.length ?? 0,
     pendingAnnouncements: pendingAnnouncements.length,
     pendingDocs: pendingDocs?.length ?? 0,
+    pendingExpenses: pendingExpenses?.length ?? 0,
   }
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0)
 
@@ -185,6 +192,14 @@ export default async function DashboardPage() {
                 <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4 hover:border-slate-300 transition-colors">
                   <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">{counts.pendingDocs}</p>
                   <p className="text-sm text-slate-500 mt-0.5">{t('pendingContracts')}</p>
+                </div>
+              </Link>
+            )}
+            {counts.pendingExpenses > 0 && (
+              <Link href="/expenses">
+                <div className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/20 p-4 hover:border-emerald-300 transition-colors">
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-400">{counts.pendingExpenses}</p>
+                  <p className="text-sm text-emerald-600 dark:text-emerald-500 mt-0.5">{t('pendingExpenses')}</p>
                 </div>
               </Link>
             )}

@@ -88,6 +88,7 @@
   },
   "nav": {
     "dashboard": "總覽",
+    "approvals": "簽核中心",
     "dms": "文件管理",
     "documents": "文件",
     "announcements": "公告",
@@ -219,7 +220,8 @@
     "goHandle": "立即處理",
     "recentAnnouncements": "最新公告",
     "viewAllAnnouncements": "查看所有公告",
-    "noAnnouncements": "目前沒有公告"
+    "noAnnouncements": "目前沒有公告",
+    "pendingExpenses": "待審報帳"
   },
   "documents": {
     "title": "文件管理",
@@ -2292,5 +2294,35 @@
     "uploadFailed": "附件上傳失敗",
     "mfaRequired": "審批動作需要完成兩階段驗證（MFA）",
     "total": "合計"
+  },
+  "approvals": {
+    "title": "簽核中心",
+    "description": "彙總所有待你審核的申請",
+    "loadFailed": "載入失敗",
+    "actionFailed": "操作失敗",
+    "done": "已完成",
+    "refresh": "重新整理",
+    "allClear": "沒有待簽核的項目 🎉",
+    "pendingCount": "共 {count} 筆待處理",
+    "approve": "核准",
+    "reject": "退回",
+    "rejectReason": "退回原因",
+    "markPaid": "標記撥付",
+    "mfaRequired": "審批動作需要完成兩階段驗證（MFA）",
+    "days": "天",
+    "hours": "小時",
+    "clockIn": "補上班卡",
+    "clockOut": "補下班卡",
+    "secLeave": "請假",
+    "secOvertime": "加班",
+    "secMakeup": "補打卡",
+    "secExpenses": "報帳",
+    "secDocuments": "文件 / 合約",
+    "secPayroll": "薪資",
+    "secProcurement": "採購",
+    "payrollStage_draft": "待 HR 初審",
+    "payrollStage_hr_reviewed": "待財務確認",
+    "payrollStage_finance_confirmed": "待 COO 核准",
+    "payrollStage_coo_approved": "待撥付"
   }
 }

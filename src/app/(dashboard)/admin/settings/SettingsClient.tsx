@@ -96,6 +96,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     procurement: 'procurement',
     daily_report: 'dailyReport',
     expenses: 'expenses',
+    approvals: 'approvals',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [

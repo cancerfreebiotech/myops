@@ -183,6 +183,9 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3" aria-label="Navigation">
         <NavLink href="/" label={t('dashboard')} icon={LayoutDashboard} collapsed={collapsed} active={isActive('/')} />
+        {show('approvals') && (
+          <NavLink href="/approvals" label={t('approvals')} icon={CheckSquare} collapsed={collapsed} active={isActive('/approvals')} />
+        )}
 
         {dailyReportItems.length > 0 && (
           <>

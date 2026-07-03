@@ -88,6 +88,7 @@
   },
   "nav": {
     "dashboard": "Dashboard",
+    "approvals": "Approvals",
     "dms": "Document Management",
     "documents": "Documents",
     "announcements": "Announcements",
@@ -219,7 +220,8 @@
     "goHandle": "Handle Now",
     "recentAnnouncements": "Recent Announcements",
     "viewAllAnnouncements": "View All Announcements",
-    "noAnnouncements": "No announcements"
+    "noAnnouncements": "No announcements",
+    "pendingExpenses": "Pending expenses"
   },
   "documents": {
     "title": "Documents",
@@ -2292,5 +2294,35 @@
     "uploadFailed": "Failed to upload attachment",
     "mfaRequired": "Approval actions require two-factor authentication (MFA)",
     "total": "Total"
+  },
+  "approvals": {
+    "title": "Approval Center",
+    "description": "Everything waiting for your approval, in one place",
+    "loadFailed": "Failed to load",
+    "actionFailed": "Action failed",
+    "done": "Done",
+    "refresh": "Refresh",
+    "allClear": "Nothing waiting for you 🎉",
+    "pendingCount": "{count} item(s) pending",
+    "approve": "Approve",
+    "reject": "Reject",
+    "rejectReason": "Rejection reason",
+    "markPaid": "Mark paid",
+    "mfaRequired": "Approval actions require two-factor authentication (MFA)",
+    "days": "d",
+    "hours": "h",
+    "clockIn": "Clock-in makeup",
+    "clockOut": "Clock-out makeup",
+    "secLeave": "Leave",
+    "secOvertime": "Overtime",
+    "secMakeup": "Makeup Clock",
+    "secExpenses": "Expenses",
+    "secDocuments": "Documents / Contracts",
+    "secPayroll": "Payroll",
+    "secProcurement": "Procurement",
+    "payrollStage_draft": "Awaiting HR review",
+    "payrollStage_hr_reviewed": "Awaiting finance confirmation",
+    "payrollStage_finance_confirmed": "Awaiting COO approval",
+    "payrollStage_coo_approved": "Awaiting payout"
   }
 }

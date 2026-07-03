@@ -88,6 +88,7 @@
   },
   "nav": {
     "dashboard": "ダッシュボード",
+    "approvals": "承認センター",
     "dms": "文書管理",
     "documents": "ドキュメント",
     "announcements": "お知らせ",
@@ -219,7 +220,8 @@
     "goHandle": "今すぐ処理",
     "recentAnnouncements": "最新のお知らせ",
     "viewAllAnnouncements": "すべてのお知らせを見る",
-    "noAnnouncements": "お知らせはありません"
+    "noAnnouncements": "お知らせはありません",
+    "pendingExpenses": "承認待ち経費"
   },
   "documents": {
     "title": "ドキュメント",
@@ -2292,5 +2294,35 @@
     "uploadFailed": "添付のアップロードに失敗しました",
     "mfaRequired": "承認操作には二要素認証（MFA）が必要です",
     "total": "合計"
+  },
+  "approvals": {
+    "title": "承認センター",
+    "description": "あなたの承認待ち案件を一括表示",
+    "loadFailed": "読み込みに失敗しました",
+    "actionFailed": "操作に失敗しました",
+    "done": "完了しました",
+    "refresh": "更新",
+    "allClear": "承認待ちの案件はありません 🎉",
+    "pendingCount": "未処理 {count} 件",
+    "approve": "承認",
+    "reject": "差し戻し",
+    "rejectReason": "差し戻し理由",
+    "markPaid": "支払済みにする",
+    "mfaRequired": "承認操作には二要素認証（MFA）が必要です",
+    "days": "日",
+    "hours": "時間",
+    "clockIn": "出勤打刻の補正",
+    "clockOut": "退勤打刻の補正",
+    "secLeave": "休暇",
+    "secOvertime": "残業",
+    "secMakeup": "打刻補正",
+    "secExpenses": "経費",
+    "secDocuments": "文書 / 契約",
+    "secPayroll": "給与",
+    "secProcurement": "購買",
+    "payrollStage_draft": "HR確認待ち",
+    "payrollStage_hr_reviewed": "財務確認待ち",
+    "payrollStage_finance_confirmed": "COO承認待ち",
+    "payrollStage_coo_approved": "支払待ち"
   }
 }
