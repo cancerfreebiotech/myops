@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.6 — 公司行事曆（2026-07-03）
+
+### Added
+- **公司行事曆**：新頁面 `/calendar` — 一頁月曆彙總公司活動（綠）、已核准請假（藍）、已核准出差（紫）；點日期看當日完整清單；HR/管理員可建立與管理公司活動；手機版最佳化
+
 ## v0.5.5 — 出差管理（2026-07-03）
 
 ### Added
