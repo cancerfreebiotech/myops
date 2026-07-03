@@ -124,6 +124,13 @@ export default async function DashboardPage() {
     .neq('status', 'retired')
     .or(`next_calibration_date.lte.${in30Days},next_maintenance_date.lte.${in30Days}`) : { data: [] }
 
+  const isTrainingManager = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('training_manage')
+  const { data: expiringCerts } = isTrainingManager ? await service
+    .from('certifications')
+    .select('id')
+    .is('deleted_at', null)
+    .lte('expiry_date', in30Days) : { data: [] }
+
   const counts = {
     pendingLeave: pendingLeave?.length ?? 0,
     pendingOT: pendingOT?.length ?? 0,
@@ -131,6 +138,7 @@ export default async function DashboardPage() {
     pendingDocs: pendingDocs?.length ?? 0,
     pendingExpenses: pendingExpenses?.length ?? 0,
     dueAssets: dueAssets?.length ?? 0,
+    expiringCerts: expiringCerts?.length ?? 0,
   }
   const totalPending = Object.values(counts).reduce((a, b) => a + b, 0)
 
@@ -218,6 +226,14 @@ export default async function DashboardPage() {
                 <div className="rounded-lg border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20 p-4 hover:border-orange-300 transition-colors">
                   <p className="text-2xl font-bold text-orange-700 dark:text-orange-400">{counts.dueAssets}</p>
                   <p className="text-sm text-orange-600 dark:text-orange-500 mt-0.5">{t('dueAssets')}</p>
+                </div>
+              </Link>
+            )}
+            {counts.expiringCerts > 0 && (
+              <Link href="/training">
+                <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20 p-4 hover:border-violet-300 transition-colors">
+                  <p className="text-2xl font-bold text-violet-700 dark:text-violet-400">{counts.expiringCerts}</p>
+                  <p className="text-sm text-violet-600 dark:text-violet-500 mt-0.5">{t('expiringCerts')}</p>
                 </div>
               </Link>
             )}

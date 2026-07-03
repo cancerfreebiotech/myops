@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -115,6 +115,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('overtime')   && { href: '/overtime',   label: t('overtime'),   icon: Timer },
     show('payroll')    && { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
     show('expenses')   && { href: '/expenses',   label: t('expenses'),   icon: Receipt },
+    show('training')   && { href: '/training',   label: t('training'),   icon: GraduationCap },
   ].filter(Boolean) as NavItem[]
 
   const projectItems: NavItem[] = [

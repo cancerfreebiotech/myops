@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { bucket, filename } = await request.json()
-  const allowed = ['documents', 'feedback-screenshots', 'insurance-brackets', 'expense-receipts', 'asset-files']
+  const allowed = ['documents', 'feedback-screenshots', 'insurance-brackets', 'expense-receipts', 'asset-files', 'training-files']
   if (!allowed.includes(bucket)) return NextResponse.json({ error: 'Invalid bucket' }, { status: 400 })
 
   const ext = filename?.split('.').pop() ?? 'bin'

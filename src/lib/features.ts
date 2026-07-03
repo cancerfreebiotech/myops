@@ -14,6 +14,7 @@ export const FEATURE_KEYS = [
   // expenses / assets
   'expense_approve',        // TS + RLS
   'asset_manage',           // TS + RLS
+  'training_manage',        // TS + RLS
   // procurement
   'procurement_unit',       // TS + RLS
   'procurement_manage',     // TS + RLS
