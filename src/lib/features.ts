@@ -13,7 +13,8 @@ export const FEATURE_KEYS = [
   'manage_projects',        // RLS (projects write)
   // expenses / assets
   'expense_approve',        // TS + RLS
-  'asset_manage',           // TS + RLS
+  'asset_manage',
+  'lab_manage',           // TS + RLS
   'training_manage',        // TS + RLS
   // procurement
   'procurement_unit',       // TS + RLS

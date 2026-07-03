@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks, UserPlus, FlaskConical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -129,6 +129,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
 
   const assetItems: NavItem[] = [
     show('assets') && { href: '/assets', label: t('assets'), icon: Package },
+    show('lab_supplies') && { href: '/lab', label: t('labSupplies'), icon: FlaskConical },
   ].filter(Boolean) as NavItem[]
 
   const dailyReportItems: NavItem[] = show('daily_report') ? [
@@ -140,6 +141,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     { href: '/insights',               label: t('insights'),        icon: BarChart3 },
     { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
     { href: '/admin/lifecycle',        label: t('lifecycle'),        icon: ListChecks },
+    { href: '/admin/recruiting',       label: t('recruiting'),       icon: UserPlus },
     { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
     { href: '/admin/companies',        label: t('adminCompanies'),   icon: Building2 },
     { href: '/admin/feedback',         label: t('adminFeedback'),    icon: MessageCircle },
