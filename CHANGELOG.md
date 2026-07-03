@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.7 — 營運儀表板（2026-07-03）
+
+### Added
+- **營運儀表板**（管理員限定）：新頁面 `/insights` — 本月出勤與加班摘要、年度請假與報帳合計，以及近 6 個月加班時數、出勤人日、請購金額趨勢與請假假別/報帳類別/專案加班分布圖
+
 ## v0.5.6 — 公司行事曆（2026-07-03）
 
 ### Added
