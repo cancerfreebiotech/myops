@@ -139,7 +139,8 @@
     "dailyReportTasks": "我的任務",
     "dailyReportTeam": "團隊總覽",
     "adminDailyReportGroups": "報告群組管理",
-    "insights": "營運儀表板"
+    "insights": "營運儀表板",
+    "askAi": "AI 政策問答"
   },
   "dailyReport": {
     "title": "每日報告",
@@ -2556,5 +2557,16 @@
     "chartLeave": "{year} 請假（按假別）",
     "chartExpense": "{year} 報帳（按類別）",
     "chartProjectOT": "近 6 月專案加班時數"
+  },
+  "askAi": {
+    "title": "AI 政策問答",
+    "subtitle": "根據公司文件回答（測試中）",
+    "placeholder": "例：特休怎麼計算？出差報帳的流程是什麼？",
+    "ask": "詢問",
+    "asking": "思考中...",
+    "failed": "回答失敗，請稍後再試",
+    "noDocs": "文件庫尚無可參考的內容",
+    "sourcesNote": "參考了 {count} 份公司文件",
+    "disclaimer": "回答由 AI 根據已發布的公司文件生成，僅供參考；正式規定以文件原文與 HR 說明為準。"
   }
 }

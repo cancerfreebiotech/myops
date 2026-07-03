@@ -139,7 +139,8 @@
     "dailyReportTasks": "My Tasks",
     "dailyReportTeam": "Team Overview",
     "adminDailyReportGroups": "Report Groups",
-    "insights": "Insights"
+    "insights": "Insights",
+    "askAi": "AI Policy Q&A"
   },
   "dailyReport": {
     "title": "Daily Report",
@@ -2556,5 +2557,16 @@
     "chartLeave": "{year} leave by type",
     "chartExpense": "{year} expenses by category",
     "chartProjectOT": "Overtime by project (6 months)"
+  },
+  "askAi": {
+    "title": "AI Policy Q&A",
+    "subtitle": "Answers based on company documents (beta)",
+    "placeholder": "e.g. How is annual leave calculated?",
+    "ask": "Ask",
+    "asking": "Thinking...",
+    "failed": "Failed to answer, please try again",
+    "noDocs": "No reference documents available yet",
+    "sourcesNote": "Referenced {count} company document(s)",
+    "disclaimer": "Answers are AI-generated from published company documents and for reference only; official rules follow the original documents and HR."
   }
 }

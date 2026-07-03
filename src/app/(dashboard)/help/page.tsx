@@ -2,6 +2,7 @@
 
 import { useLocale } from 'next-intl'
 import Link from 'next/link'
+import { AskAiBox } from '@/components/AskAiBox'
 import {
   LayoutDashboard, Clock, CalendarDays, Timer, DollarSign,
   FolderKanban, FileText, Megaphone, FileSignature,
@@ -711,6 +712,11 @@ export default function HelpPage() {
           {content.title}
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">{content.subtitle}</p>
+      </div>
+
+      {/* AI 政策問答（flag ask_ai 開啟時；403 自動隱藏） */}
+      <div className="mb-8">
+        <AskAiBox />
       </div>
 
       {/* Feature Matrix */}

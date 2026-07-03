@@ -1,4 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { answerPolicyQuestion } from '@/lib/policy-qa'
+import { getFeatureFlags } from '@/lib/feature-flags'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { teamsText } from '@/lib/teams-i18n'
@@ -168,7 +170,14 @@ export async function POST(request: NextRequest) {
     } else if (matches(command, PAYROLL_KEYWORDS)) {
       text = await payrollText(service, user, lang)
     } else {
-      text = teamsText(lang, 'botQueryUnknown')
+      // 政策問答 fallback（flag `ask_ai` 開啟時）
+      const flags = await getFeatureFlags()
+      if (flags.ask_ai) {
+        const result = await answerPolicyQuestion(command, lang ?? 'zh-TW')
+        text = 'error' in result ? teamsText(lang, 'botQueryUnknown') : result.answer
+      } else {
+        text = teamsText(lang, 'botQueryUnknown')
+      }
     }
     return NextResponse.json({ text })
   } catch (e) {

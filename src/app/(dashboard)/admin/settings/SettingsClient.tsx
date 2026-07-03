@@ -102,6 +102,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     business_trip: 'businessTrip',
     calendar: 'calendar',
     insights: 'insights',
+    ask_ai: 'askAi',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [

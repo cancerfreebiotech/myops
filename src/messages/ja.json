@@ -139,7 +139,8 @@
     "dailyReportTasks": "タスク",
     "dailyReportTeam": "チーム概要",
     "adminDailyReportGroups": "報告グループ管理",
-    "insights": "経営ダッシュボード"
+    "insights": "経営ダッシュボード",
+    "askAi": "AI 規定Q&A"
   },
   "dailyReport": {
     "title": "日報",
@@ -2556,5 +2557,16 @@
     "chartLeave": "{year} 休暇（種別）",
     "chartExpense": "{year} 経費（カテゴリ別）",
     "chartProjectOT": "プロジェクト別残業（直近6ヶ月）"
+  },
+  "askAi": {
+    "title": "AI 規定Q&A",
+    "subtitle": "社内文書に基づいて回答（ベータ）",
+    "placeholder": "例：年次有給休暇はどのように計算されますか？",
+    "ask": "質問",
+    "asking": "考え中...",
+    "failed": "回答に失敗しました。再試行してください",
+    "noDocs": "参照できる文書がまだありません",
+    "sourcesNote": "{count} 件の社内文書を参照しました",
+    "disclaimer": "回答は公開済み社内文書に基づく AI 生成であり参考情報です。正式な規定は文書原文と HR にご確認ください。"
   }
 }
