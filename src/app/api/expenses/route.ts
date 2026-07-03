@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
     .select(`
       *,
       user:users!expense_claims_user_id_fkey(id, display_name, email),
-      reviewer:users!expense_claims_reviewed_by_fkey(id, display_name)
+      reviewer:users!expense_claims_reviewed_by_fkey(id, display_name),
+      trip:business_trips(id, destination, start_date, end_date)
     `)
     .order('expense_date', { ascending: false })
 
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
-  const { expense_date, category, amount, description, receipt_paths } = body
+  const { expense_date, category, amount, description, receipt_paths, trip_id } = body
 
   if (!isValidDateString(expense_date) || !CATEGORIES.includes(category) || !description?.trim()) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
       amount: numAmount,
       description: description.trim(),
       receipt_paths: Array.isArray(receipt_paths) ? receipt_paths : [],
+      trip_id: trip_id || null,
     })
     .select()
     .single()

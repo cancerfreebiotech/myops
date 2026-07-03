@@ -103,6 +103,7 @@
     "procurement": "購買",
     "assets": "資産管理",
     "training": "教育訓練",
+    "businessTrip": "出張管理",
     "other": "その他",
     "settings": "設定",
     "feedback": "フィードバック",
@@ -2301,7 +2302,8 @@
     "loadFailed": "読み込みに失敗しました",
     "uploadFailed": "添付のアップロードに失敗しました",
     "mfaRequired": "承認操作には二要素認証（MFA）が必要です",
-    "total": "合計"
+    "total": "合計",
+    "tripLabel": "関連出張"
   },
   "approvals": {
     "title": "承認センター",
@@ -2331,7 +2333,8 @@
     "payrollStage_draft": "HR確認待ち",
     "payrollStage_hr_reviewed": "財務確認待ち",
     "payrollStage_finance_confirmed": "COO承認待ち",
-    "payrollStage_coo_approved": "支払待ち"
+    "payrollStage_coo_approved": "支払待ち",
+    "secTrips": "出張"
   },
   "assets": {
     "title": "資産と機器",
@@ -2463,5 +2466,42 @@
     "uploadFailed": "添付のアップロードに失敗しました",
     "submit": "保存",
     "submitting": "保存中..."
+  },
+  "businessTrip": {
+    "title": "出張管理",
+    "description": "出張申請・承認と旅費精算",
+    "tabMine": "自分の出張",
+    "tabNew": "新規申請",
+    "tabApprove": "承認待ち",
+    "destination": "目的地",
+    "purpose": "目的",
+    "startDate": "開始日",
+    "endDate": "終了日",
+    "itinerary": "行程",
+    "statusPending": "承認待ち",
+    "statusApproved": "承認済み",
+    "statusRejected": "差し戻し",
+    "statusCancelled": "キャンセル",
+    "submit": "申請する",
+    "submitting": "送信中...",
+    "submitted": "出張申請を送信しました",
+    "cancelTrip": "申請を取消",
+    "cancelConfirm": "この出張申請を取り消しますか？",
+    "cancelled": "取り消しました",
+    "approve": "承認",
+    "reject": "差し戻し",
+    "rejectReason": "差し戻し理由",
+    "approved": "承認しました",
+    "rejected": "差し戻しました",
+    "applicant": "申請者",
+    "approver": "承認者",
+    "days": "日",
+    "createExpense": "旅費精算",
+    "noTrips": "出張記録はありません",
+    "noPending": "承認待ちの申請はありません",
+    "requiredFields": "必須項目を入力してください",
+    "saveFailed": "操作に失敗しました。再試行してください",
+    "loadFailed": "読み込みに失敗しました",
+    "mfaRequired": "承認操作には二要素認証（MFA）が必要です"
   }
 }

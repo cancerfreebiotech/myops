@@ -15,6 +15,7 @@ interface ApprovalData {
   leave: { id: string; start_date: string; end_date: string; total_days: number; reason: string; user: NamedUser | null; leave_type: { name: string } | null }[]
   overtime: { id: string; ot_date: string; total_hours: number; reason: string; user: NamedUser | null }[]
   makeup: { id: string; clock_date: string; clock_type: string; clock_time: string; reason: string; user: NamedUser | null }[]
+  trips: { id: string; destination: string; purpose: string; start_date: string; end_date: string; user: NamedUser | null }[]
   documents: { id: string; title: string; doc_type: string; created_at: string; uploader: NamedUser | null }[]
   payroll: { id: string; year: number; month: number; status: string; user: NamedUser | null }[]
   expenses: { id: string; expense_date: string; category: string; amount: number; currency: string; description: string; status: string; user: NamedUser | null }[]
@@ -28,7 +29,7 @@ interface ProcurementItem {
   arrived_at: string
 }
 
-const EMPTY: ApprovalData = { leave: [], overtime: [], makeup: [], documents: [], payroll: [], expenses: [] }
+const EMPTY: ApprovalData = { leave: [], overtime: [], makeup: [], trips: [], documents: [], payroll: [], expenses: [] }
 
 // 採購單據詳情頁路徑
 const PROC_PATHS: Record<string, (id: string) => string> = {
@@ -108,6 +109,7 @@ export function ApprovalsClient() {
 
   const total =
     data.leave.length + data.overtime.length + data.makeup.length +
+    data.trips.length +
     data.documents.length + data.payroll.length + data.expenses.length +
     procurement.length
 
@@ -207,6 +209,21 @@ export function ApprovalsClient() {
             actions={<ApproveRejectButtons
               onApprove={() => act(`/api/attendance/makeup/${r.id}`, { action: 'approve' })}
               onReject={() => rejectWithReason(reason => act(`/api/attendance/makeup/${r.id}`, { action: 'reject', reject_reason: reason }))}
+            />}
+          />
+        ))}
+      </Section>
+
+      {/* 出差 */}
+      <Section title={t('secTrips')} count={data.trips.length}>
+        {data.trips.map(r => (
+          <Row
+            key={r.id}
+            main={<>{r.user?.display_name} — {r.destination}</>}
+            sub={<>{r.start_date} ~ {r.end_date}　{r.purpose}</>}
+            actions={<ApproveRejectButtons
+              onApprove={() => act(`/api/business-trips/${r.id}`, { action: 'approve' })}
+              onReject={() => rejectWithReason(reason => act(`/api/business-trips/${r.id}`, { action: 'reject', reject_reason: reason }))}
             />}
           />
         ))}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Trash2, Paperclip, Download, Check, X, Banknote } from 'lucide-react'
+import { Plus, Trash2, Paperclip, Download, Check, X, Banknote, Plane } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,10 +23,12 @@ interface ExpenseClaim {
   review_note: string | null
   user: { id: string; display_name: string | null; email: string } | null
   reviewer: { id: string; display_name: string | null } | null
+  trip: { id: string; destination: string; start_date: string; end_date: string } | null
 }
 
 interface Props {
   isApprover: boolean
+  prefillTrip?: { id: string; destination: string; start_date: string; end_date: string } | null
 }
 
 type Tab = 'mine' | 'new' | 'approve'
@@ -49,17 +51,19 @@ const STATUS_COLORS: Record<ExpenseClaim['status'], string> = {
   cancelled: 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400',
 }
 
-export function ExpensesClient({ isApprover }: Props) {
+export function ExpensesClient({ isApprover, prefillTrip }: Props) {
   const t = useTranslations('expense')
-  const [tab, setTab] = useState<Tab>('mine')
+  const [tab, setTab] = useState<Tab>(prefillTrip ? 'new' : 'mine')
   const [claims, setClaims] = useState<ExpenseClaim[]>([])
   const [loading, setLoading] = useState(true)
 
   // New claim form
   const [expenseDate, setExpenseDate] = useState(() => taipeiToday())
-  const [category, setCategory] = useState<string>('transport')
+  const [category, setCategory] = useState<string>(prefillTrip ? 'travel' : 'transport')
   const [amount, setAmount] = useState('')
-  const [description, setDescription] = useState('')
+  const [description, setDescription] = useState(
+    prefillTrip ? `${prefillTrip.destination} ${prefillTrip.start_date}~${prefillTrip.end_date}` : ''
+  )
   const [receipts, setReceipts] = useState<{ path: string; name: string }[]>([])
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -126,6 +130,7 @@ export function ExpensesClient({ isApprover }: Props) {
           amount: numAmount,
           description: description.trim(),
           receipt_paths: receipts.map(r => r.path),
+          ...(prefillTrip ? { trip_id: prefillTrip.id } : {}),
         }),
       })
       if (!res.ok) throw new Error()
@@ -197,6 +202,11 @@ export function ExpensesClient({ isApprover }: Props) {
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 break-words">{c.description}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="text-xs text-slate-400">{c.expense_date}</span>
+              {c.trip && (
+                <span className="text-xs text-slate-400 inline-flex items-center gap-1">
+                  <Plane size={12} />{c.trip.destination}
+                </span>
+              )}
               {tab === 'approve' && c.user && (
                 <span className="text-xs text-slate-400">{t('applicant')}: {c.user.display_name ?? c.user.email}</span>
               )}
@@ -282,6 +292,11 @@ export function ExpensesClient({ isApprover }: Props) {
       {tab === 'new' && (
         <Card>
           <CardContent className="pt-4 space-y-3">
+            {prefillTrip && (
+              <p className="text-xs text-slate-500 inline-flex items-center gap-1">
+                <Plane size={12} />{t('tripLabel')}: {prefillTrip.destination}
+              </p>
+            )}
             <div className="flex gap-2 flex-wrap">
               <div>
                 <label className="block text-xs text-slate-500 mb-1">{t('expenseDate')}</label>

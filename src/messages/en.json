@@ -103,6 +103,7 @@
     "procurement": "Procurement",
     "assets": "Assets",
     "training": "Training",
+    "businessTrip": "Business Trips",
     "other": "Other",
     "settings": "Settings",
     "feedback": "Feedback",
@@ -2301,7 +2302,8 @@
     "loadFailed": "Failed to load",
     "uploadFailed": "Failed to upload attachment",
     "mfaRequired": "Approval actions require two-factor authentication (MFA)",
-    "total": "Total"
+    "total": "Total",
+    "tripLabel": "Linked trip"
   },
   "approvals": {
     "title": "Approval Center",
@@ -2331,7 +2333,8 @@
     "payrollStage_draft": "Awaiting HR review",
     "payrollStage_hr_reviewed": "Awaiting finance confirmation",
     "payrollStage_finance_confirmed": "Awaiting COO approval",
-    "payrollStage_coo_approved": "Awaiting payout"
+    "payrollStage_coo_approved": "Awaiting payout",
+    "secTrips": "Business Trips"
   },
   "assets": {
     "title": "Assets & Instruments",
@@ -2463,5 +2466,42 @@
     "uploadFailed": "Failed to upload attachment",
     "submit": "Save",
     "submitting": "Saving..."
+  },
+  "businessTrip": {
+    "title": "Business Trips",
+    "description": "Trip requests, approval and travel expenses",
+    "tabMine": "My Trips",
+    "tabNew": "New Trip",
+    "tabApprove": "Pending Approval",
+    "destination": "Destination",
+    "purpose": "Purpose",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "itinerary": "Itinerary",
+    "statusPending": "Pending",
+    "statusApproved": "Approved",
+    "statusRejected": "Rejected",
+    "statusCancelled": "Cancelled",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "submitted": "Trip request submitted",
+    "cancelTrip": "Cancel",
+    "cancelConfirm": "Cancel this trip request?",
+    "cancelled": "Cancelled",
+    "approve": "Approve",
+    "reject": "Reject",
+    "rejectReason": "Rejection reason",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "applicant": "Applicant",
+    "approver": "Approver",
+    "days": "day(s)",
+    "createExpense": "Travel expense",
+    "noTrips": "No trips yet",
+    "noPending": "No trips pending approval",
+    "requiredFields": "Please fill in the required fields",
+    "saveFailed": "Operation failed, please try again",
+    "loadFailed": "Failed to load",
+    "mfaRequired": "Approval actions require two-factor authentication (MFA)"
   }
 }

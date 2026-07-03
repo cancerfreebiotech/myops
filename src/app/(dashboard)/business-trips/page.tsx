@@ -3,10 +3,9 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { ExpensesClient } from './ExpensesClient'
+import { BusinessTripsClient } from './BusinessTripsClient'
 
-export default async function ExpensesPage({ searchParams }: { searchParams: Promise<{ trip?: string }> }) {
-  const { trip } = await searchParams
+export default async function BusinessTripsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -19,28 +18,29 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
     .single()
 
   const featureFlags = await getFeatureFlags()
-  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'expenses')) redirect('/no-permission')
+  if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'business_trip')) redirect('/no-permission')
 
   const isApprover = currentUser?.role === 'admin'
-    || ((currentUser?.granted_features as string[] | null) ?? []).includes('expense_approve')
+    || ((currentUser?.granted_features as string[] | null) ?? []).includes('hr_manager')
 
-  // 差旅報帳預填：/expenses?trip=<id>
-  let prefillTrip: { id: string; destination: string; start_date: string; end_date: string } | null = null
-  if (trip) {
-    const { data: tripRecord } = await service
+  // 一般主管（被指定為 approver_id 者）也要能看到待審核 tab
+  let showApproveTab = isApprover
+  if (!showApproveTab) {
+    const { data: pendingAsApprover } = await service
       .from('business_trips')
-      .select('id, destination, start_date, end_date')
-      .eq('id', trip)
-      .maybeSingle()
-    prefillTrip = tripRecord ?? null
+      .select('id')
+      .eq('approver_id', user.id)
+      .eq('status', 'pending')
+      .limit(1)
+    showApproveTab = (pendingAsApprover?.length ?? 0) > 0
   }
 
-  const t = await getTranslations('expense')
+  const t = await getTranslations('businessTrip')
 
   return (
     <div>
       <PageHeader title={t('title')} description={t('description')} />
-      <ExpensesClient isApprover={isApprover} prefillTrip={prefillTrip} />
+      <BusinessTripsClient showApproveTab={showApproveTab} />
     </div>
   )
 }

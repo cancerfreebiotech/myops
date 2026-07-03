@@ -38,6 +38,15 @@ export async function GET() {
     return q
   }
 
+  const tripsQuery = () => {
+    let q = supabase
+      .from('business_trips')
+      .select('id, destination, purpose, start_date, end_date, user:users!business_trips_user_id_fkey(display_name)')
+      .eq('status', 'pending')
+    if (!isAdmin && !feats.includes('hr_manager')) q = q.eq('approver_id', user.id)
+    return q
+  }
+
   const makeupQuery = () => {
     let q = supabase
       .from('attendance_makeup_requests')
@@ -53,10 +62,11 @@ export async function GET() {
   if (has('confirm_payroll')) payrollStages.push('hr_reviewed')
   if (has('approve_payroll')) payrollStages.push('finance_confirmed')
 
-  const [leave, overtime, makeup, documents, payroll, expenses] = await Promise.all([
+  const [leave, overtime, makeup, trips, documents, payroll, expenses] = await Promise.all([
     leaveQuery(),
     overtimeQuery(),
     makeupQuery(),
+    tripsQuery(),
     has('approve_contract')
       ? supabase
           .from('documents')
@@ -84,6 +94,7 @@ export async function GET() {
       leave: leave.data ?? [],
       overtime: overtime.data ?? [],
       makeup: makeup.data ?? [],
+      trips: trips.data ?? [],
       documents: documents.data ?? [],
       payroll: payroll.data ?? [],
       expenses: expenses.data ?? [],

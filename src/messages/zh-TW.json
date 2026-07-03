@@ -103,6 +103,7 @@
     "procurement": "採購",
     "assets": "資產管理",
     "training": "教育訓練",
+    "businessTrip": "出差管理",
     "other": "其他",
     "settings": "個人設定",
     "feedback": "回饋",
@@ -2301,7 +2302,8 @@
     "loadFailed": "載入失敗",
     "uploadFailed": "附件上傳失敗",
     "mfaRequired": "審批動作需要完成兩階段驗證（MFA）",
-    "total": "合計"
+    "total": "合計",
+    "tripLabel": "關聯出差"
   },
   "approvals": {
     "title": "簽核中心",
@@ -2331,7 +2333,8 @@
     "payrollStage_draft": "待 HR 初審",
     "payrollStage_hr_reviewed": "待財務確認",
     "payrollStage_finance_confirmed": "待 COO 核准",
-    "payrollStage_coo_approved": "待撥付"
+    "payrollStage_coo_approved": "待撥付",
+    "secTrips": "出差"
   },
   "assets": {
     "title": "資產與儀器",
@@ -2463,5 +2466,42 @@
     "uploadFailed": "附件上傳失敗",
     "submit": "儲存",
     "submitting": "儲存中..."
+  },
+  "businessTrip": {
+    "title": "出差管理",
+    "description": "出差申請、審批與差旅報帳",
+    "tabMine": "我的出差",
+    "tabNew": "新增出差",
+    "tabApprove": "待審核",
+    "destination": "目的地",
+    "purpose": "事由",
+    "startDate": "開始日期",
+    "endDate": "結束日期",
+    "itinerary": "行程說明",
+    "statusPending": "待審核",
+    "statusApproved": "已核准",
+    "statusRejected": "已退回",
+    "statusCancelled": "已取消",
+    "submit": "送出申請",
+    "submitting": "送出中...",
+    "submitted": "出差申請已送出",
+    "cancelTrip": "取消申請",
+    "cancelConfirm": "確定取消此出差申請？",
+    "cancelled": "已取消",
+    "approve": "核准",
+    "reject": "退回",
+    "rejectReason": "退回原因",
+    "approved": "已核准",
+    "rejected": "已退回",
+    "applicant": "申請人",
+    "approver": "審核人",
+    "days": "天",
+    "createExpense": "差旅報帳",
+    "noTrips": "尚無出差記錄",
+    "noPending": "沒有待審核的申請",
+    "requiredFields": "請填寫必填欄位",
+    "saveFailed": "操作失敗，請稍後再試",
+    "loadFailed": "載入失敗",
+    "mfaRequired": "審批動作需要完成兩階段驗證（MFA）"
   }
 }
