@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.8 — AI 政策問答（2026-07-03）
+
+### Added
+- **AI 政策問答**：說明頁（/help）新增問答框 — 用自然語言詢問公司規定（如「特休怎麼計算」），AI 根據已發布的公司文件回答並附出處；文件中沒有的內容會明說並建議洽詢 HR
+- **Teams bot 升級**：對 bot 提問不在既有指令範圍的問題時，自動以文件庫為根據回答
+
 ## v0.5.7 — 營運儀表板（2026-07-03）
 
 ### Added
