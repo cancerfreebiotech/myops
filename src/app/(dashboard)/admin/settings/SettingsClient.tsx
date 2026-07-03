@@ -101,6 +101,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     training: 'training',
     business_trip: 'businessTrip',
     calendar: 'calendar',
+    insights: 'insights',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [

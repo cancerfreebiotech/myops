@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -137,6 +137,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
   ].filter(Boolean) as NavItem[] : []
 
   const adminItems: NavItem[] = isAdmin ? [
+    { href: '/insights',               label: t('insights'),        icon: BarChart3 },
     { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
     { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
     { href: '/admin/companies',        label: t('adminCompanies'),   icon: Building2 },

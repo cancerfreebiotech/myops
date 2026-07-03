@@ -138,7 +138,8 @@
     "dailyReport": "My Daily Report",
     "dailyReportTasks": "My Tasks",
     "dailyReportTeam": "Team Overview",
-    "adminDailyReportGroups": "Report Groups"
+    "adminDailyReportGroups": "Report Groups",
+    "insights": "Insights"
   },
   "dailyReport": {
     "title": "Daily Report",
@@ -2537,5 +2538,23 @@
     "wd4": "Thu",
     "wd5": "Fri",
     "wd6": "Sat"
+  },
+  "insights": {
+    "title": "Operations Insights",
+    "description": "Attendance, overtime, leave, procurement and expense overview",
+    "loadFailed": "Failed to load",
+    "noData": "No data yet",
+    "monthSuffix": "",
+    "daysUnit": "d",
+    "statAttendance": "Attendance (this month)",
+    "statOT": "Overtime (this month)",
+    "statLeave": "{year} leave total",
+    "statExpense": "{year} expenses total",
+    "chartOT": "Overtime hours (6 months)",
+    "chartAttendance": "Attendance person-days (6 months)",
+    "chartProcurement": "Purchase requests (6 months)",
+    "chartLeave": "{year} leave by type",
+    "chartExpense": "{year} expenses by category",
+    "chartProjectOT": "Overtime by project (6 months)"
   }
 }

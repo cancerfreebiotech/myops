@@ -138,7 +138,8 @@
     "dailyReport": "日報入力",
     "dailyReportTasks": "タスク",
     "dailyReportTeam": "チーム概要",
-    "adminDailyReportGroups": "報告グループ管理"
+    "adminDailyReportGroups": "報告グループ管理",
+    "insights": "経営ダッシュボード"
   },
   "dailyReport": {
     "title": "日報",
@@ -2537,5 +2538,23 @@
     "wd4": "木",
     "wd5": "金",
     "wd6": "土"
+  },
+  "insights": {
+    "title": "経営ダッシュボード",
+    "description": "勤怠・残業・休暇・購買・経費の概況",
+    "loadFailed": "読み込みに失敗しました",
+    "noData": "データはまだありません",
+    "monthSuffix": "月",
+    "daysUnit": "日",
+    "statAttendance": "今月の出勤延べ日数",
+    "statOT": "今月の残業",
+    "statLeave": "{year} 休暇合計",
+    "statExpense": "{year} 経費合計",
+    "chartOT": "残業時間（直近6ヶ月）",
+    "chartAttendance": "出勤延べ日数（直近6ヶ月）",
+    "chartProcurement": "購買申請額（直近6ヶ月）",
+    "chartLeave": "{year} 休暇（種別）",
+    "chartExpense": "{year} 経費（カテゴリ別）",
+    "chartProjectOT": "プロジェクト別残業（直近6ヶ月）"
   }
 }

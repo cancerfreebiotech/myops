@@ -138,7 +138,8 @@
     "dailyReport": "每日填報",
     "dailyReportTasks": "我的任務",
     "dailyReportTeam": "團隊總覽",
-    "adminDailyReportGroups": "報告群組管理"
+    "adminDailyReportGroups": "報告群組管理",
+    "insights": "營運儀表板"
   },
   "dailyReport": {
     "title": "每日報告",
@@ -2537,5 +2538,23 @@
     "wd4": "四",
     "wd5": "五",
     "wd6": "六"
+  },
+  "insights": {
+    "title": "營運儀表板",
+    "description": "出勤、加班、請假、採購與報帳總覽",
+    "loadFailed": "載入失敗",
+    "noData": "尚無資料",
+    "monthSuffix": "月",
+    "daysUnit": "天",
+    "statAttendance": "本月出勤人日",
+    "statOT": "本月加班",
+    "statLeave": "{year} 請假合計",
+    "statExpense": "{year} 報帳合計",
+    "chartOT": "近 6 月加班時數",
+    "chartAttendance": "近 6 月出勤人日",
+    "chartProcurement": "近 6 月請購金額",
+    "chartLeave": "{year} 請假（按假別）",
+    "chartExpense": "{year} 報帳（按類別）",
+    "chartProjectOT": "近 6 月專案加班時數"
   }
 }
