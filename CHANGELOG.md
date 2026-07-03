@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.5 — 出差管理（2026-07-03）
+
+### Added
+- **出差管理**：新頁面 `/business-trips` — 出差申請（目的地、事由、行程）→ 主管審批；申請人可取消待審核申請
+- **簽核中心整合**：出差申請納入 `/approvals` 一鍵核准/退回
+- **差旅報帳串接**：已核准出差一鍵帶入報帳表單（類別與事由自動預填），報帳記錄顯示關聯出差
+
 ## v0.5.4 — 教育訓練與證照管理（2026-07-03）
 
 ### Added
