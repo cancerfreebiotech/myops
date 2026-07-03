@@ -100,6 +100,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     assets: 'assets',
     training: 'training',
     business_trip: 'businessTrip',
+    calendar: 'calendar',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [

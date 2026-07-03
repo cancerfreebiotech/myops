@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
-  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt, CheckSquare, Package, GraduationCap, Plane } from 'lucide-react'
+  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt, CheckSquare, Package, GraduationCap, Plane, CalendarRange } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -56,6 +56,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('assets')        && { href: '/assets',        label: t('assets'),        icon: Package },
     show('training')      && { href: '/training',      label: t('training'),      icon: GraduationCap },
     show('business_trip') && { href: '/business-trips', label: t('businessTrip'), icon: Plane },
+    show('calendar')      && { href: '/calendar',       label: t('calendar'),     icon: CalendarRange },
     show('feedback')      && { href: '/feedback/new',  label: t('feedback'),      icon: MessageSquarePlus },
     { href: '/settings', label: t('settings'), icon: Settings },
     { href: '/help',     label: t('help'),     icon: HelpCircle },

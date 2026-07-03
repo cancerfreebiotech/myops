@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -191,6 +191,9 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
         <NavLink href="/" label={t('dashboard')} icon={LayoutDashboard} collapsed={collapsed} active={isActive('/')} />
         {show('approvals') && (
           <NavLink href="/approvals" label={t('approvals')} icon={CheckSquare} collapsed={collapsed} active={isActive('/approvals')} />
+        )}
+        {show('calendar') && (
+          <NavLink href="/calendar" label={t('calendar')} icon={CalendarRange} collapsed={collapsed} active={isActive('/calendar')} />
         )}
 
         {dailyReportItems.length > 0 && (

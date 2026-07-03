@@ -3,7 +3,7 @@
 export const FEATURE_KEYS = [
   'attendance', 'leave', 'overtime', 'payroll',
   'documents', 'announcements', 'contracts', 'projects', 'feedback',
-  'procurement', 'daily_report', 'expenses', 'approvals', 'assets', 'training', 'business_trip',
+  'procurement', 'daily_report', 'expenses', 'approvals', 'assets', 'training', 'business_trip', 'calendar',
 ] as const
 
 export type FeatureFlagKey = typeof FEATURE_KEYS[number]
