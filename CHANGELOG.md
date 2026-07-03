@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.5.9 — 入職/離職流程（2026-07-04）
+
+### Added
+- **入職/離職流程**（HR/管理員限定）：新頁面 `/admin/lifecycle` — 為新進或離職員工建立流程清單（入職 10 項/離職 8 項預設範本：帳號、設備、權限、交接、人資），逐項勾選追蹤（記錄完成人與時間）、可加自訂項目與備註、完成後結案
+
 ## v0.5.8 — AI 政策問答（2026-07-03）
 
 ### Added
