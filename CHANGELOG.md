@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.6.1 — 績效考核（2026-07-05）
+
+### Added
+- **績效考核**：新頁面 `/performance` — HR 建立考核週期；員工設定目標（權重合計 100%）→ 主管核定或退回 → 員工逐目標自評（1–5 分）→ 主管逐目標評分與總評（需 MFA）→ 完成鎖定結果；完成時自動存入該期間的每日報告 KPI 快照（目標 vs 實績）供對照；HR 可檢視全公司進度並重新開啟已完成考核
+- UAT 清單 v1.3：新增第 28 章績效考核測試（T-105 ~ T-112，共 112 項）
+
+### Notes
+- feature flag `performance` 預設關閉；DB migration（`20260704000004`）待另行執行後才可開啟
+
 ## v0.6.0 — 招募管理 + 試劑/耗材管理（2026-07-04）
 
 ### Added
