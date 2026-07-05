@@ -43,15 +43,15 @@
 - expenses POST 驗證 trip_id 屬本人且已核准
 - 訓練時數禁非管理者竄改、證照不得復活軟刪除、資產軟刪除限 admin
 
-**待修（稽核已確認，尚未處理）**：
-1. **請假/加班「送出」自建置起就壞**（`leave_requests`/`overtime_requests` 皆 0 筆）：INSERT 用不存在欄位（leave: `half_day`/`deputy_id`/`approver_id`；overtime: `total_hours`/`ot_type`/`approver_id`，且漏填 NOT NULL 的 `hours`/`request_type`），balance 檢查讀不存在的 `leave_types.max_days_per_year`/`name`。需對齊 schema 欄位＋核對前端 payload＋實測。**高，但因從未有資料故非即時外洩**。
-2. **行事曆 RLS 欄位洩漏**（高）：`leave_requests`/`business_trips`「已核准全員可讀」policy 讓任何員工直打 PostgREST 讀他人請假事由/附件 URL/出差行程。需改 SECURITY DEFINER function 只回安全欄位（牽動公司行事曆＋請假行事曆兩處，須測）。
-3. 採購作廢 `void` 端點只需讀取權限即可作廢已核准財務/庫存單據（高）。
-4. 進貨驗收單 PUT 缺建檔人/manager 所有權檢查（IDOR，medium）。
-5. 薪資核准未驗證當前狀態，可跳簽核階段（狀態機，medium）。
-6. 補打卡可經 PostgREST 自設 approver_id 後自我核准（medium）。
-7. 打卡日期、teams 打卡提醒用 UTC 算日期，台北凌晨 off-by-one（medium/low）。
-8. 資產/訓練到期 60 天 cutoff 用 UTC 日期（low）；lab 可對已軟刪品項入庫孤兒批次（low）。
+**第二/三批已修並上線**（migration `20260706000001` 已跑線上驗證；v0.6.3）：
+- ✅ 請假/加班「送出」修復（欄位對齊 schema；⚠️ **仍需以真實登入帳號跑一次 UAT 送出→核准全流程**，目前僅以 rolled-back dry-run 驗證欄位集正確）
+- ✅ 採購作廢限 canWrite + MFA；驗收單 PUT 補所有權檢查
+- ✅ 薪資核准狀態機前置驗證 + 條件式寫入；status 補 'rejected'
+- ✅ 補打卡核准人以 manager_id 判定、禁本人核准、trigger 強制 approver_id
+- ✅ 試劑禁對已軟刪品項入庫；打卡/提醒/到期 cutoff 改台北時區；證照 PATCH 日期驗證
+
+**待修（僅剩 1 項，需重構＋測試）**：
+1. **行事曆 RLS 欄位洩漏**（高）：`leave_requests`/`business_trips`「已核准全員可讀」policy 讓任何員工直打 PostgREST 讀他人請假事由/附件 URL/出差行程。需改 SECURITY DEFINER function 只回安全欄位（牽動公司行事曆＋請假行事曆兩處，須測）。
 
 ## 已知技術債（可順手修，非緊急）
 
