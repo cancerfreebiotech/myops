@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { taipeiToday } from '@/lib/taipei-date'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
   if (!['in', 'out'].includes(action)) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
   const now = new Date()
-  const clockDate = now.toISOString().split('T')[0]
+  const clockDate = taipeiToday()
 
   if (action === 'in') {
     // Check if already clocked in today
@@ -85,7 +86,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
-  const today = new Date().toISOString().split('T')[0]
+  const today = taipeiToday()
   const { data } = await supabase
     .from('attendance_records')
     .select('id, clock_in, clock_out, is_auto_in, is_auto_out, clock_in_lat, clock_in_lng')

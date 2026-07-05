@@ -15,21 +15,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
-  // Get user's manager
-  const { data: userRecord } = await service
-    .from('users')
-    .select('manager_id, display_name')
-    .eq('id', user.id)
-    .single()
-
+  // approver_id / status 由 DB trigger set_makeup_request_defaults() 強制（防申請人自設核准人）
   const { data, error } = await service.from('attendance_makeup_requests').insert({
     user_id: user.id,
     clock_date,
     clock_type,
     clock_time,
     reason,
-    approver_id: userRecord?.manager_id ?? null,
-    status: 'pending',
   }).select().single()
 
   if (error) {

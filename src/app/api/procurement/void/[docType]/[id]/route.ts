@@ -32,8 +32,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
-  const { canRead } = await getProcurementAccess(supabase, user.id)
-  if (!canRead) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+  // 作廢會沖銷已核准財務/庫存單據（clone 時回沖庫存）—— 限採購管理者/admin，且需 MFA（與審批一致）
+  const { canWrite } = await getProcurementAccess(supabase, user.id)
+  if (!canWrite) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') {
+    return NextResponse.json({ error: t('common.mfaRequired'), code: 'MFA_REQUIRED' }, { status: 403 })
+  }
 
   let body: { reason?: string; clone?: boolean }
   try {

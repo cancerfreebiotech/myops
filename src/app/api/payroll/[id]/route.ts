@@ -29,6 +29,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     reject: 'rejected',
   }
 
+  // 狀態機前置條件：強制 draft → hr_reviewed → finance_confirmed → coo_approved → paid，
+  // 避免跳階或倒退；reject 允許在任一「尚未付款」階段執行。
+  const allowedFromStatus: Record<string, string[]> = {
+    hr_review: ['draft'],
+    finance_confirm: ['hr_reviewed'],
+    coo_approve: ['finance_confirmed'],
+    pay: ['coo_approved'],
+    reject: ['draft', 'hr_reviewed', 'finance_confirmed', 'coo_approved'],
+  }
+
   const newStatus = statusMap[action]
   if (!newStatus) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
@@ -49,10 +59,34 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
+  // 讀取現況並驗證目前 status 是否為此 action 的合法前置狀態
+  const allowedPrev = allowedFromStatus[action] ?? []
+  const { data: existing, error: fetchError } = await service
+    .from('payroll_records')
+    .select('status')
+    .eq('id', id)
+    .single()
+  if (fetchError || !existing) {
+    return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+  }
+  if (!allowedPrev.includes(existing.status)) {
+    return NextResponse.json(
+      { error: t('common.invalidRequest'), code: 'INVALID_STATE', currentStatus: existing.status },
+      { status: 409 },
+    )
+  }
+
   const updatePayload: { status: string; paid_at?: string } = { status: newStatus }
   if (action === 'pay') updatePayload.paid_at = new Date().toISOString()
 
-  const { data, error } = await service.from('payroll_records').update(updatePayload).eq('id', id).select().single()
+  // .in('status', allowedPrev)：DB 層條件式寫入，關閉 TOCTOU 競態（被搶改則 0 列，.single() 報錯）
+  const { data, error } = await service
+    .from('payroll_records')
+    .update(updatePayload)
+    .eq('id', id)
+    .in('status', allowedPrev)
+    .select()
+    .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ data })
 }

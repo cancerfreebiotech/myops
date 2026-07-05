@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
-import { isValidDateString } from '@/lib/taipei-date'
+import { isValidDateString, taipeiToday } from '@/lib/taipei-date'
 
 const CATEGORIES = ['it_equipment', 'instrument', 'furniture', 'other']
 const STATUSES = ['in_use', 'idle', 'repair', 'retired']
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   if (status && STATUSES.includes(status)) query = query.eq('status', status)
   if (due === '1') {
     // 60 天內到期（校驗或保養）的資產
-    const cutoff = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const cutoff = new Date(new Date(taipeiToday()).getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     query = query
       .neq('status', 'retired')
       .or(`next_calibration_date.lte.${cutoff},next_maintenance_date.lte.${cutoff}`)

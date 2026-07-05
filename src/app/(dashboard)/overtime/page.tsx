@@ -32,15 +32,15 @@ export default async function OvertimePage() {
     .from('overtime_rates')
     .select('*')
     .eq('is_active', true)
-    .order('ot_type')
+    .order('sort_order')
 
-  // Pending for approval
+  // Pending for approval（無 approver_id 欄位：由 RLS 限定可見範圍，列 pending 且排除自己的單）
   let pendingApprovals: OvertimeRequest[] = []
   const { data: pending } = await service
     .from('overtime_requests')
-    .select(`*, user:users!overtime_requests_user_id_fkey(id, display_name), project:projects(name)`)
-    .eq('approver_id', user.id)
+    .select(`*, ot_type:request_type, total_hours:hours, user:users!overtime_requests_user_id_fkey(id, display_name), project:projects(name)`)
     .eq('status', 'pending')
+    .neq('user_id', user.id)
     .order('created_at', { ascending: false })
   pendingApprovals = pending ?? []
 

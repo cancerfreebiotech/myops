@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { taipeiToday } from '@/lib/taipei-date'
 
 interface CalendarUserJoin {
   id: string
@@ -35,18 +36,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
-  // Get user info for approver chain
-  const { data: userRecord } = await service
-    .from('users')
-    .select('manager_id, employment_type, display_name')
-    .eq('id', user.id)
-    .single()
-
-  // Check leave balance
-  const currentYear = new Date().getFullYear()
+  // Check leave balance（leave_balances 無 remaining_days，以 total_days - used_days 計算）
+  const currentYear = Number(taipeiToday().slice(0, 4))
   const { data: balance } = await service
     .from('leave_balances')
-    .select('id, remaining_days')
+    .select('id, total_days, used_days')
     .eq('user_id', user.id)
     .eq('leave_type_id', leave_type_id)
     .eq('year', currentYear)
@@ -54,26 +48,30 @@ export async function POST(request: NextRequest) {
 
   const { data: leaveType } = await service
     .from('leave_types')
-    .select('max_days_per_year, name')
+    .select('default_quota_days, name:name_zh')
     .eq('id', leave_type_id)
     .single()
 
-  if (leaveType?.max_days_per_year && balance) {
-    if (balance.remaining_days < total_days) {
-      return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType.name, remaining: balance.remaining_days }) }, { status: 400 })
+  if (leaveType?.default_quota_days && balance) {
+    const remaining = Number(balance.total_days) - Number(balance.used_days ?? 0)
+    if (remaining < total_days) {
+      return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType.name, remaining }) }, { status: 400 })
     }
   }
+
+  // 半天假：client 傳 half_day（morning/afternoon）；DB 用 start_half/end_half
+  const half = half_day === 'morning' || half_day === 'afternoon' ? half_day : 'full'
 
   const { data, error } = await service.from('leave_requests').insert({
     user_id: user.id,
     leave_type_id,
     start_date,
     end_date,
-    half_day: half_day ?? null,
+    start_half: half,
+    end_half: half,
     total_days,
     reason,
-    deputy_id: deputy_id ?? null,
-    approver_id: userRecord?.manager_id ?? null,
+    deputy_user_id: deputy_id ?? null,
     status: 'pending',
   }).select().single()
 

@@ -30,10 +30,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   })
 
   if (error) {
-    const status = error.message.includes('forbidden') ? 403
+    const isMfa = error.message.includes('mfa_required')
+    const status = isMfa ? 403
+      : error.message.includes('forbidden') ? 403
       : error.message.includes('not_found') ? 404
       : error.message.includes('already_processed') ? 409 : 500
-    return NextResponse.json({ error: error.message }, { status })
+    return NextResponse.json({ error: error.message, ...(isMfa ? { code: 'MFA_REQUIRED' } : {}) }, { status })
   }
   return NextResponse.json({ data })
 }

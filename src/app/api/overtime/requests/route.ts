@@ -17,27 +17,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
-  const { data: userRecord } = await service
-    .from('users')
-    .select('manager_id')
-    .eq('id', user.id)
-    .single()
-
   // Calculate hours
   const startMinutes = parseInt(start_time.split(':')[0]) * 60 + parseInt(start_time.split(':')[1])
   const endMinutes = parseInt(end_time.split(':')[0]) * 60 + parseInt(end_time.split(':')[1])
   const total_hours = Math.max(0, (endMinutes - startMinutes) / 60)
 
+  // DB 欄位為 hours / request_type（無 total_hours / ot_type / approver_id）
+  const requestType = ot_type === 'project' ? 'project' : 'regular'
   const { data, error } = await service.from('overtime_requests').insert({
     user_id: user.id,
     ot_date,
     start_time,
     end_time,
-    total_hours,
+    hours: total_hours,
     reason,
-    ot_type,
+    request_type: requestType,
     project_id: project_id ?? null,
-    approver_id: userRecord?.manager_id ?? null,
     status: 'pending',
   }).select().single()
 
@@ -59,19 +54,19 @@ export async function GET(request: NextRequest) {
   const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr'
 
+  // ot_type/total_hours 為 client 使用的欄位名；DB 實為 request_type/hours，用別名回傳
   let query = service
     .from('overtime_requests')
-    .select(`*, user:users!overtime_requests_user_id_fkey(id, display_name), project:projects(id, name)`)
+    .select(`*, ot_type:request_type, total_hours:hours, user:users!overtime_requests_user_id_fkey(id, display_name), project:projects(id, name)`)
     .order('created_at', { ascending: false })
 
   if (view === 'mine') {
     query = query.eq('user_id', user.id)
   } else if (view === 'approve') {
-    if (isAdmin) {
-      query = query.eq('status', 'pending')
-    } else {
-      query = query.eq('approver_id', user.id).eq('status', 'pending')
-    }
+    // 無 approver_id 欄位：核准對象由 RLS（主管/專案負責人/coo/admin 可見）限定，
+    // 僅列 pending 且排除自己的單
+    query = query.eq('status', 'pending')
+    if (!isAdmin) query = query.neq('user_id', user.id)
   }
 
   const { data, error } = await query

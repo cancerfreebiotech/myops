@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { canManageTraining } from '@/lib/training'
+import { isValidDateString } from '@/lib/taipei-date'
 
 const EDITABLE = ['name', 'issuer', 'cert_no', 'issued_date', 'expiry_date', 'attachment_paths', 'note']
 
@@ -29,6 +30,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const updates = Object.fromEntries(Object.entries(body).filter(([k]) => EDITABLE.includes(k)))
   if (!Object.keys(updates).length) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+  }
+  for (const k of ['issued_date', 'expiry_date'] as const) {
+    if (updates[k] && !isValidDateString(updates[k] as string)) {
+      return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+    }
   }
 
   const { data, error } = await supabase

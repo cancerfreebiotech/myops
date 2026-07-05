@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 import { NextRequest, NextResponse } from 'next/server'
+import { taipeiToday } from '@/lib/taipei-date'
 
 // T57: Teams Bot clock reminder
 // Sends clock-in/clock-out reminders to users who haven't clocked yet
@@ -21,7 +22,7 @@ function checkCronAuth(request: NextRequest): NextResponse | null {
 
 async function runReminder(reminderType: string) {
   const service = await createServiceClient()
-  const today = new Date().toISOString().split('T')[0]
+  const today = taipeiToday()
 
   // Get all active users
   const { data: users } = await service

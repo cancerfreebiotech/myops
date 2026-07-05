@@ -60,11 +60,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-    // Deduct leave balance
-    const currentYear = new Date(leaveReq.start_date).getFullYear()
+    // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）
+    const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
     const { data: balance } = await service
       .from('leave_balances')
-      .select('id, used_days, remaining_days')
+      .select('id, used_days')
       .eq('user_id', leaveReq.user_id)
       .eq('leave_type_id', leaveReq.leave_type_id)
       .eq('year', currentYear)
@@ -72,8 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (balance) {
       await service.from('leave_balances').update({
-        used_days: balance.used_days + leaveReq.total_days,
-        remaining_days: Math.max(0, balance.remaining_days - leaveReq.total_days),
+        used_days: Number(balance.used_days ?? 0) + Number(leaveReq.total_days),
       }).eq('id', balance.id)
     }
 

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { canManageTraining } from '@/lib/training'
-import { isValidDateString } from '@/lib/taipei-date'
+import { isValidDateString, taipeiToday } from '@/lib/taipei-date'
 
 // GET /api/training/certifications?view=mine|all|due — 證照
 export async function GET(request: NextRequest) {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
     }
     if (view === 'due') {
-      const cutoff = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+      const cutoff = new Date(new Date(taipeiToday()).getTime() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       query = query.lte('expiry_date', cutoff)
     }
   }

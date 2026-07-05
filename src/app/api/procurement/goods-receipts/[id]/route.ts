@@ -162,13 +162,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const service = await createServiceClient()
   const { data: doc } = await service
     .from('goods_receipts')
-    .select('id, status')
+    .select('id, status, created_by')
     .eq('id', id)
     .maybeSingle()
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
 
   // Drafts only — once submitted the document is locked to the approval flow
   if (doc.status !== 'draft') return NextResponse.json({ error: tg('errors.onlyDraftEditable') }, { status: 400 })
+
+  // 僅建檔人 / 採購管理者 / admin 可編輯草稿。同時擋住「非建檔人把 updated_by 寫成自己」，
+  // 因為簽核第一關 = doc_field('updated_by')，否則可自任第一關簽核人。
+  const canEdit = doc.created_by === me.id
+    || userHasFeature(me.role, me.job_role, me.granted_features, 'procurement_manage')
+  if (!canEdit) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   let body: Record<string, unknown>
   try {
