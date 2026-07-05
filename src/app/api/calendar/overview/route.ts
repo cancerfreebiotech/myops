@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       .gte('end_date', monthStart),
     supabase
       .from('leave_requests')
-      .select('id, start_date, end_date, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name)')
+      .select('id, start_date, end_date, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name:name_zh)')
       .eq('status', 'approved')
       .lt('start_date', monthEnd)
       .gte('end_date', monthStart),

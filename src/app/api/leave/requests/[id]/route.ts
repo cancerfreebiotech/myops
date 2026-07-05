@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data: leaveReq } = await service
     .from('leave_requests')
-    .select('*, leave_type:leave_types(name)')
+    .select('*, leave_type:leave_types(name:name_zh)')
     .eq('id', id)
     .single()
 

@@ -52,58 +52,27 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!ACTIONS.includes(action)) {
     return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
   }
+  const delta = action === 'use' || action === 'adjust' ? Number(quantity_delta) : 0
 
-  const { data: lot } = await supabase
-    .from('lab_lots')
-    .select('id, quantity, status, opened_at')
-    .eq('id', id)
-    .maybeSingle()
-  if (!lot) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
-
-  let delta = 0
-  const updates: Record<string, unknown> = {}
-
-  if (action === 'use' || action === 'adjust') {
-    delta = Number(quantity_delta)
-    if (!Number.isFinite(delta) || delta === 0) {
-      return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+  // 原子化：SELECT FOR UPDATE + 狀態機 + 庫存更新 + audit log 於單一交易內完成
+  const { data, error } = await supabase.rpc('lab_lot_apply', {
+    p_lot_id: id,
+    p_action: action,
+    p_delta: Number.isFinite(delta) ? delta : null,
+    p_note: typeof note === 'string' && note.trim() ? note.trim() : null,
+  })
+  if (error) {
+    const msg = error.message || ''
+    if (msg.includes('not_found')) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+    if (msg.includes('forbidden')) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    if (msg.includes('insufficient_stock')) {
+      return NextResponse.json({ error: t('common.invalidRequest'), code: 'INSUFFICIENT_STOCK' }, { status: 400 })
     }
-    // use 一律為負值扣減
-    if (action === 'use' && delta >= 0) {
+    if (msg.includes('invalid_state') || msg.includes('bad_delta') || msg.includes('bad_action')) {
       return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
     }
-    const newQty = Number(lot.quantity) + delta
-    updates.quantity = Math.max(newQty, 0)
-    if (newQty <= 0) {
-      updates.status = 'depleted'
-    } else if (lot.status === 'depleted') {
-      updates.status = 'in_stock'
-    }
-  } else if (action === 'open') {
-    updates.opened_at = new Date().toISOString()
-  } else {
-    // discard
-    updates.status = 'discarded'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
-
-  const { data, error } = await supabase
-    .from('lab_lots')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  const { error: logError } = await supabase
-    .from('lab_lot_logs')
-    .insert({
-      lot_id: id,
-      action,
-      quantity_delta: delta,
-      user_id: user.id,
-      note: typeof note === 'string' && note.trim() ? note.trim() : null,
-    })
-  if (logError) return NextResponse.json({ error: logError.message }, { status: 500 })
 
   return NextResponse.json({ data })
 }

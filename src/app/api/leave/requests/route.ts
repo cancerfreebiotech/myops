@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
       .from('leave_requests')
       .select(`id, user_id, leave_type_id, start_date, end_date, status, reason,
         user:users!leave_requests_user_id_fkey(id, display_name, department_id),
-        leave_type:leave_types(name)`)
+        leave_type:leave_types(name:name_zh)`)
       .in('status', ['approved', 'pending'])
       .lte('start_date', endParam)
       .gte('end_date', startParam)
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
 
   let query = service
     .from('leave_requests')
-    .select(`*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name, pay_rate)`)
+    .select(`*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name:name_zh, pay_rate:salary_ratio)`)
     .order('created_at', { ascending: false })
 
   if (view === 'mine') {

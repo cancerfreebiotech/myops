@@ -4,6 +4,7 @@ import { isValidDateString } from '@/lib/taipei-date'
 import { getTranslations } from 'next-intl/server'
 
 const CATEGORIES = ['transport', 'travel', 'meal', 'supplies', 'other']
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 async function getApproverInfo(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -75,6 +76,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
+  // 差旅串接：trip_id 必須屬於本人且已核准，否則不接受（防掛到他人/未核准出差）
+  let validTripId: string | null = null
+  if (trip_id) {
+    if (typeof trip_id !== 'string' || !UUID_RE.test(trip_id)) {
+      return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+    }
+    const { data: trip } = await supabase
+      .from('business_trips')
+      .select('id, user_id, status')
+      .eq('id', trip_id)
+      .maybeSingle()
+    if (!trip || trip.user_id !== user.id || trip.status !== 'approved') {
+      return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+    }
+    validTripId = trip.id
+  }
+
   const { data, error } = await supabase
     .from('expense_claims')
     .insert({
@@ -84,7 +102,7 @@ export async function POST(request: NextRequest) {
       amount: numAmount,
       description: description.trim(),
       receipt_paths: Array.isArray(receipt_paths) ? receipt_paths : [],
-      trip_id: trip_id || null,
+      trip_id: validTripId,
     })
     .select()
     .single()

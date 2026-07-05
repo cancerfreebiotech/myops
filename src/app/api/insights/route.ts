@@ -17,10 +17,20 @@ export async function GET() {
   const today = taipeiToday()
   const year = today.slice(0, 4)
   const yearStart = `${year}-01-01`
-  // 近 6 個月（含當月）
-  const now = new Date(`${today}T00:00:00+08:00`)
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1)
-  const rangeStart = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`
+  // 近 6 個月（含當月）— 以台北日期字串直接運算，不經 Date 本地時區 getter
+  const y0 = Number(today.slice(0, 4))
+  const m0 = Number(today.slice(5, 7)) // 1-12
+  // 月度 key 清單（近 6 月）
+  const months: string[] = []
+  for (let i = 5; i >= 0; i--) {
+    let mm = m0 - i, yy = y0
+    while (mm <= 0) { mm += 12; yy -= 1 }
+    months.push(`${yy}-${String(mm).padStart(2, '0')}`)
+  }
+  const rangeStart = `${months[0]}-01`
+  // 將 UTC timestamptz 轉台北月份 key（+8h 後取 YYYY-MM），供 created_at 分桶用
+  const taipeiMonth = (iso: string) =>
+    new Date(new Date(iso).getTime() + 8 * 3600 * 1000).toISOString().slice(0, 7)
 
   const [ot, attendance, leaves, prs, expenses] = await Promise.all([
     supabase
@@ -34,13 +44,13 @@ export async function GET() {
       .gte('clock_date', rangeStart),
     supabase
       .from('leave_requests')
-      .select('total_days, leave_type:leave_types(name)')
+      .select('total_days, leave_type:leave_types(name:name_zh)')
       .eq('status', 'approved')
       .gte('start_date', yearStart),
     supabase
       .from('purchase_requests')
       .select('created_at, total_amount, status')
-      .gte('created_at', `${rangeStart}T00:00:00Z`),
+      .gte('created_at', `${rangeStart}T00:00:00+08:00`),
     supabase
       .from('expense_claims')
       .select('expense_date, category, amount, status')
@@ -50,13 +60,6 @@ export async function GET() {
 
   type OtRow = { ot_date: string; total_hours: number; project: { name: string } | null }
   type PrRow = { created_at: string; total_amount: number | null; status: string }
-
-  // 月度 key 清單（近 6 月）
-  const months: string[] = []
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`)
-  }
 
   const monthlyOT = months.map(m => ({
     month: m,
@@ -73,7 +76,7 @@ export async function GET() {
   const monthlyProcurement = months.map(m => ({
     month: m,
     amount: ((prs.data ?? []) as unknown as PrRow[])
-      .filter(r => r.created_at.startsWith(m) && !['cancelled', 'voided', 'rejected'].includes(r.status))
+      .filter(r => taipeiMonth(r.created_at) === m && !['cancelled', 'voided', 'rejected'].includes(r.status))
       .reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
   }))
 

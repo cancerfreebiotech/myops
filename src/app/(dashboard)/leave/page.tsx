@@ -37,7 +37,7 @@ export default async function LeavePage() {
   const currentYear = new Date().getFullYear()
   const { data: balances } = await service
     .from('leave_balances')
-    .select(`*, leave_type:leave_types(name)`)
+    .select(`*, leave_type:leave_types(name:name_zh)`)
     .eq('user_id', user.id)
     .eq('year', currentYear)
 
@@ -56,7 +56,7 @@ export default async function LeavePage() {
   if (isHR || currentUser?.role === 'manager') {
     const { data } = await service
       .from('leave_requests')
-      .select(`*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name)`)
+      .select(`*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name:name_zh)`)
       .eq('approver_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })

@@ -23,7 +23,7 @@ export async function GET() {
   const leaveQuery = () => {
     let q = supabase
       .from('leave_requests')
-      .select('id, start_date, end_date, total_days, reason, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name)')
+      .select('id, start_date, end_date, total_days, reason, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name:name_zh)')
       .eq('status', 'pending')
     if (!isAdmin && !feats.includes('hr_manager')) q = q.eq('approver_id', user.id)
     return q
