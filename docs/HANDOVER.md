@@ -29,6 +29,30 @@
 9. **憑證**：一律從 `.env.local` 或 `~/.claude/notify-release.env` 讀，**絕不 inline 在 bash 指令**（Luna 明確要求過）。
 10. **notify release**：`/notify-release` skill 或手寫 node script 打 SendGrid（憑證 `~/.claude/notify-release.env`）。收件人 = active users（linda, jessie, pohan, eva, shihpei）。發布前確認 CHANGELOG 有對應版本。
 
+## 2026-07-05/06 全站稽核 — 已修 vs 待修
+
+**已修並上線**（migration `20260705000001` / `20260705000002` 已跑線上並驗證；程式已 push）：
+- leave_types 嵌入用不存在的 `name`/`pay_rate` 欄位（全 8 處改 PostgREST 別名）— 影響線上請假/簽核/行事曆查詢
+- 報帳、出差 UPDATE 補 `WITH CHECK`（原本本人取消必 500）
+- **CRITICAL** users self-update 可自設 `role='admin'` → guard trigger 擋敏感欄位
+- 請假、加班自我核准 → RLS `WITH CHECK` + route 核准人身分檢查
+- 文件核准補 MFA aal2 + status 變更 guard trigger（原上傳者可自審）
+- 履歷 `recruiting-files` storage RLS 收緊為 admin/hr_manager（原全員可下載）
+- 試劑批次改原子 RPC `lab_lot_apply`（lost update／discarded 可操作／超領靜默截斷）
+- insights 近 6 月視窗改台北時區運算
+- expenses POST 驗證 trip_id 屬本人且已核准
+- 訓練時數禁非管理者竄改、證照不得復活軟刪除、資產軟刪除限 admin
+
+**待修（稽核已確認，尚未處理）**：
+1. **請假/加班「送出」自建置起就壞**（`leave_requests`/`overtime_requests` 皆 0 筆）：INSERT 用不存在欄位（leave: `half_day`/`deputy_id`/`approver_id`；overtime: `total_hours`/`ot_type`/`approver_id`，且漏填 NOT NULL 的 `hours`/`request_type`），balance 檢查讀不存在的 `leave_types.max_days_per_year`/`name`。需對齊 schema 欄位＋核對前端 payload＋實測。**高，但因從未有資料故非即時外洩**。
+2. **行事曆 RLS 欄位洩漏**（高）：`leave_requests`/`business_trips`「已核准全員可讀」policy 讓任何員工直打 PostgREST 讀他人請假事由/附件 URL/出差行程。需改 SECURITY DEFINER function 只回安全欄位（牽動公司行事曆＋請假行事曆兩處，須測）。
+3. 採購作廢 `void` 端點只需讀取權限即可作廢已核准財務/庫存單據（高）。
+4. 進貨驗收單 PUT 缺建檔人/manager 所有權檢查（IDOR，medium）。
+5. 薪資核准未驗證當前狀態，可跳簽核階段（狀態機，medium）。
+6. 補打卡可經 PostgREST 自設 approver_id 後自我核准（medium）。
+7. 打卡日期、teams 打卡提醒用 UTC 算日期，台北凌晨 off-by-one（medium/low）。
+8. 資產/訓練到期 60 天 cutoff 用 UTC 日期（low）；lab 可對已軟刪品項入庫孤兒批次（low）。
+
 ## 已知技術債（可順手修，非緊急）
 
 - `attendance_makeup_requests` 的審批已補（v0.5.2 的 `approve_makeup_request` SECURITY DEFINER function）。
