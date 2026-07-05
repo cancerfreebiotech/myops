@@ -50,8 +50,9 @@
 - ✅ 補打卡核准人以 manager_id 判定、禁本人核准、trigger 強制 approver_id
 - ✅ 試劑禁對已軟刪品項入庫；打卡/提醒/到期 cutoff 改台北時區；證照 PATCH 日期驗證
 
-**待修（僅剩 1 項，需重構＋測試）**：
-1. **行事曆 RLS 欄位洩漏**（高）：`leave_requests`/`business_trips`「已核准全員可讀」policy 讓任何員工直打 PostgREST 讀他人請假事由/附件 URL/出差行程。需改 SECURITY DEFINER function 只回安全欄位（牽動公司行事曆＋請假行事曆兩處，須測）。
+**行事曆 RLS 欄位洩漏已修**（migration `20260706000002`，v0.6.4）：移除過寬 row policy，改以 3 個 SECURITY DEFINER function 只回安全欄位（公司行事曆全員；請假行事曆 HR/admin 全部、一般員工限同部門）。
+
+**稽核全部修復完成。** 唯一仍待人工確認：請假/加班「送出→核准」全流程需以真實登入帳號跑一次 UAT（目前僅 rolled-back dry-run 驗證欄位集）。
 
 ## 已知技術債（可順手修，非緊急）
 
