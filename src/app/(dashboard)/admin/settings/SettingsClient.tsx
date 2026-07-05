@@ -106,6 +106,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     lifecycle: 'lifecycle',
     recruiting: 'recruiting',
     lab_supplies: 'labSupplies',
+    performance: 'performance',
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [

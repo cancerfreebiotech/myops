@@ -101,7 +101,10 @@
       "Bash(vercel inspect *)",
       "Bash(unzip -l tmp/P.zip)",
       "Bash(grep -vE '^$|^>')",
-      "Bash(echo \"TSC: $?\")"
+      "Bash(echo \"TSC: $?\")",
+      "Bash(sed -n '/CREATE TABLE IF NOT EXISTS leave_requests/,/\\);/p' /home/po/proj/myops/supabase/migrations/20260403000001_initial_schema.sql)",
+      "Bash(sed -n '/CREATE TABLE IF NOT EXISTS overtime_requests/,/\\);/p' /home/po/proj/myops/supabase/migrations/20260403000001_initial_schema.sql)",
+      "Bash(xargs -I{} sh -c 'echo \"== {} ==\"; cat {}')"
     ]
   },
   "enabledPlugins": {

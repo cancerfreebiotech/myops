@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks, UserPlus, FlaskConical } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks, UserPlus, FlaskConical, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -117,6 +117,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('expenses')   && { href: '/expenses',   label: t('expenses'),   icon: Receipt },
     show('training')      && { href: '/training',       label: t('training'),     icon: GraduationCap },
     show('business_trip') && { href: '/business-trips', label: t('businessTrip'), icon: Plane },
+    show('performance')   && { href: '/performance',    label: t('performance'),  icon: Target },
   ].filter(Boolean) as NavItem[]
 
   const projectItems: NavItem[] = [
