@@ -29,6 +29,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (!leaveReq) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
 
+  // 核准/退回限 直屬主管 / hr_manager / admin，且不得核准自己的單（職責分離）
+  if (action === 'approve' || action === 'reject') {
+    const { data: me } = await service
+      .from('users')
+      .select('role, granted_features')
+      .eq('id', user.id)
+      .single()
+    const isHrOrAdmin = me?.role === 'admin'
+      || (me?.granted_features as string[] | null)?.includes('hr_manager')
+    const { data: applicant } = await service
+      .from('users')
+      .select('manager_id')
+      .eq('id', leaveReq.user_id)
+      .single()
+    const isManager = applicant?.manager_id === user.id
+    if (leaveReq.user_id === user.id || !(isHrOrAdmin || isManager)) {
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    }
+    if (leaveReq.status !== 'pending') {
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    }
+  }
+
   if (action === 'approve') {
     const { error } = await service.from('leave_requests').update({
       status: 'approved',

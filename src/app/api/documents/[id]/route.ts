@@ -21,6 +21,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     || (currentUser?.granted_features as string[] | null)?.includes('approve_contract')
   if (!canApprove) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  // 審核動作需 MFA（aal2），與請假/加班/報帳/出差/採購一致
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') {
+    return NextResponse.json({ error: 'MFA required', code: 'MFA_REQUIRED' }, { status: 403 })
+  }
+
   const body = await request.json()
   const action = body._action as string | undefined
   delete body._action

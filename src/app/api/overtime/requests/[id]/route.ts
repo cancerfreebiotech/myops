@@ -19,6 +19,37 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { action, reject_reason } = await request.json()
 
+  // 核准/退回：驗證核准人身分（主管／專案負責人／coo／admin），且不得核准自己的單
+  if (action === 'approve' || action === 'reject') {
+    const { data: otReq } = await service
+      .from('overtime_requests')
+      .select('user_id, status, project_id')
+      .eq('id', id)
+      .single()
+    if (!otReq) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+    if (otReq.status !== 'pending') return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+
+    const { data: me } = await service
+      .from('users')
+      .select('role, granted_features')
+      .eq('id', user.id)
+      .single()
+    const isAdmin = me?.role === 'admin'
+    const hasCoo = (me?.granted_features as string[] | null)?.includes('coo_notify')
+    const { data: applicant } = await service
+      .from('users').select('manager_id').eq('id', otReq.user_id).single()
+    const isManager = applicant?.manager_id === user.id
+    let isProjectLead = false
+    if (otReq.project_id) {
+      const { data: proj } = await service
+        .from('projects').select('project_lead_id').eq('id', otReq.project_id).single()
+      isProjectLead = proj?.project_lead_id === user.id
+    }
+    if (otReq.user_id === user.id || !(isAdmin || hasCoo || isManager || isProjectLead)) {
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    }
+  }
+
   if (action === 'approve') {
     const { error } = await service.from('overtime_requests').update({
       status: 'approved',
