@@ -3,24 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { taipeiToday } from '@/lib/taipei-date'
 
-interface CalendarUserJoin {
-  id: string
-  display_name: string | null
-  department_id: string | null
-}
-interface CalendarLeaveTypeJoin { name: string | null }
-interface CalendarLeaveRow {
-  id: string
-  user_id: string
-  leave_type_id: string
-  start_date: string
-  end_date: string
-  status: string
-  reason: string | null
-  user: CalendarUserJoin | CalendarUserJoin[] | null
-  leave_type: CalendarLeaveTypeJoin | CalendarLeaveTypeJoin[] | null
-}
-
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
   const supabase = await createClient()
@@ -101,42 +83,30 @@ export async function GET(request: NextRequest) {
   const isAdmin = currentUser?.role === 'admin'
   const isHR = (currentUser?.granted_features as string[] ?? []).includes('hr_manager')
 
-  // Calendar mode: return department/all leaves for a date range
+  // Calendar mode：部門範圍內的請假（改走 calendar_dept_leaves SECURITY DEFINER function，
+  // 部門範圍與欄位由 DB 端把關，關閉「已核准全員可直讀他人 reason」的洩漏）
   if (calendarMode && startParam && endParam) {
-    let calQuery = service
-      .from('leave_requests')
-      .select(`id, user_id, leave_type_id, start_date, end_date, status, reason,
-        user:users!leave_requests_user_id_fkey(id, display_name, department_id),
-        leave_type:leave_types(name:name_zh)`)
-      .in('status', ['approved', 'pending'])
-      .lte('start_date', endParam)
-      .gte('end_date', startParam)
-
-    if (!isAdmin && !isHR) {
-      // Regular user: only same department
-      calQuery = calQuery.eq('user.department_id', currentUser?.department_id)
-    }
-
-    const { data: calData, error: calError } = await calQuery
+    const { data: calData, error: calError } = await service.rpc('calendar_dept_leaves', {
+      p_from: startParam,
+      p_to: endParam,
+    })
     if (calError) return NextResponse.json({ error: calError.message }, { status: 500 })
 
-    // Flatten for CalendarClient
-    const flat = (calData ?? []).map((r: CalendarLeaveRow) => {
-      const u = Array.isArray(r.user) ? r.user[0] : r.user
-      const lt = Array.isArray(r.leave_type) ? r.leave_type[0] : r.leave_type
-      return {
-        id: r.id,
-        user_id: r.user_id,
-        leave_type_id: r.leave_type_id,
-        start_date: r.start_date,
-        end_date: r.end_date,
-        status: r.status,
-        reason: r.reason,
-        display_name: u?.display_name ?? '',
-        department_id: u?.department_id ?? '',
-        leave_type_name: lt?.name ?? '',
-      }
-    })
+    const flat = (calData ?? []).map((r: {
+      id: string; user_id: string; leave_type_id: string; start_date: string; end_date: string
+      status: string; reason: string | null; display_name: string | null; department_id: string | null; leave_type_name: string | null
+    }) => ({
+      id: r.id,
+      user_id: r.user_id,
+      leave_type_id: r.leave_type_id,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      status: r.status,
+      reason: r.reason,
+      display_name: r.display_name ?? '',
+      department_id: r.department_id ?? '',
+      leave_type_name: r.leave_type_name ?? '',
+    }))
 
     return NextResponse.json({ data: flat })
   }

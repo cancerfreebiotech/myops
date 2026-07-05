@@ -19,33 +19,29 @@ export async function GET(request: NextRequest) {
   const monthStart = `${month}-01`
   const monthEnd = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`
 
-  // 與當月重疊：start < 月底 AND end >= 月初
-  const [events, leaves, trips] = await Promise.all([
+  // 已核准請假/出差改走 SECURITY DEFINER function，只回安全欄位（不洩漏 reason/purpose/itinerary）
+  const [events, leavesRes, tripsRes] = await Promise.all([
     supabase
       .from('company_events')
       .select('id, title, description, start_date, end_date')
       .is('deleted_at', null)
       .lt('start_date', monthEnd)
       .gte('end_date', monthStart),
-    supabase
-      .from('leave_requests')
-      .select('id, start_date, end_date, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name:name_zh)')
-      .eq('status', 'approved')
-      .lt('start_date', monthEnd)
-      .gte('end_date', monthStart),
-    supabase
-      .from('business_trips')
-      .select('id, destination, start_date, end_date, user:users!business_trips_user_id_fkey(display_name)')
-      .eq('status', 'approved')
-      .lt('start_date', monthEnd)
-      .gte('end_date', monthStart),
+    supabase.rpc('calendar_overview_leaves', { p_from: monthStart, p_to: monthEnd }),
+    supabase.rpc('calendar_overview_trips', { p_from: monthStart, p_to: monthEnd }),
   ])
 
-  return NextResponse.json({
-    data: {
-      events: events.data ?? [],
-      leaves: leaves.data ?? [],
-      trips: trips.data ?? [],
-    },
-  })
+  type LeaveRow = { id: string; start_date: string; end_date: string; display_name: string | null; leave_type_name: string | null }
+  type TripRow = { id: string; start_date: string; end_date: string; display_name: string | null; destination: string }
+
+  const leaves = ((leavesRes.data ?? []) as LeaveRow[]).map(r => ({
+    id: r.id, start_date: r.start_date, end_date: r.end_date,
+    user: { display_name: r.display_name }, leave_type: { name: r.leave_type_name },
+  }))
+  const trips = ((tripsRes.data ?? []) as TripRow[]).map(r => ({
+    id: r.id, start_date: r.start_date, end_date: r.end_date,
+    destination: r.destination, user: { display_name: r.display_name },
+  }))
+
+  return NextResponse.json({ data: { events: events.data ?? [], leaves, trips } })
 }
