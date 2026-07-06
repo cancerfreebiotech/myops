@@ -70,11 +70,13 @@ export async function GET(request: NextRequest) {
     const u = Array.isArray(r.user) ? r.user[0] : r.user
     const dept = Array.isArray(u?.department) ? u.department[0] : u?.department
     const confirmed = r.confirmed_at != null
+    // 與報表/催人的「未確認」定義一致：requires_confirmation=false 者標「無需確認」
+    const status = !r.requires_confirmation ? '無需確認' : confirmed ? '已確認' : '未確認'
     return {
       '姓名': u?.display_name ?? '',
       'Email': u?.email ?? '',
       '部門': dept?.name ?? '',
-      '狀態': confirmed ? '已確認' : '未確認',
+      '狀態': status,
       '確認時間': r.confirmed_at
         ? new Date(r.confirmed_at).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false })
         : '',

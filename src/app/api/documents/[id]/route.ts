@@ -87,6 +87,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           .from('users')
           .select('id, language')
           .eq('job_role', 'coo')
+          .eq('is_active', true)
         const targets = (coos ?? []).filter((c) => c.id !== user.id)
         if (targets.length) {
           const msgs = targets.map((c) => {

@@ -80,8 +80,15 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
-  // 蓋上冷卻時間戳（發布者在 RLS 下可 UPDATE documents，publish route 已驗證）
-  await service.from('documents').update({ last_reminded_at: new Date().toISOString() }).eq('id', id)
+  // 只在確實送出至少一封時才蓋冷卻時間戳（送全失敗不應鎖住重試）；
+  // 並以「last_reminded_at 仍為讀取時的值」為條件更新，降低並發 TOCTOU 重複發送
+  if (sent > 0) {
+    let stamp = service.from('documents').update({ last_reminded_at: new Date().toISOString() }).eq('id', id)
+    stamp = doc.last_reminded_at
+      ? stamp.eq('last_reminded_at', doc.last_reminded_at)
+      : stamp.is('last_reminded_at', null)
+    await stamp
+  }
 
   // 稽核（best-effort，與 publish/confirm route 一致，不檢查錯誤）
   await service.from('audit_logs').insert({

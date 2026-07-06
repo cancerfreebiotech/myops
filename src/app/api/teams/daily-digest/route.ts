@@ -1,7 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
-import { sendProactiveMessages } from '@/lib/teams-bot'
+import { sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 
 // T55: Teams Bot daily digest — called by cron at 08:30
@@ -106,21 +106,20 @@ export async function POST(request: NextRequest) {
     messages.push({ userId: u.id, text: lines.join('\n') })
   }
 
-  // sendProactiveMessages never throws (per-item error isolation in the lib),
-  // but guard anyway so notification sending can never 500 the cron run
+  // 逐一發送並記錄實際送達的使用者（sendProactiveMessage 內建 per-item 隔離、永不 throw）
   let sent = 0
   let failed = 0
-  try {
-    ;({ sent, failed } = await sendProactiveMessages(messages))
-  } catch (e) {
-    console.error('[Teams Digest] batch send error:', e)
-    failed = messages.length - sent
+  const sentUserIds = new Set<string>()
+  for (const m of messages) {
+    const ok = await sendProactiveMessage(m.userId, m.text)
+    if (ok) { sent++; sentUserIds.add(m.userId) } else failed++
   }
 
-  // B6：更新本次已提醒的公告收件列 last_reminded_at（下次依 reminder_days 間隔再提醒）
-  if (reminderBumps.length) {
+  // B6：只回寫「訊息確實送達者」的公告收件列 last_reminded_at；送失敗者維持原值，下次仍會提醒
+  const bumps = reminderBumps.filter((b) => sentUserIds.has(b.user_id))
+  if (bumps.length) {
     const nowIso = new Date().toISOString()
-    for (const b of reminderBumps) {
+    for (const b of bumps) {
       await service.from('document_recipients')
         .update({ last_reminded_at: nowIso })
         .eq('document_id', b.document_id)
