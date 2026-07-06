@@ -1634,6 +1634,7 @@
       "submitted": "承認申請しました",
       "convertToInbound": "入庫伝票へ変換",
       "convertToAp": "支払依頼へ変換",
+      "convertToAsset": "資産へ変換",
       "convertSuccess": "下書き {docNo} を作成しました",
       "voidAndClone": "無効化して複製",
       "voidTitle": "入荷検収書を無効化",
@@ -2402,7 +2403,10 @@
     "deleteAsset": "削除",
     "deleteConfirm": "この資産を削除してもよろしいですか？",
     "deleted": "削除しました",
-    "editAsset": "編集"
+    "editAsset": "編集",
+    "fromGoodsReceipt": "仕入元の検収書",
+    "selectGoodsReceipt": "選択してください（任意）",
+    "grOptionLabel": "{docNo}（{vendor}、NT$ {amount}）"
   },
   "training": {
     "title": "教育訓練・資格",

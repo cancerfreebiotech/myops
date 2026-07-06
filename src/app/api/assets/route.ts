@@ -76,6 +76,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // 若指定來源進貨驗收單，必須是已核准的 GR（避免掛到不存在/未核准單據）
+  if (source_gr_id) {
+    const { data: ok } = await supabase.rpc('gr_is_convertible', { p_gr_id: source_gr_id })
+    if (!ok) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('assets')
     .insert({

@@ -1634,6 +1634,7 @@
       "submitted": "已送簽",
       "convertToInbound": "轉入庫單",
       "convertToAp": "轉請款單",
+      "convertToAsset": "轉為資產",
       "convertSuccess": "已建立 {docNo} 草稿",
       "voidAndClone": "作廢並複製",
       "voidTitle": "作廢進貨驗收單",
@@ -2402,7 +2403,10 @@
     "deleteAsset": "刪除",
     "deleteConfirm": "確定要刪除此資產嗎？",
     "deleted": "已刪除",
-    "editAsset": "編輯"
+    "editAsset": "編輯",
+    "fromGoodsReceipt": "來源進貨驗收單",
+    "selectGoodsReceipt": "請選擇（選填）",
+    "grOptionLabel": "{docNo}（{vendor}，NT$ {amount}）"
   },
   "training": {
     "title": "教育訓練與證照",

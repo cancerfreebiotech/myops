@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import {
-  Save, Send, Loader2, PackagePlus, Receipt, CopyX,
+  Save, Send, Loader2, PackagePlus, Package, Receipt, CopyX,
   ExternalLink, AlertTriangle, Ban, HandCoins,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -139,7 +139,7 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.R
   )
 }
 
-export function GoodsReceiptDetailClient({ id }: { id: string }) {
+export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string; canConvertToAsset: boolean }) {
   const t = useTranslations('procurement.goodsReceipts')
   const tc = useTranslations('common')
   const router = useRouter()
@@ -607,6 +607,16 @@ export function GoodsReceiptDetailClient({ id }: { id: string }) {
             <CopyX size={16} />
             {t('voidAndClone')}
           </Button>
+          {canConvertToAsset && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/assets?gr=${id}`)}
+              className="min-h-[44px] cursor-pointer"
+            >
+              <Package size={16} />
+              {t('convertToAsset')}
+            </Button>
+          )}
         </div>
       )}
 

@@ -34,12 +34,15 @@ export default async function GoodsReceiptDetailPage({ params }: { params: Promi
     userHasFeature(currentUser.role, currentUser.job_role, granted, 'procurement_manage')
   if (!hasAccess) redirect('/no-permission')
 
+  // 「轉為資產」按鈕僅 admin / asset_manage 可見（與 /assets 頁面的資產管理權限一致）
+  const canConvertToAsset = userHasFeature(currentUser.role, currentUser.job_role, granted, 'asset_manage')
+
   const t = await getTranslations('procurement.goodsReceipts')
 
   return (
     <div>
       <PageHeader title={t('detailTitle')} description={t('description')} />
-      <GoodsReceiptDetailClient id={id} />
+      <GoodsReceiptDetailClient id={id} canConvertToAsset={canConvertToAsset} />
     </div>
   )
 }

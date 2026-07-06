@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Plus, Paperclip, X, Search, ChevronDown, ChevronUp, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -57,6 +58,14 @@ interface AssetDetail extends Asset {
   logs: AssetLog[]
 }
 
+interface GrOption {
+  id: string
+  doc_no: string
+  vendor_name: string | null
+  total_amount: number | null
+  purchase_date: string | null
+}
+
 interface Props {
   isManager: boolean
   allUsers: UserOption[]
@@ -105,13 +114,14 @@ interface AssetForm {
   maintenance_cycle_months: string
   next_maintenance_date: string
   note: string
+  source_gr_id: string
 }
 
 const EMPTY_FORM: AssetForm = {
   asset_no: '', name: '', category: 'it_equipment', serial_no: '', location: '',
   custodian_id: '', status: 'in_use', purchase_date: '', purchase_amount: '',
   vendor_name: '', calibration_cycle_months: '', next_calibration_date: '',
-  maintenance_cycle_months: '', next_maintenance_date: '', note: '',
+  maintenance_cycle_months: '', next_maintenance_date: '', note: '', source_gr_id: '',
 }
 
 const toNumberOrNull = (s: string): number | null =>
@@ -135,6 +145,12 @@ const buildAssetPayload = (f: AssetForm) => ({
   note: f.note.trim() || null,
 })
 
+// 建立資產專用：帶上來源進貨驗收單（編輯時不可變更，故 PATCH 沿用 buildAssetPayload 即可）
+const buildCreatePayload = (f: AssetForm) => ({
+  ...buildAssetPayload(f),
+  source_gr_id: f.source_gr_id || null,
+})
+
 const toForm = (a: Asset): AssetForm => ({
   asset_no: a.asset_no,
   name: a.name,
@@ -151,6 +167,7 @@ const toForm = (a: Asset): AssetForm => ({
   maintenance_cycle_months: a.maintenance_cycle_months != null ? String(a.maintenance_cycle_months) : '',
   next_maintenance_date: a.next_maintenance_date ?? '',
   note: a.note ?? '',
+  source_gr_id: '',
 })
 
 const daysUntil = (dateStr: string): number => {
@@ -171,10 +188,14 @@ const dueState = (a: Asset): 'overdue' | 'dueSoon' | null => {
 
 export function AssetsClient({ isManager, allUsers }: Props) {
   const t = useTranslations('assets')
+  const searchParams = useSearchParams()
   const [tab, setTab] = useState<Tab>('list')
   const [assets, setAssets] = useState<Asset[]>([])
   const [dueAssets, setDueAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
+
+  // 來源進貨驗收單（轉資產）
+  const [grOptions, setGrOptions] = useState<GrOption[]>([])
 
   // 清單篩選
   const [search, setSearch] = useState('')
@@ -246,6 +267,44 @@ export function AssetsClient({ isManager, allUsers }: Props) {
     load()
   }, [tab, loadAssets, loadDue])
 
+  // 供「新增資產」表單選用的已核准進貨驗收單清單。非 asset_manage/admin 或載入
+  // 失敗（含 403）時靜默留空，下拉不顯示，不中斷頁面。
+  const loadGrOptions = useCallback(async () => {
+    try {
+      const res = await fetch('/api/assets/gr-options')
+      if (!res.ok) { setGrOptions([]); return }
+      const json = await res.json()
+      setGrOptions(json.data ?? [])
+    } catch {
+      setGrOptions([])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (isManager) loadGrOptions()
+  }, [isManager, loadGrOptions])
+
+  // 將所選 GR 的廠商/金額/日期預填到表單（使用者仍可覆寫）
+  const applyGrToForm = useCallback((setForm: Dispatch<SetStateAction<AssetForm>>, gr: GrOption) => {
+    setForm(prev => ({
+      ...prev,
+      source_gr_id: gr.id,
+      vendor_name: gr.vendor_name ?? prev.vendor_name,
+      purchase_amount: gr.total_amount != null ? String(gr.total_amount) : prev.purchase_amount,
+      purchase_date: gr.purchase_date ?? prev.purchase_date,
+    }))
+  }, [])
+
+  // 從 GR 詳情頁的「轉為資產」導入：?gr=<id> 時開啟新增表單並預選該 GR
+  useEffect(() => {
+    const grId = searchParams.get('gr')
+    if (!grId || grOptions.length === 0) return
+    const gr = grOptions.find(g => g.id === grId)
+    if (!gr) return
+    setTab('new')
+    applyGrToForm(setNewForm, gr)
+  }, [searchParams, grOptions, applyGrToForm])
+
   const loadDetail = async (id: string) => {
     try {
       const res = await fetch(`/api/assets/${id}`)
@@ -315,7 +374,7 @@ export function AssetsClient({ isManager, allUsers }: Props) {
       const res = await fetch('/api/assets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildAssetPayload(newForm)),
+        body: JSON.stringify(buildCreatePayload(newForm)),
       })
       if (!res.ok) throw new Error()
       toast.success(t('created'))
@@ -477,10 +536,30 @@ export function AssetsClient({ isManager, allUsers }: Props) {
     setForm: Dispatch<SetStateAction<AssetForm>>,
     onSubmit: () => void,
     busy: boolean,
+    showGrField = false,
   ) => {
     const set = (k: keyof AssetForm) => (v: string) => setForm(prev => ({ ...prev, [k]: v }))
+    const selectGr = (grId: string) => {
+      if (!grId) { setForm(prev => ({ ...prev, source_gr_id: '' })); return }
+      const gr = grOptions.find(g => g.id === grId)
+      if (gr) applyGrToForm(setForm, gr)
+    }
     return (
       <div className="space-y-3">
+        {showGrField && grOptions.length > 0 && (
+          <div className="grid grid-cols-1 gap-3">
+            {selectField(t('fromGoodsReceipt'), form.source_gr_id, selectGr,
+              grOptions.map(g => ({
+                value: g.id,
+                label: t('grOptionLabel', {
+                  docNo: g.doc_no,
+                  vendor: g.vendor_name ?? '—',
+                  amount: g.total_amount != null ? g.total_amount.toLocaleString() : '—',
+                }),
+              })),
+              { emptyLabel: t('selectGoodsReceipt') })}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {textField(t('assetNo'), form.asset_no, set('asset_no'), { required: true })}
           {textField(t('name'), form.name, set('name'), { required: true })}
@@ -782,7 +861,7 @@ export function AssetsClient({ isManager, allUsers }: Props) {
       {tab === 'new' && isManager && (
         <Card>
           <CardContent className="pt-4">
-            {renderAssetForm(newForm, setNewForm, submitNewAsset, newSubmitting)}
+            {renderAssetForm(newForm, setNewForm, submitNewAsset, newSubmitting, true)}
           </CardContent>
         </Card>
       )}

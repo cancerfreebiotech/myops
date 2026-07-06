@@ -1634,6 +1634,7 @@
       "submitted": "Submitted for approval",
       "convertToInbound": "Convert to Inbound Order",
       "convertToAp": "Convert to AP Request",
+      "convertToAsset": "Convert to Asset",
       "convertSuccess": "Draft {docNo} created",
       "voidAndClone": "Void & Clone",
       "voidTitle": "Void Goods Receipt",
@@ -2402,7 +2403,10 @@
     "deleteAsset": "Delete",
     "deleteConfirm": "Are you sure you want to delete this asset?",
     "deleted": "Deleted",
-    "editAsset": "Edit"
+    "editAsset": "Edit",
+    "fromGoodsReceipt": "Source Goods Receipt",
+    "selectGoodsReceipt": "Select (optional)",
+    "grOptionLabel": "{docNo} ({vendor}, NT$ {amount})"
   },
   "training": {
     "title": "Training & Certifications",
