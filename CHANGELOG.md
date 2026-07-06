@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.6.5 — 合約/公告流程強化與資產轉入（2026-07-07）
+## v0.6.7 — 合約/公告流程強化與資產轉入（2026-07-07）
 
 ### Added
 - **合約到期自動提醒**：合約（含 NDA/MOU/增補）到期前 90 天與 30 天，系統自動透過 Teams 提醒具合約審核權限的同仁
