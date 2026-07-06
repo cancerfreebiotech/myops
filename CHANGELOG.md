@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.6.3 — 稽核修復第二/三批（2026-07-06）
+## v0.6.4 — 稽核修復與行事曆隱私（2026-07-06）
 
 ### Fixed
 - **請假 / 加班送出**：修正送出申請因欄位名稱與資料庫不符而一直失敗的問題（此前無法成功建立任何請假或加班申請）
