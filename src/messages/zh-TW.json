@@ -299,7 +299,10 @@
       "fileRequired": "請選擇要上傳的檔案",
       "uploadLinkError": "取得上傳連結失敗",
       "fileUploadError": "檔案上傳失敗",
-      "documentUploaded": "文件已上傳"
+      "documentUploaded": "文件已上傳",
+      "relatedDocLabel": "此公司已有 {count} 份文件，是否關聯其中一份？",
+      "relatedDocPlaceholder": "選擇要關聯的文件",
+      "relatedDocNone": "不關聯"
     },
     "detail": {
       "uploader": "上傳者",
@@ -384,7 +387,16 @@
       "headerTitle": "公告標題",
       "headerPublishDate": "發佈日期",
       "headerConfirmStatus": "確認狀況",
-      "recipientCount": "{count} 人"
+      "recipientCount": "{count} 人",
+      "headerAction": "操作",
+      "remindButton": "催一下",
+      "unconfirmedCount": "未確認 {count}／共 {total}",
+      "allConfirmed": "全部已確認",
+      "remindConfirm": "確定要對 {count} 位尚未確認的同仁發送 Teams 提醒嗎？",
+      "remindSuccess": "已透過 Teams 提醒 {count} 人",
+      "remindNone": "目前沒有未確認的同仁",
+      "remindCooldown": "剛剛已提醒過，請稍後再試",
+      "exportReads": "匯出Excel"
     },
     "detailExtra": {
       "docTypes": {
@@ -1400,7 +1412,17 @@
     "botQueryPayrollStatus_coo_approved": "營運長已核准",
     "botQueryPayrollStatus_paid": "已發放",
     "botQueryPayrollStatus_rejected": "已退回",
-    "botQueryUnknown": "🤔 我看不懂這個指令。你可以問我「我的待簽」「請假」或「薪資」。"
+    "botQueryUnknown": "🤔 我看不懂這個指令。你可以問我「我的待簽」「請假」或「薪資」。",
+    "contractExpiryHeader": "⚠️ {name}，以下合約即將到期，請及早處理續約或存檔：",
+    "contractExpiryLine": "  📄 {title}（{company}）將於 {days} 天後（{date}）到期",
+    "contractExpiryLineNoCompany": "  📄 {title} 將於 {days} 天後（{date}）到期",
+    "contractExpiryFooter": "👉 前往 myOPS：https://ops.cancerfree.io/documents",
+    "documentApproved": "✅ 你的文件「{title}」已核准通過",
+    "documentRejected": "❌ 你的文件「{title}」已被退回：{reason}",
+    "contractApprovedCoo": "📄 合約已核准：「{title}」（申請人：{applicant}）",
+    "contractRejectedCoo": "📄 合約已退回：「{title}」（申請人：{applicant}），原因：{reason}",
+    "projectOtCooAlert": "⏰ 專案加班超額提醒：{name} 於 {date} 申請專案「{project}」加班 {hours} 小時，已超過門檻 {threshold} 小時，請至 myOPS 審核 👉 https://ops.cancerfree.io/overtime",
+    "announcementReminder": "【提醒】您尚未確認公告「{title}」，請盡快閱讀並點選確認。"
   },
   "procurement": {
     "approval": {

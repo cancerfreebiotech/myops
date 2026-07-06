@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -41,6 +41,7 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
     expires_at: z.string().optional(),
     announcement_category: z.string().optional(),
     content_zh: z.string().optional(),
+    related_doc_id: z.string().optional(),
   })
   type FormValues = z.infer<typeof schema>
 
@@ -52,6 +53,31 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
   const docType = useWatch({ control: form.control, name: 'doc_type' })
   const isAnnouncement = ['ANN', 'REG'].includes(docType)
   const isContract = ['NDA', 'MOU', 'CONTRACT', 'AMEND'].includes(docType)
+
+  const companyId = useWatch({ control: form.control, name: 'company_id' })
+  const [companyDocs, setCompanyDocs] = useState<{ id: string; title: string; doc_type: string }[]>([])
+  const [companyDocCount, setCompanyDocCount] = useState(0)
+
+  // B3: 選定關聯公司後，查詢該公司既有文件以提示關聯
+  useEffect(() => {
+    if (!isContract || !companyId) {
+      setCompanyDocs([])
+      setCompanyDocCount(0)
+      form.setValue('related_doc_id', undefined)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/documents?company_id=${companyId}`)
+      .then(r => r.json())
+      .then(({ data, count }) => {
+        if (cancelled) return
+        setCompanyDocs(data ?? [])
+        setCompanyDocCount(count ?? 0)
+      })
+      .catch(() => { if (!cancelled) { setCompanyDocs([]); setCompanyDocCount(0) } })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, isContract])
 
   const onDocTypeChange = (val: string | null) => {
     if (!val) return
@@ -99,6 +125,7 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
     if (!values.expires_at) delete payload.expires_at
     if (!values.announcement_category) delete payload.announcement_category
     if (!values.content_zh) delete payload.content_zh
+    if (!values.related_doc_id) delete payload.related_doc_id
 
     const res = await fetch('/api/documents', {
       method: 'POST',
@@ -180,6 +207,22 @@ export function DocumentUploadForm({ departments, companies, canPublish, current
                 </Select>
               </FormItem>
             )} />
+            {companyDocCount > 0 && (
+              <FormField control={form.control} name="related_doc_id" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{tf('relatedDocLabel', { count: companyDocCount })}</FormLabel>
+                  <Select value={field.value ?? ''} onValueChange={v => field.onChange(v || undefined)}>
+                    <FormControl><SelectTrigger><SelectValue placeholder={tf('relatedDocPlaceholder')} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="">{tf('relatedDocNone')}</SelectItem>
+                      {companyDocs.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+            )}
             <FormField control={form.control} name="expires_at" render={({ field }) => (
               <FormItem>
                 <FormLabel>{tf('contractExpiresAt')}</FormLabel>

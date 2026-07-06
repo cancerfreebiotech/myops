@@ -35,6 +35,8 @@ export async function POST(request: NextRequest) {
 
   // teams-bot lib handles missing TEAMS_BOT_APP_ID/SECRET itself (logs + returns false per message)
   const messages: { userId: string; text: string }[] = []
+  // B6：本次實際提醒的公告收件列，送出後回寫 last_reminded_at
+  const reminderBumps: { document_id: string; user_id: string }[] = []
 
   for (const u of users) {
     // Get pending items scoped to this user's responsibilities
@@ -65,10 +67,10 @@ export async function POST(request: NextRequest) {
       canApproveContracts
         ? service.from('documents').select('id', { count: 'exact', head: true }).eq('status', 'pending').in('doc_type', ['NDA', 'MOU', 'CONTRACT', 'AMEND']).is('deleted_at', null)
         : Promise.resolve({ count: 0 }),
-      // Unconfirmed announcements that require confirmation for this user
+      // Unconfirmed announcements requiring confirmation (rows, for reminder-frequency gate)
       service
         .from('document_recipients')
-        .select('document_id', { count: 'exact', head: true })
+        .select('document_id, reminder_days, last_reminded_at')
         .eq('user_id', u.id)
         .eq('requires_confirmation', true)
         .is('confirmed_at', null),
@@ -76,7 +78,17 @@ export async function POST(request: NextRequest) {
 
     const pendingLeaves = leaveRes.count ?? 0
     const pendingContracts = contractRes.count ?? 0
-    const unconfirmedAnnouncements = announcementRes.count ?? 0
+    // B6：依每則公告 reminder_days 控制頻率——距上次提醒未達間隔者本次略過；reminder_days<=0 不提醒
+    const nowMs = Date.now()
+    const dueAnnouncements = ((announcementRes.data ?? []) as { document_id: string; reminder_days: number | null; last_reminded_at: string | null }[])
+      .filter((r) => {
+        const days = r.reminder_days ?? 3
+        if (days <= 0) return false
+        if (!r.last_reminded_at) return true
+        return (nowMs - new Date(r.last_reminded_at).getTime()) / 86_400_000 >= days
+      })
+    const unconfirmedAnnouncements = dueAnnouncements.length
+    for (const r of dueAnnouncements) reminderBumps.push({ document_id: r.document_id, user_id: u.id })
     const totalPending = pendingLeaves + pendingContracts + unconfirmedAnnouncements
 
     if (totalPending === 0) continue
@@ -103,6 +115,17 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error('[Teams Digest] batch send error:', e)
     failed = messages.length - sent
+  }
+
+  // B6：更新本次已提醒的公告收件列 last_reminded_at（下次依 reminder_days 間隔再提醒）
+  if (reminderBumps.length) {
+    const nowIso = new Date().toISOString()
+    for (const b of reminderBumps) {
+      await service.from('document_recipients')
+        .update({ last_reminded_at: nowIso })
+        .eq('document_id', b.document_id)
+        .eq('user_id', b.user_id)
+    }
   }
 
   return NextResponse.json({ data: { sent, failed, total: messages.length } })

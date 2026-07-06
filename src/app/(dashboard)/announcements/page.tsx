@@ -24,22 +24,45 @@ export default async function AnnouncementsPage() {
   const canPublish = currentUser?.role === 'admin' ||
     currentUser?.granted_features?.includes('publish_announcement')
 
-  // Publisher report: unconfirmed counts per announcement
+  // Publisher report: recipient totals + unconfirmed counts per announcement
   let reportData: ReportDoc[] = []
   if (canPublish) {
-    const { data } = await service
+    const { data: docs } = await service
       .from('documents')
       .select(`
-        id, title, created_at, announcement_category, status,
-        document_recipients(count),
-        document_recipients_confirmed:document_recipients(count)
+        id, title, created_at, announcement_category, status, last_reminded_at,
+        document_recipients(count)
       `)
       .in('doc_type', ['ANN', 'REG'])
       .eq('status', 'approved')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(50)
-    reportData = data ?? []
+
+    const docIds = (docs ?? []).map((d) => d.id)
+    const unconfirmedMap = new Map<string, number>()
+    if (docIds.length) {
+      const { data: unconfirmedRows } = await service
+        .from('document_recipients')
+        .select('document_id')
+        .in('document_id', docIds)
+        .eq('requires_confirmation', true)
+        .is('confirmed_at', null)
+      for (const r of unconfirmedRows ?? []) {
+        unconfirmedMap.set(r.document_id, (unconfirmedMap.get(r.document_id) ?? 0) + 1)
+      }
+    }
+
+    reportData = (docs ?? []).map((d) => ({
+      id: d.id,
+      title: d.title,
+      created_at: d.created_at,
+      announcement_category: d.announcement_category,
+      status: d.status,
+      recipient_count: (d.document_recipients as { count: number }[] | null)?.[0]?.count ?? 0,
+      unconfirmed_count: unconfirmedMap.get(d.id) ?? 0,
+      last_reminded_at: d.last_reminded_at ?? null,
+    }))
   }
 
   const t = await getTranslations('announcements')

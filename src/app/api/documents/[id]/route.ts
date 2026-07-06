@@ -1,8 +1,10 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { sendProactiveMessage, sendProactiveMessages } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 // 可透過本路由更新的欄位（審核狀態流轉）；其餘欄位一律拒絕
-const ALLOWED_FIELDS = ['status', 'reject_reason', 'approved_at', 'approved_by', 'folder']
+const ALLOWED_FIELDS = ['status', 'reject_reason', 'approved_at', 'approved_by', 'folder', 'related_doc_id']
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -44,6 +46,64 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       doc_id: id, user_id: user.id, action,
       detail: action === 'reject' ? { reason: body.reject_reason } : null,
     })
+  }
+
+  // Teams 通知（fire-and-forget：永不讓通知錯誤影響審核回應）
+  if (action === 'approve' || action === 'reject') {
+    try {
+      const doc = data as {
+        uploaded_by: string | null
+        doc_type: string
+        title: string
+        title_en: string | null
+        title_ja: string | null
+        reject_reason: string | null
+      }
+      const pickTitle = (lang: string | null | undefined) =>
+        lang === 'en' ? (doc.title_en || doc.title)
+          : lang === 'ja' ? (doc.title_ja || doc.title)
+            : doc.title
+
+      // (a) 通知上傳者/申請人審核結果（用其語言）
+      let uploaderName = '-'
+      if (doc.uploaded_by) {
+        const { data: applicant } = await service
+          .from('users')
+          .select('language, display_name')
+          .eq('id', doc.uploaded_by)
+          .single()
+        uploaderName = applicant?.display_name ?? '-'
+        const title = pickTitle(applicant?.language)
+        const text = action === 'approve'
+          ? teamsText(applicant?.language, 'documentApproved', { title })
+          : teamsText(applicant?.language, 'documentRejected', { title, reason: doc.reject_reason ?? '-' })
+        await sendProactiveMessage(doc.uploaded_by, text)
+      }
+
+      // (b) 合約類文件（CONTRACT/NDA/MOU/AMEND）知會 COO；一般文件不通知
+      const CONTRACT_TYPES = ['CONTRACT', 'NDA', 'MOU', 'AMEND']
+      if (CONTRACT_TYPES.includes(doc.doc_type)) {
+        const { data: coos } = await service
+          .from('users')
+          .select('id, language')
+          .eq('job_role', 'coo')
+        const targets = (coos ?? []).filter((c) => c.id !== user.id)
+        if (targets.length) {
+          const msgs = targets.map((c) => {
+            const lang = c.language as string | null
+            return {
+              userId: c.id as string,
+              text: action === 'approve'
+                ? teamsText(lang, 'contractApprovedCoo', { title: pickTitle(lang), applicant: uploaderName })
+                : teamsText(lang, 'contractRejectedCoo', { title: pickTitle(lang), applicant: uploaderName, reason: doc.reject_reason ?? '-' }),
+            }
+          })
+          await sendProactiveMessages(msgs)
+        }
+      }
+    } catch (e) {
+      console.error('[documents] Teams notify failed:', e)
+    }
   }
 
   return NextResponse.json({ data })

@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/StatusBadge'
-import { Search, Users, CheckCircle } from 'lucide-react'
+import { Search, Users, CheckCircle, BellRing, Download } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 interface AnnouncementDoc {
   id: string
@@ -39,7 +40,9 @@ export interface ReportDoc {
   created_at: string
   announcement_category: string | null
   status: string
-  document_recipients: { count: number }[] | null
+  recipient_count: number
+  unconfirmed_count: number
+  last_reminded_at: string | null
 }
 
 interface Props {
@@ -62,6 +65,7 @@ export function AnnouncementsClient({ canPublish, reportData }: Props) {
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [tab, setTab] = useState<'all' | 'my' | 'report'>('my')
+  const [remindingId, setRemindingId] = useState<string | null>(null)
 
   const loading = loadedSearch !== search
 
@@ -90,6 +94,23 @@ export function AnnouncementsClient({ canPublish, reportData }: Props) {
   const filtered = announcements.filter(a =>
     !filterCategory || a.announcement_category === filterCategory
   )
+
+  const handleRemind = async (doc: ReportDoc) => {
+    if (doc.unconfirmed_count === 0 || remindingId) return
+    if (!window.confirm(tx('remindConfirm', { count: doc.unconfirmed_count }))) return
+    setRemindingId(doc.id)
+    try {
+      const res = await fetch(`/api/announcements/${doc.id}/remind-unconfirmed`, { method: 'POST' })
+      const { data, error, code } = await res.json()
+      if (code === 'RATE_LIMITED') { toast.error(tx('remindCooldown')); return }
+      if (error) { toast.error(error); return }
+      if ((data?.sent ?? 0) === 0) { toast.info(tx('remindNone')); return }
+      toast.success(tx('remindSuccess', { count: data.sent }))
+      router.refresh()
+    } finally {
+      setRemindingId(null)
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -218,11 +239,13 @@ export function AnnouncementsClient({ canPublish, reportData }: Props) {
                     <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('category')}</th>
                     <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerPublishDate')}</th>
                     <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerConfirmStatus')}</th>
+                    <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{tx('headerAction')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {reportData.map((doc) => {
-                    const total = doc.document_recipients?.length ?? 0
+                    const total = doc.recipient_count
+                    const unconfirmed = doc.unconfirmed_count
                     return (
                       <tr
                         key={doc.id}
@@ -233,10 +256,37 @@ export function AnnouncementsClient({ canPublish, reportData }: Props) {
                         <td className="px-4 py-3 text-slate-500">{CATEGORY_LABELS[doc.announcement_category ?? ''] ?? '—'}</td>
                         <td className="px-4 py-3 text-slate-500">{format(new Date(doc.created_at), 'yyyy/MM/dd')}</td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Users size={13} className="text-slate-400" />
-                            <span className="text-slate-600 dark:text-slate-400">{tx('recipientCount', { count: total })}</span>
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="flex items-center gap-1">
+                              <Users size={13} className="text-slate-400" />
+                              <span className="text-slate-600 dark:text-slate-400">
+                                {unconfirmed > 0
+                                  ? tx('unconfirmedCount', { count: unconfirmed, total })
+                                  : tx('allConfirmed')}
+                              </span>
+                            </div>
+                            <a
+                              href={`/api/export/announcement-reads?id=${doc.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700"
+                              title={tx('exportReads')}
+                              aria-label={tx('exportReads')}
+                            >
+                              <Download size={13} />
+                              <span className="hidden sm:inline">{tx('exportReads')}</span>
+                            </a>
                           </div>
+                        </td>
+                        <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            disabled={unconfirmed === 0 || remindingId === doc.id}
+                            onClick={() => handleRemind(doc)}
+                            className="inline-flex items-center gap-1 rounded-md border border-slate-200 dark:border-slate-600 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <BellRing size={13} />
+                            {remindingId === doc.id ? tc('loading') : tx('remindButton')}
+                          </button>
                         </td>
                       </tr>
                     )

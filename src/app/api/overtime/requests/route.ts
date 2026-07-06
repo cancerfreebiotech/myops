@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { notifyCooOverThreshold } from '@/lib/overtime-coo-notify'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -37,6 +38,21 @@ export async function POST(request: NextRequest) {
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // B7：專案加班時數超過 COO 門檻 → 通知營運長（唯讀提醒，永不阻斷送出回應）
+  if (requestType === 'project') {
+    try {
+      await notifyCooOverThreshold(service, {
+        applicantId: user.id,
+        projectId: project_id ?? null,
+        hours: total_hours,
+        otDate: ot_date,
+      })
+    } catch (e) {
+      console.error('[overtime] COO over-threshold notify failed:', e)
+    }
+  }
+
   return NextResponse.json({ data })
 }
 

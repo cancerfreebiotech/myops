@@ -9,6 +9,18 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
+  // B3: 若指定關聯文件，驗證其存在、未刪除且屬於同一公司（防止關聯到任意/他公司文件）
+  if (body.related_doc_id) {
+    const { data: relDoc } = await service
+      .from('documents')
+      .select('company_id, deleted_at')
+      .eq('id', body.related_doc_id)
+      .maybeSingle()
+    if (!relDoc || relDoc.deleted_at || relDoc.company_id !== (body.company_id ?? null)) {
+      return NextResponse.json({ error: 'Invalid related_doc_id' }, { status: 400 })
+    }
+  }
+
   const { data, error } = await service.from('documents').insert({
     ...body,
     uploaded_by: user.id,

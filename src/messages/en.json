@@ -299,7 +299,10 @@
       "fileRequired": "Please select a file to upload",
       "uploadLinkError": "Failed to get upload link",
       "fileUploadError": "File upload failed",
-      "documentUploaded": "Document uploaded"
+      "documentUploaded": "Document uploaded",
+      "relatedDocLabel": "This company already has {count} document(s). Link one of them?",
+      "relatedDocPlaceholder": "Select a document to link",
+      "relatedDocNone": "Do not link"
     },
     "detail": {
       "uploader": "Uploaded By",
@@ -384,7 +387,16 @@
       "headerTitle": "Announcement Title",
       "headerPublishDate": "Published Date",
       "headerConfirmStatus": "Confirmation Status",
-      "recipientCount": "{count} recipients"
+      "recipientCount": "{count} recipients",
+      "headerAction": "Action",
+      "remindButton": "Remind",
+      "unconfirmedCount": "{count} of {total} unconfirmed",
+      "allConfirmed": "All confirmed",
+      "remindConfirm": "Send a Teams reminder to {count} recipients who haven't confirmed?",
+      "remindSuccess": "Reminded {count} recipients via Teams",
+      "remindNone": "No unconfirmed recipients",
+      "remindCooldown": "A reminder was sent recently. Please try again later.",
+      "exportReads": "Export Excel"
     },
     "detailExtra": {
       "docTypes": {
@@ -1400,7 +1412,17 @@
     "botQueryPayrollStatus_coo_approved": "COO approved",
     "botQueryPayrollStatus_paid": "Paid",
     "botQueryPayrollStatus_rejected": "Rejected",
-    "botQueryUnknown": "🤔 I didn't understand that. Try asking about your \"pending\" approvals, \"leave\", or \"payroll\"."
+    "botQueryUnknown": "🤔 I didn't understand that. Try asking about your \"pending\" approvals, \"leave\", or \"payroll\".",
+    "contractExpiryHeader": "⚠️ {name}, the following contracts are expiring soon — please renew or archive them:",
+    "contractExpiryLine": "  📄 {title} ({company}) expires in {days} days (on {date})",
+    "contractExpiryLineNoCompany": "  📄 {title} expires in {days} days (on {date})",
+    "contractExpiryFooter": "👉 Open myOPS: https://ops.cancerfree.io/documents",
+    "documentApproved": "✅ Your document 「{title}」 has been approved",
+    "documentRejected": "❌ Your document 「{title}」 was rejected: {reason}",
+    "contractApprovedCoo": "📄 Contract approved: 「{title}」 (submitted by {applicant})",
+    "contractRejectedCoo": "📄 Contract rejected: 「{title}」 (submitted by {applicant}) — reason: {reason}",
+    "projectOtCooAlert": "⏰ Project overtime alert: {name} requested {hours}h of overtime on {date} for project \"{project}\", exceeding the {threshold}h threshold. Review on myOPS 👉 https://ops.cancerfree.io/overtime",
+    "announcementReminder": "[Reminder] You haven't confirmed the announcement \"{title}\" yet. Please read and confirm it as soon as possible."
   },
   "procurement": {
     "approval": {

@@ -299,7 +299,10 @@
       "fileRequired": "アップロードするファイルを選択してください",
       "uploadLinkError": "アップロードリンクの取得に失敗しました",
       "fileUploadError": "ファイルのアップロードに失敗しました",
-      "documentUploaded": "ドキュメントがアップロードされました"
+      "documentUploaded": "ドキュメントがアップロードされました",
+      "relatedDocLabel": "この会社にはすでに {count} 件の文書があります。いずれかに関連付けますか？",
+      "relatedDocPlaceholder": "関連付ける文書を選択",
+      "relatedDocNone": "関連付けない"
     },
     "detail": {
       "uploader": "アップロード者",
@@ -384,7 +387,16 @@
       "headerTitle": "お知らせタイトル",
       "headerPublishDate": "公開日",
       "headerConfirmStatus": "確認状況",
-      "recipientCount": "{count}名"
+      "recipientCount": "{count}名",
+      "headerAction": "操作",
+      "remindButton": "催促",
+      "unconfirmedCount": "未確認 {count}／全 {total}",
+      "allConfirmed": "全員確認済み",
+      "remindConfirm": "未確認の{count}名にTeamsで催促を送信しますか？",
+      "remindSuccess": "{count}名にTeamsで催促しました",
+      "remindNone": "未確認の対象者はいません",
+      "remindCooldown": "先ほど催促を送信しました。しばらくしてから再試行してください。",
+      "exportReads": "Excelエクスポート"
     },
     "detailExtra": {
       "docTypes": {
@@ -1400,7 +1412,17 @@
     "botQueryPayrollStatus_coo_approved": "COO承認済み",
     "botQueryPayrollStatus_paid": "支払済み",
     "botQueryPayrollStatus_rejected": "却下",
-    "botQueryUnknown": "🤔 そのコマンドが分かりませんでした。「待簽」「請假（休暇）」「薪資（給与）」と聞いてみてください。"
+    "botQueryUnknown": "🤔 そのコマンドが分かりませんでした。「待簽」「請假（休暇）」「薪資（給与）」と聞いてみてください。",
+    "contractExpiryHeader": "⚠️ {name}さん、以下の契約がまもなく期限切れになります。更新または保管の手続きをお願いします：",
+    "contractExpiryLine": "  📄 {title}（{company}）は {days} 日後（{date}）に期限切れになります",
+    "contractExpiryLineNoCompany": "  📄 {title} は {days} 日後（{date}）に期限切れになります",
+    "contractExpiryFooter": "👉 myOPS を開く：https://ops.cancerfree.io/documents",
+    "documentApproved": "✅ あなたの文書「{title}」が承認されました",
+    "documentRejected": "❌ あなたの文書「{title}」が却下されました：{reason}",
+    "contractApprovedCoo": "📄 契約が承認されました：「{title}」（申請者：{applicant}）",
+    "contractRejectedCoo": "📄 契約が却下されました：「{title}」（申請者：{applicant}）、理由：{reason}",
+    "projectOtCooAlert": "⏰ プロジェクト残業アラート：{name} さんが {date} にプロジェクト「{project}」の残業 {hours} 時間を申請し、しきい値 {threshold} 時間を超えました。myOPS で確認してください 👉 https://ops.cancerfree.io/overtime",
+    "announcementReminder": "【リマインド】お知らせ「{title}」がまだ未確認です。お早めに内容を確認してください。"
   },
   "procurement": {
     "approval": {
