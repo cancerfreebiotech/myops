@@ -56,3 +56,19 @@ export async function createServiceClient() {
     }
   )
 }
+
+/**
+ * ⚠️ 真正的 service-role client（不帶任何 cookies，故 Authorization 為 service key，
+ * 真正繞過 RLS）。與 createServiceClient 不同——後者帶 request cookies 會以使用者身分跑 RLS。
+ * 僅用於「需以他人身分操作」且呼叫端已自行做明確授權的情境（如：核准他人請假時，
+ * 讀取當事人的 Microsoft refresh token 推送其 Outlook 行事曆）。切勿當一般查詢用。
+ */
+export function createAdminClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: { getAll() { return [] }, setAll() {} },
+    }
+  )
+}

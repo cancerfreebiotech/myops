@@ -1,0 +1,123 @@
+import { createAdminClient } from '@/lib/supabase/server'
+
+// Outlook 單向同步：以「當事人身分」在其 Outlook 行事曆建立/刪除事件。
+// 用當事人於登入時儲存的 refresh token 換取 access token（AAD v2 token endpoint）。
+// 全部 best-effort：任何失敗只記 log、回傳 null，絕不影響呼叫端（核准流程）。
+
+const TOKEN_URL = () =>
+  `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`
+
+/** 登入 callback 擷取到 provider_refresh_token 時呼叫，存入 user_ms_tokens。 */
+export async function storeMsRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  if (!refreshToken) return
+  const admin = createAdminClient()
+  await admin.from('user_ms_tokens').upsert(
+    { user_id: userId, refresh_token: refreshToken, updated_at: new Date().toISOString() },
+    { onConflict: 'user_id' },
+  )
+}
+
+/** 以儲存的 refresh token 換一個新的 access token；順帶更新輪替後的 refresh token。 */
+async function getAccessToken(userId: string): Promise<string | null> {
+  const clientId = process.env.AZURE_CLIENT_ID
+  const clientSecret = process.env.AZURE_CLIENT_SECRET
+  if (!clientId || !clientSecret) return null
+
+  const admin = createAdminClient()
+  const { data: row } = await admin
+    .from('user_ms_tokens')
+    .select('refresh_token')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!row?.refresh_token) return null
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: row.refresh_token,
+    scope: 'openid profile email offline_access Calendars.ReadWrite',
+  })
+
+  try {
+    const res = await fetch(TOKEN_URL(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    })
+    if (!res.ok) {
+      console.error('[ms-calendar] token refresh failed:', res.status, await res.text().catch(() => ''))
+      return null
+    }
+    const json = await res.json() as { access_token?: string; refresh_token?: string }
+    // AAD 會輪替 refresh token — 存回新的以免下次失效
+    if (json.refresh_token && json.refresh_token !== row.refresh_token) {
+      await admin.from('user_ms_tokens')
+        .update({ refresh_token: json.refresh_token, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+    }
+    return json.access_token ?? null
+  } catch (e) {
+    console.error('[ms-calendar] token refresh error:', e)
+    return null
+  }
+}
+
+export interface OutlookEventInput {
+  subject: string
+  startDate: string // YYYY-MM-DD
+  endDate: string   // YYYY-MM-DD（含當日；all-day 事件以 23:59:59 表示）
+}
+
+/**
+ * 在 userId 的 Outlook 建立 all-day OOF 事件，回傳 event id（失敗回 null）。
+ * userId 為當事人（請假/出差申請人），非核准者。
+ */
+export async function pushOutlookEvent(userId: string, input: OutlookEventInput): Promise<string | null> {
+  const token = await getAccessToken(userId)
+  if (!token) return null
+  try {
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject: input.subject,
+        showAs: 'oof',
+        isAllDay: true,
+        start: { dateTime: `${input.startDate}T00:00:00`, timeZone: 'Asia/Taipei' },
+        end: { dateTime: `${input.endDate}T23:59:59`, timeZone: 'Asia/Taipei' },
+      }),
+    })
+    if (!res.ok) {
+      console.error('[ms-calendar] create event failed:', res.status, await res.text().catch(() => ''))
+      return null
+    }
+    const ev = await res.json() as { id?: string }
+    return ev.id ?? null
+  } catch (e) {
+    console.error('[ms-calendar] create event error:', e)
+    return null
+  }
+}
+
+/** 刪除 userId Outlook 的事件（請假/出差被取消或退回時）。best-effort。 */
+export async function deleteOutlookEvent(userId: string, eventId: string): Promise<void> {
+  if (!eventId) return
+  const token = await getAccessToken(userId)
+  if (!token) return
+  try {
+    await fetch(`https://graph.microsoft.com/v1.0/me/events/${eventId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (e) {
+    console.error('[ms-calendar] delete event error:', e)
+  }
+}
+
+/** 該使用者是否已連結 Outlook（登入時存過 refresh token）。 */
+export async function isMsConnected(userId: string): Promise<boolean> {
+  const admin = createAdminClient()
+  const { data } = await admin.from('user_ms_tokens').select('user_id').eq('user_id', userId).maybeSingle()
+  return !!data
+}

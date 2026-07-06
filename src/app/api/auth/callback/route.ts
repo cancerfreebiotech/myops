@@ -25,6 +25,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`)
   }
 
+  // 擷取 Microsoft refresh token（offline_access）供日後以當事人身分推 Outlook 行事曆
+  const msRefresh = data.session?.provider_refresh_token
+  if (msRefresh) {
+    try {
+      const { storeMsRefreshToken } = await import('@/lib/ms-calendar')
+      await storeMsRefreshToken(data.user.id, msRefresh)
+    } catch (e) {
+      console.error('[auth callback] store MS refresh token failed:', e)
+    }
+  }
+
   // Sync locale cookie from user's saved language preference
   const service = await createServiceClient()
   const { data: dbUser } = await service

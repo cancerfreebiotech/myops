@@ -76,6 +76,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }).eq('id', balance.id)
     }
 
+    // 單向同步：在申請人 Outlook 建立請假事件（best-effort，永不影響核准回應）
+    try {
+      const { pushOutlookEvent } = await import('@/lib/ms-calendar')
+      const lt = Array.isArray(leaveReq.leave_type) ? leaveReq.leave_type[0] : leaveReq.leave_type
+      const subject = `請假${lt?.name ? `（${lt.name}）` : ''}`
+      const eventId = await pushOutlookEvent(leaveReq.user_id, {
+        subject, startDate: leaveReq.start_date, endDate: leaveReq.end_date,
+      })
+      if (eventId) await service.from('leave_requests').update({ outlook_event_id: eventId }).eq('id', id)
+    } catch (e) {
+      console.error('[leave] Outlook push failed:', e)
+    }
+
   } else if (action === 'reject') {
     const { error } = await service.from('leave_requests').update({
       status: 'rejected',
@@ -84,6 +97,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       approved_at: new Date().toISOString(),
     }).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+    // 若先前已同步過（理論上 reject 前為 pending 不會有），仍嘗試清除 Outlook 事件
+    if (leaveReq.outlook_event_id) {
+      try {
+        const { deleteOutlookEvent } = await import('@/lib/ms-calendar')
+        await deleteOutlookEvent(leaveReq.user_id, leaveReq.outlook_event_id)
+      } catch (e) { console.error('[leave] Outlook delete failed:', e) }
+    }
 
   } else if (action === 'cancel') {
     // Only requestor can cancel

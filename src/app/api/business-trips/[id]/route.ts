@@ -65,5 +65,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .select()
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 單向同步：核准 → 在申請人 Outlook 建立出差事件；退回 → 清除既有事件（best-effort）
+  if (action === 'approve') {
+    try {
+      const { pushOutlookEvent } = await import('@/lib/ms-calendar')
+      const eventId = await pushOutlookEvent(data.user_id, {
+        subject: `出差（${data.destination}）`, startDate: data.start_date, endDate: data.end_date,
+      })
+      if (eventId) await supabase.from('business_trips').update({ outlook_event_id: eventId }).eq('id', id)
+    } catch (e) {
+      console.error('[business-trip] Outlook push failed:', e)
+    }
+  } else if (action === 'reject' && data.outlook_event_id) {
+    try {
+      const { deleteOutlookEvent } = await import('@/lib/ms-calendar')
+      await deleteOutlookEvent(data.user_id, data.outlook_event_id)
+    } catch (e) {
+      console.error('[business-trip] Outlook delete failed:', e)
+    }
+  }
+
   return NextResponse.json({ data })
 }
