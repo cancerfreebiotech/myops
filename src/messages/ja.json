@@ -144,7 +144,9 @@
     "lifecycle": "入退社フロー",
     "recruiting": "採用管理",
     "labSupplies": "試薬・消耗品",
-    "performance": "人事考課"
+    "performance": "人事考課",
+    "adminShifts": "シフト管理",
+    "geofences": "打刻エリア"
   },
   "dailyReport": {
     "title": "日報",
@@ -349,7 +351,12 @@
       "requireConfirmRead": "既読確認を要求",
       "reminderDays": "リマインド間隔（日）",
       "publishing": "公開中...",
-      "confirmPublish": "公開を確認"
+      "confirmPublish": "公開を確認",
+      "ocrExtract": "テキスト抽出 (OCR)",
+      "ocrReextract": "OCR を再実行",
+      "ocrExtracting": "抽出中…",
+      "ocrComplete": "OCR 抽出が完了しました",
+      "ocrText": "OCR テキスト"
     },
     "actions": {
       "upload": "アップロード",
@@ -358,7 +365,8 @@
       "archive": "アーカイブ",
       "publish": "公開",
       "translate": "AI翻訳",
-      "confirm": "既読確認"
+      "confirm": "既読確認",
+      "ocr": "OCR"
     },
     "detailExtra": {
       "english": "英語",
@@ -1036,7 +1044,9 @@
       "groupFeaturesDesc": "各機能モジュールを個別に有効化・無効化できます",
       "featureEnable": "有効化",
       "featureDisable": "無効化",
-      "inputPlaceholder": "{label}を入力"
+      "inputPlaceholder": "{label}を入力",
+      "ocrApiUrl": "OCR API URL",
+      "ocrApiKey": "OCR API キー"
     },
     "audit": {
       "title": "監査ログ",
@@ -1261,6 +1271,59 @@
       "thresholdLabel": "金額しきい値",
       "thresholdHelp": "書類金額がこのしきい値未満の場合のみワンタップを許可します。空欄の場合は制限なし。",
       "thresholdPlaceholder": "例：50000"
+    },
+    "shifts": {
+      "description": "フレックス勤務シフトを定義し従業員に割り当てます。遅刻はシフト開始時刻を基準に判定します。",
+      "shiftsTitle": "シフト",
+      "newShift": "シフトを追加",
+      "editShift": "シフトを編集",
+      "assignTitle": "従業員シフト割り当て",
+      "selectShift": "シフトを選択",
+      "name": "シフト名",
+      "nameRequired": "シフト名を入力してください",
+      "startTime": "開始時刻",
+      "endTime": "終了時刻",
+      "flexMinutes": "フレックス/遅刻猶予（分）",
+      "breakMinutes": "休憩（分）",
+      "workDays": "勤務日",
+      "active": "有効",
+      "inactive": "無効",
+      "flex": "フレックス",
+      "break": "休憩",
+      "noShifts": "シフトがありません",
+      "dow": {
+        "1": "月",
+        "2": "火",
+        "3": "水",
+        "4": "木",
+        "5": "金",
+        "6": "土",
+        "7": "日"
+      }
+    },
+    "geofences": {
+      "title": "打刻ジオフェンス",
+      "description": "打刻を許可するオフィス範囲を設定します（複数拠点対応）",
+      "enforceLabel": "範囲チェックを強制",
+      "enforceDesc": "オンにするとすべての有効範囲外では打刻できません。オフの場合は座標を記録するのみです",
+      "enforceOn": "強制を有効化",
+      "enforceOff": "強制を無効化",
+      "addTitle": "範囲を追加",
+      "listTitle": "範囲一覧",
+      "name": "名称（例：台北本社）",
+      "lat": "緯度",
+      "lng": "経度",
+      "radius": "半径（メートル）",
+      "useMyLocation": "現在地を使う",
+      "add": "追加",
+      "empty": "範囲が未設定です",
+      "enable": "有効化",
+      "disable": "無効化",
+      "delete": "削除",
+      "confirmDelete": "範囲「{name}」を削除しますか？",
+      "invalidInput": "名称と正しい緯度・経度・半径を入力してください",
+      "geoUnsupported": "この端末は位置情報に対応していません",
+      "geoDenied": "現在地を取得できませんでした"
     }
   },
   "tooltips": {
@@ -1320,7 +1383,9 @@
     "attendanceClock": {
       "alreadyClockedIn": "本日はすでに出勤打刻済みです",
       "notClockedIn": "まだ出勤打刻がされていません",
-      "alreadyClockedOut": "本日はすでに退勤打刻済みです"
+      "alreadyClockedOut": "本日はすでに退勤打刻済みです",
+      "geofenceOut": "打刻が許可された範囲外です",
+      "geofenceNoLocation": "打刻には位置情報が必要です。位置情報を有効にして再試行してください"
     },
     "documentTranslate": {
       "noChineseContent": "翻訳できる中国語コンテンツがありません",

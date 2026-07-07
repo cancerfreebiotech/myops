@@ -1,7 +1,9 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { taipeiToday } from '@/lib/taipei-date'
+import { resolveShiftStart, computeLateMinutes } from '@/lib/shifts'
+import { haversineMeters } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -14,10 +16,38 @@ export async function POST(request: NextRequest) {
   const { action, lat, lng } = await request.json()
   if (!['in', 'out'].includes(action)) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
+  // ── F3 地理圍欄強制（用真 service role 讀，繞過使用者 RLS）──
+  const admin = createAdminClient()
+  const { data: enforceRow } = await admin
+    .from('system_settings').select('value').eq('key', 'geofence_enforce').maybeSingle()
+  if (enforceRow?.value === 'true') {
+    if (lat == null || lng == null) {
+      return NextResponse.json(
+        { error: t('attendanceClock.geofenceNoLocation'), code: 'GEOFENCE_NO_LOCATION' },
+        { status: 403 })
+    }
+    const { data: fences } = await admin
+      .from('geofences').select('lat, lng, radius_m').eq('is_active', true)
+    const list = fences ?? []
+    if (list.length > 0) {
+      const inside = list.some(f =>
+        haversineMeters(Number(lat), Number(lng), Number(f.lat), Number(f.lng)) <= Number(f.radius_m))
+      if (!inside) {
+        return NextResponse.json(
+          { error: t('attendanceClock.geofenceOut'), code: 'GEOFENCE_OUT' },
+          { status: 403 })
+      }
+    }
+  }
+
   const now = new Date()
   const clockDate = taipeiToday()
 
   if (action === 'in') {
+    const shift = await resolveShiftStart(service, user.id, clockDate)
+    const lateMin = computeLateMinutes(now.toISOString(), shift.startTime, shift.flexMinutes)
+    const isLate = lateMin > 0
+
     // Check if already clocked in today
     const { data: existing } = await service
       .from('attendance_records')
@@ -37,6 +67,8 @@ export async function POST(request: NextRequest) {
         clock_in_lat: lat ?? null,
         clock_in_lng: lng ?? null,
         is_auto_in: false,
+        is_late: isLate,
+        late_minutes: Math.max(0, lateMin),
       }).eq('id', existing.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     } else {
@@ -47,6 +79,8 @@ export async function POST(request: NextRequest) {
         clock_in_lat: lat ?? null,
         clock_in_lng: lng ?? null,
         is_auto_in: false,
+        is_late: isLate,
+        late_minutes: Math.max(0, lateMin),
       })
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     }

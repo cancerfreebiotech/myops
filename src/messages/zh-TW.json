@@ -144,7 +144,9 @@
     "lifecycle": "入職/離職流程",
     "recruiting": "招募管理",
     "labSupplies": "試劑耗材",
-    "performance": "績效考核"
+    "performance": "績效考核",
+    "adminShifts": "班別管理",
+    "geofences": "打卡範圍"
   },
   "dailyReport": {
     "title": "每日報告",
@@ -349,7 +351,12 @@
       "requireConfirmRead": "需要確認閱讀",
       "reminderDays": "提醒間隔（天）",
       "publishing": "發佈中...",
-      "confirmPublish": "確認發佈"
+      "confirmPublish": "確認發佈",
+      "ocrExtract": "OCR 抽取文字",
+      "ocrReextract": "重新 OCR",
+      "ocrExtracting": "抽取中…",
+      "ocrComplete": "OCR 抽取完成",
+      "ocrText": "OCR 文字內容"
     },
     "actions": {
       "upload": "上傳",
@@ -358,7 +365,8 @@
       "archive": "封存",
       "publish": "發佈",
       "translate": "AI 翻譯",
-      "confirm": "確認閱讀"
+      "confirm": "確認閱讀",
+      "ocr": "OCR 抽取"
     },
     "detailExtra": {
       "english": "英文",
@@ -1036,7 +1044,9 @@
       "groupFeaturesDesc": "管理員可手動啟用或停用各功能模組",
       "featureEnable": "啟用",
       "featureDisable": "停用",
-      "inputPlaceholder": "輸入 {label}"
+      "inputPlaceholder": "輸入 {label}",
+      "ocrApiUrl": "OCR API 網址",
+      "ocrApiKey": "OCR API 金鑰"
     },
     "audit": {
       "title": "稽核紀錄",
@@ -1261,6 +1271,59 @@
       "thresholdLabel": "金額門檻",
       "thresholdHelp": "僅當單據金額低於此門檻時才允許一鍵直簽；留空表示不限金額。",
       "thresholdPlaceholder": "例如 50000"
+    },
+    "shifts": {
+      "description": "設定彈性工時班別，並指派員工班別；打卡遲到以班別上班時間為準。",
+      "shiftsTitle": "班別",
+      "newShift": "新增班別",
+      "editShift": "編輯班別",
+      "assignTitle": "員工班別指派",
+      "selectShift": "選擇班別",
+      "name": "班別名稱",
+      "nameRequired": "請輸入班別名稱",
+      "startTime": "上班時間",
+      "endTime": "下班時間",
+      "flexMinutes": "彈性/遲到寬限（分）",
+      "breakMinutes": "休息時間（分）",
+      "workDays": "上班日",
+      "active": "啟用",
+      "inactive": "停用",
+      "flex": "彈性",
+      "break": "休息",
+      "noShifts": "尚無班別",
+      "dow": {
+        "1": "一",
+        "2": "二",
+        "3": "三",
+        "4": "四",
+        "5": "五",
+        "6": "六",
+        "7": "日"
+      }
+    },
+    "geofences": {
+      "title": "打卡地理圍欄",
+      "description": "設定允許打卡的辦公室範圍，可支援多個地點",
+      "enforceLabel": "強制範圍檢查",
+      "enforceDesc": "開啟後，超出所有啟用範圍將無法打卡；關閉時僅記錄座標不阻擋",
+      "enforceOn": "開啟強制",
+      "enforceOff": "關閉強制",
+      "addTitle": "新增範圍",
+      "listTitle": "範圍清單",
+      "name": "名稱（例：台北總部）",
+      "lat": "緯度",
+      "lng": "經度",
+      "radius": "半徑（公尺）",
+      "useMyLocation": "使用目前位置",
+      "add": "新增",
+      "empty": "尚未設定任何範圍",
+      "enable": "啟用",
+      "disable": "停用",
+      "delete": "刪除",
+      "confirmDelete": "確定刪除範圍「{name}」？",
+      "invalidInput": "請填寫名稱並輸入正確的經緯度與半徑",
+      "geoUnsupported": "此裝置不支援定位",
+      "geoDenied": "無法取得目前位置"
     }
   },
   "tooltips": {
@@ -1320,7 +1383,9 @@
     "attendanceClock": {
       "alreadyClockedIn": "今日已打上班卡",
       "notClockedIn": "尚未打上班卡",
-      "alreadyClockedOut": "今日已打下班卡"
+      "alreadyClockedOut": "今日已打下班卡",
+      "geofenceOut": "你不在允許的打卡範圍內",
+      "geofenceNoLocation": "打卡需要定位，請開啟定位權限後再試"
     },
     "documentTranslate": {
       "noChineseContent": "無中文內容可翻譯",

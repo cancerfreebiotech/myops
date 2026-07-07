@@ -144,7 +144,9 @@
     "lifecycle": "On/Offboarding",
     "recruiting": "Recruiting",
     "labSupplies": "Lab Supplies",
-    "performance": "Performance"
+    "performance": "Performance",
+    "adminShifts": "Work Shifts",
+    "geofences": "Clock-in Areas"
   },
   "dailyReport": {
     "title": "Daily Report",
@@ -349,7 +351,12 @@
       "requireConfirmRead": "Require read confirmation",
       "reminderDays": "Reminder interval (days)",
       "publishing": "Publishing...",
-      "confirmPublish": "Confirm Publish"
+      "confirmPublish": "Confirm Publish",
+      "ocrExtract": "Extract text (OCR)",
+      "ocrReextract": "Re-run OCR",
+      "ocrExtracting": "Extracting…",
+      "ocrComplete": "OCR extraction complete",
+      "ocrText": "OCR text"
     },
     "actions": {
       "upload": "Upload",
@@ -358,7 +365,8 @@
       "archive": "Archive",
       "publish": "Publish",
       "translate": "AI Translate",
-      "confirm": "Confirm Read"
+      "confirm": "Confirm Read",
+      "ocr": "OCR"
     },
     "detailExtra": {
       "english": "English",
@@ -1036,7 +1044,9 @@
       "groupFeaturesDesc": "Enable or disable individual feature modules",
       "featureEnable": "Enable",
       "featureDisable": "Disable",
-      "inputPlaceholder": "Enter {label}"
+      "inputPlaceholder": "Enter {label}",
+      "ocrApiUrl": "OCR API URL",
+      "ocrApiKey": "OCR API Key"
     },
     "audit": {
       "title": "Audit Logs",
@@ -1261,6 +1271,59 @@
       "thresholdLabel": "Amount threshold",
       "thresholdHelp": "One-tap is allowed only when the document amount is below this threshold; leave blank for no limit.",
       "thresholdPlaceholder": "e.g. 50000"
+    },
+    "shifts": {
+      "description": "Define flexible work shifts and assign them to employees; lateness is judged against the shift start time.",
+      "shiftsTitle": "Shifts",
+      "newShift": "New Shift",
+      "editShift": "Edit Shift",
+      "assignTitle": "Employee Shift Assignment",
+      "selectShift": "Select shift",
+      "name": "Shift name",
+      "nameRequired": "Please enter a shift name",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "flexMinutes": "Flex / grace (min)",
+      "breakMinutes": "Break (min)",
+      "workDays": "Work days",
+      "active": "Active",
+      "inactive": "Inactive",
+      "flex": "Flex",
+      "break": "Break",
+      "noShifts": "No shifts yet",
+      "dow": {
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat",
+        "7": "Sun"
+      }
+    },
+    "geofences": {
+      "title": "Clock-in Geofences",
+      "description": "Configure office areas where clock-in is allowed; multiple locations supported",
+      "enforceLabel": "Enforce area check",
+      "enforceDesc": "When on, clock-in is blocked outside all active areas; when off, coordinates are only recorded",
+      "enforceOn": "Turn on enforcement",
+      "enforceOff": "Turn off enforcement",
+      "addTitle": "Add area",
+      "listTitle": "Areas",
+      "name": "Name (e.g. Taipei HQ)",
+      "lat": "Latitude",
+      "lng": "Longitude",
+      "radius": "Radius (meters)",
+      "useMyLocation": "Use my location",
+      "add": "Add",
+      "empty": "No areas configured yet",
+      "enable": "Enable",
+      "disable": "Disable",
+      "delete": "Delete",
+      "confirmDelete": "Delete area \"{name}\"?",
+      "invalidInput": "Please enter a name and valid latitude, longitude and radius",
+      "geoUnsupported": "Geolocation not supported on this device",
+      "geoDenied": "Could not get current location"
     }
   },
   "tooltips": {
@@ -1320,7 +1383,9 @@
     "attendanceClock": {
       "alreadyClockedIn": "You have already clocked in today",
       "notClockedIn": "You have not clocked in yet",
-      "alreadyClockedOut": "You have already clocked out today"
+      "alreadyClockedOut": "You have already clocked out today",
+      "geofenceOut": "You are outside the allowed clock-in area",
+      "geofenceNoLocation": "Location is required to clock in. Please enable location access and try again"
     },
     "documentTranslate": {
       "noChineseContent": "No Chinese content available to translate",

@@ -66,7 +66,16 @@ export async function GET(request: NextRequest) {
   if (folder) query = query.eq('folder', folder)
   if (doc_type) query = query.eq('doc_type', doc_type)
   if (status) query = query.eq('status', status)
-  if (search) query = query.ilike('title', `%${search}%`)
+  if (search) {
+    // 全文搜尋：標題 + OCR 抽取文字 + 三語內文。先移除會破壞 or() 語法的字元（, ( ) *）
+    const safe = search.replace(/[,()*]/g, ' ').trim()
+    if (safe) {
+      const pat = `*${safe}*`
+      query = query.or(
+        `title.ilike.${pat},ocr_text.ilike.${pat},content_zh.ilike.${pat},content_en.ilike.${pat},content_ja.ilike.${pat}`
+      )
+    }
+  }
   if (company_id) query = query.eq('company_id', company_id)
 
   const { data, count, error } = await query

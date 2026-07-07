@@ -9,11 +9,13 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flag-keys'
 
-const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret']
+const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret', 'ocr_api_key']
 
 /** Map DB setting keys to i18n keys under admin.settings.* */
 const SETTING_I18N_KEY: Record<string, string> = {
   gemini_api_key: 'geminiApiKey',
+  ocr_api_url: 'ocrApiUrl',
+  ocr_api_key: 'ocrApiKey',
   default_clock_in_time: 'defaultClockIn',
   default_clock_out_time: 'defaultClockOut',
   auto_clock_check_delay_minutes: 'autoClockCheckDelay',
@@ -110,7 +112,7 @@ export function SettingsClient({ settings, featureFlags }: Props) {
   }
 
   const groupDefs: [string, (key: string) => boolean][] = [
-    [t('groupAi'), k => k.includes('gemini')],
+    [t('groupAi'), k => k.includes('gemini') || k.includes('ocr')],
     [t('groupClock'), k => k.includes('clock') || k.includes('intern_missed') || k.includes('fulltime_auto')],
     [t('groupNotification'), k => k.includes('contract_reminder') || k.includes('daily_digest') || k.includes('teams_')],
     [t('groupSystem'), k => ['maintenance_mode', 'mfa_approval_session_minutes', 'overtime_min_advance_hours', 'project_ot_coo_threshold_hours', 'payroll_pay_day', 'payroll_auto_generate_day'].includes(k)],

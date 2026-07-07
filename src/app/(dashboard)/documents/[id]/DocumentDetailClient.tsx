@@ -8,12 +8,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
-import { Download, CheckCircle, XCircle, Archive, Globe, FileText, Clock, Send } from 'lucide-react'
+import { Download, CheckCircle, XCircle, Archive, Globe, FileText, Clock, Send, ScanText } from 'lucide-react'
 import { format } from 'date-fns'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useTranslations } from 'next-intl'
 
-const KNOWN_AUDIT_ACTIONS = new Set(['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm'])
+const KNOWN_AUDIT_ACTIONS = new Set(['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm', 'ocr'])
 
 interface NamedRef {
   id: string
@@ -34,6 +34,8 @@ interface DocumentDetail {
   content_en: string | null
   content_ja: string | null
   ai_translated: boolean | null
+  file_url: string | null
+  ocr_text: string | null
   company: { id: string; name: string } | null
   department: { id: string; name: string } | null
   uploaded_by_user: NamedRef | null
@@ -88,6 +90,8 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
   const [loading, setLoading] = useState(false)
   const [translating, setTranslating] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [ocrText, setOcrText] = useState<string | null>(doc.ocr_text)
 
   const isAnnouncement = ['ANN', 'REG'].includes(doc.doc_type)
 
@@ -163,6 +167,16 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
     router.refresh()
   }
 
+  const handleOcr = async () => {
+    setOcrLoading(true)
+    const res = await fetch(`/api/documents/${doc.id}/ocr`, { method: 'POST' })
+    const { data, error } = await res.json()
+    setOcrLoading(false)
+    if (error) { toast.error(error); return }
+    setOcrText(data.ocr_text)
+    toast.success(td('ocrComplete'))
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main content */}
@@ -229,9 +243,23 @@ export function DocumentDetailClient({ doc, auditLogs, recipients, currentUser, 
                   </Button>
                 </a>
               )}
+              {canApprove && (
+                <Button variant="outline" size="sm" className="min-h-[36px] shrink-0" onClick={handleOcr} disabled={ocrLoading}>
+                  <ScanText size={14} className="mr-1" />
+                  {ocrLoading ? td('ocrExtracting') : (ocrText ? td('ocrReextract') : td('ocrExtract'))}
+                </Button>
+              )}
             </div>
           )}
         </div>
+
+        {/* OCR extracted text */}
+        {ocrText && (
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
+            <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-3">{td('ocrText')}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap max-h-96 overflow-y-auto">{ocrText}</p>
+          </div>
+        )}
 
         {/* Announcement content */}
         {isAnnouncement && doc.content_zh && (

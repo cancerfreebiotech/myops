@@ -20,7 +20,7 @@ export default async function SettingsPage() {
     .select('key, value')
     .order('key')
 
-  const settings = (allSettings ?? []).filter(s => !s.key.startsWith('feature.') && !(ROLE_SETTINGS_KEYS as readonly string[]).includes(s.key))
+  const settings = (allSettings ?? []).filter(s => !s.key.startsWith('feature.') && !(ROLE_SETTINGS_KEYS as readonly string[]).includes(s.key) && s.key !== 'geofence_enforce')
   const featureRows = (allSettings ?? []).filter(s => s.key.startsWith('feature.'))
   const featureFlags = Object.fromEntries(
     FEATURE_KEYS.map(k => [k, featureRows.find(r => r.key === `feature.${k}`)?.value === 'true'])

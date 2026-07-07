@@ -22,19 +22,19 @@ export async function answerPolicyQuestion(question: string, lang: string): Prom
 
   const { data: docs } = await service
     .from('documents')
-    .select('title, doc_type, content_zh, content_en, content_ja')
+    .select('title, doc_type, content_zh, content_en, content_ja, ocr_text')
     .eq('status', 'approved')
     .in('doc_type', DOC_TYPES)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
-  const withContent = (docs ?? []).filter(d => d.content_zh || d.content_en || d.content_ja)
+  const withContent = (docs ?? []).filter(d => d.content_zh || d.content_en || d.content_ja || d.ocr_text)
   if (!withContent.length) return { error: 'no_docs' }
 
   let context = ''
   const included: string[] = []
   for (const d of withContent) {
-    const body = d.content_zh || d.content_en || d.content_ja || ''
+    const body = d.content_zh || d.content_en || d.content_ja || d.ocr_text || ''
     const block = `【${d.title}】\n${body}\n\n`
     if (context.length + block.length > MAX_CONTEXT_CHARS) break
     context += block

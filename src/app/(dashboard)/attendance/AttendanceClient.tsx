@@ -100,9 +100,13 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, lat: gps?.lat, lng: gps?.lng }),
     })
-    const { data, error } = await res.json()
+    const { data, error, code } = await res.json()
     setClocking(false)
-    if (error) { toast.error(error); return }
+    if (error) {
+      if (code === 'GEOFENCE_NO_LOCATION') setGpsStatus('denied')
+      toast.error(error)
+      return
+    }
     toast.success(`${action === 'in' ? t('clockInSuccess') : t('clockOutSuccess')} ${format(parseISO(data.time), 'HH:mm')}`)
     fetchTodayRecord()
   }
