@@ -15,7 +15,10 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
   if (error || !data.user) {
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    // TEMP 診斷：把真正的失敗原因帶回 login 供排查（確認後移除）
+    console.error('[auth callback] exchangeCodeForSession failed:', error?.status, error?.message)
+    const reason = encodeURIComponent((error?.message ?? 'no_user').slice(0, 120))
+    return NextResponse.redirect(`${origin}/login?error=auth_failed&reason=${reason}`)
   }
 
   // Enforce @cancerfree.io domain
