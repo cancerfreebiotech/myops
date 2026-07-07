@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v0.7.0 — OCR 全文搜尋 / 彈性班別 / 打卡地理圍欄（2026-07-07）
+## v0.7.1 — OCR 全文搜尋 / 彈性班別 / 打卡地理圍欄（2026-07-07）
 
 ### Added
 - **文件 OCR 全文搜尋**：純檔案（掃描 PDF / 圖片）文件可由文件管理者一鍵 OCR 抽取文字，之後可在文件搜尋中被找到，AI 政策問答也能引用；OCR 服務端點由管理員在系統設定中配置
