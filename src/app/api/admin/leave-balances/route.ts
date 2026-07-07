@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
     .single()
 
   const used = existing.data?.used_days ?? 0
-  const remaining = Math.max(0, allocated_days - used)
 
+  // leave_balances 實際欄位：total_days(NOT NULL)/used_days；無 allocated_days/remaining_days
+  // （餘額 = total_days - used_days，於讀取端換算）。前端傳入的配額寫入 total_days。
   const { error } = await service.from('leave_balances').upsert({
     user_id, leave_type_id, year,
-    allocated_days,
+    total_days: allocated_days,
     used_days: used,
-    remaining_days: remaining,
   }, { onConflict: 'user_id,leave_type_id,year' })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

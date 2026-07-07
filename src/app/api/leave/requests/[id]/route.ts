@@ -53,6 +53,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   if (action === 'approve') {
+    // 核准前先驗餘額（leave_balances 無 remaining_days，以 total_days - used_days 判斷）；
+    // 有 balance 記錄即代表該假別受額度控管，核准後 used_days 不得超過 total_days。
+    const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
+    const { data: balance } = await service
+      .from('leave_balances')
+      .select('id, used_days, total_days')
+      .eq('user_id', leaveReq.user_id)
+      .eq('leave_type_id', leaveReq.leave_type_id)
+      .eq('year', currentYear)
+      .single()
+
+    if (balance) {
+      const remaining = Number(balance.total_days) - Number(balance.used_days ?? 0)
+      if (Number(leaveReq.total_days) > remaining) {
+        const lt = Array.isArray(leaveReq.leave_type) ? leaveReq.leave_type[0] : leaveReq.leave_type
+        return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: lt?.name ?? '', remaining }) }, { status: 400 })
+      }
+    }
+
     // compare-and-swap：只在仍為 pending 時核准，擋並發/重複核准（避免重複扣假與重複推 Outlook）
     const { data: approved, error } = await service.from('leave_requests').update({
       status: 'approved',
@@ -65,15 +84,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）
-    const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
-    const { data: balance } = await service
-      .from('leave_balances')
-      .select('id, used_days')
-      .eq('user_id', leaveReq.user_id)
-      .eq('leave_type_id', leaveReq.leave_type_id)
-      .eq('year', currentYear)
-      .single()
-
     if (balance) {
       await service.from('leave_balances').update({
         used_days: Number(balance.used_days ?? 0) + Number(leaveReq.total_days),

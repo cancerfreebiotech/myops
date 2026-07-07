@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { getTranslations } from 'next-intl/server'
 import { Megaphone, ChevronRight } from 'lucide-react'
+import { getApprovalScope, overtimeScopeOrFilter } from '@/lib/approval-scope'
 
 interface AnnouncementSummary {
   id: string
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
   const t = await getTranslations('dashboard')
   const tNav = await getTranslations('nav')
   const tAtt = await getTranslations('attendance')
+  const tAdminUsers = await getTranslations('admin.users')
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -52,19 +54,35 @@ export default async function DashboardPage() {
     .eq('clock_date', today)
     .single()
 
+  // 待我審範圍：leave_requests / overtime_requests 無 approver_id，
+  // 審核者以 manager_id / project_lead_id 判定（與 /api/approvals 簽核中心共用同一邏輯）
+  const approvalScope = await getApprovalScope(
+    service,
+    user.id,
+    currentUser?.role,
+    (currentUser?.granted_features as string[] | null) ?? [],
+  )
+
   // Pending leave requests (as approver)
-  const { data: pendingLeave } = await service
+  let pendingLeaveQuery = service
     .from('leave_requests')
     .select('id')
-    .eq('approver_id', user.id)
     .eq('status', 'pending')
+  if (!approvalScope.leaveApproveAll) {
+    pendingLeaveQuery = pendingLeaveQuery.in('user_id', approvalScope.subordinateIds)
+  }
+  const { data: pendingLeave } = await pendingLeaveQuery
 
   // Pending OT requests (as approver)
-  const { data: pendingOT } = await service
+  let pendingOTQuery = service
     .from('overtime_requests')
     .select('id')
-    .eq('approver_id', user.id)
     .eq('status', 'pending')
+  if (!approvalScope.overtimeApproveAll) {
+    const otOr = overtimeScopeOrFilter(approvalScope)
+    pendingOTQuery = otOr ? pendingOTQuery.or(otOr) : pendingOTQuery.in('id', [])
+  }
+  const { data: pendingOT } = await pendingOTQuery
 
   // My pending announcement confirmations (with document details)
   const { data: pendingAnnouncementsData } = await supabase
@@ -201,7 +219,7 @@ export default async function DashboardPage() {
               <Link href="/overtime">
                 <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 p-4 hover:border-purple-300 transition-colors">
                   <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">{counts.pendingOT}</p>
-                  <p className="text-sm text-purple-600 dark:text-purple-500 mt-0.5">{t('pendingContracts')}</p>
+                  <p className="text-sm text-purple-600 dark:text-purple-500 mt-0.5">{tAdminUsers('pendingOT')}</p>
                 </div>
               </Link>
             )}

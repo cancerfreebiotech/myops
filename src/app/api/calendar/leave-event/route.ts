@@ -25,6 +25,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Graph all-day 事件 start/end 皆須為午夜；end 為結束日隔天 00:00（排他邊界）
+    const endBoundary = new Date(`${end_date}T00:00:00Z`)
+    endBoundary.setUTCDate(endBoundary.getUTCDate() + 1)
+    const endExclusive = endBoundary.toISOString().slice(0, 10)
     const eventBody = {
       subject,
       showAs: 'oof', // Out of Office
@@ -34,7 +38,7 @@ export async function POST(request: NextRequest) {
         timeZone: 'Asia/Taipei',
       },
       end: {
-        dateTime: `${end_date}T23:59:59`,
+        dateTime: `${endExclusive}T00:00:00`,
         timeZone: 'Asia/Taipei',
       },
     }

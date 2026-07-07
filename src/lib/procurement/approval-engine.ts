@@ -371,7 +371,16 @@ export async function actOnStep(
   const actedFields = { acted_by: userId, acted_at: new Date().toISOString(), comment: comment ?? null }
 
   if (effective === 'reject') {
-    await service.from(STEPS_TABLE).update({ status: 'rejected', ...actedFields }).eq('id', step.id)
+    // Compare-and-swap on the step row: only the request that flips it from
+    // 'current' proceeds. A concurrent approver/rejecter that already claimed
+    // the step gets 0 rows back and bails (prevents double-processing).
+    const { data: claimed } = await service
+      .from(STEPS_TABLE)
+      .update({ status: 'rejected', ...actedFields })
+      .eq('id', step.id)
+      .eq('status', 'current')
+      .select('id')
+    if (!claimed || claimed.length === 0) throw new ApprovalEngineError('notInApproval')
     await service
       .from(STEPS_TABLE)
       .update({ status: 'skipped' })
@@ -388,7 +397,19 @@ export async function actOnStep(
   }
 
   // approve / ack
-  await service.from(STEPS_TABLE).update({ status: 'approved', ...actedFields }).eq('id', step.id)
+  // Compare-and-swap on the step row: two eligible approvers acting on the same
+  // 'current' step (e.g. multiple procurement_unit / procurement_payment_approve
+  // holders) race here — only the one that actually flips 'current'→'approved'
+  // continues. The loser gets 0 rows and bails BEFORE advancing the document or
+  // running the post-approval hook, so the hook (e.g. registerVendor) can never
+  // run twice for one step (no duplicate vendors / vendor_products).
+  const { data: claimed } = await service
+    .from(STEPS_TABLE)
+    .update({ status: 'approved', ...actedFields })
+    .eq('id', step.id)
+    .eq('status', 'current')
+    .select('id')
+  if (!claimed || claimed.length === 0) throw new ApprovalEngineError('notInApproval')
 
   const { data: nextData } = await service
     .from(STEPS_TABLE)

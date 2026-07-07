@@ -17,6 +17,7 @@ const ERROR_STATUS: Record<ConversionErrorCode, number> = {
   invalidConversion: 400,
   docNotFound: 404,
   sourceNotApproved: 409,
+  alreadyConverted: 409,
 }
 
 export async function POST(request: NextRequest) {
@@ -48,7 +49,11 @@ export async function POST(request: NextRequest) {
     if (e instanceof ConversionError) {
       const message = e.code === 'docNotFound'
         ? t('common.notFound')
-        : t(`procurement.${e.code}` as Parameters<typeof t>[0])
+        // No dedicated i18n key: reuse the generic 「不支援此轉單組合」 message
+        // (the block is a duplicate/invalid conversion of an already-converted GR).
+        : e.code === 'alreadyConverted'
+          ? t('procurement.invalidConversion')
+          : t(`procurement.${e.code}` as Parameters<typeof t>[0])
       return NextResponse.json({ error: message }, { status: ERROR_STATUS[e.code] })
     }
     console.error('[procurement convert] unexpected error:', e)

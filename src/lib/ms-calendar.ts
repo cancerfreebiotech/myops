@@ -65,8 +65,19 @@ async function getAccessToken(userId: string): Promise<string | null> {
 
 export interface OutlookEventInput {
   subject: string
-  startDate: string // YYYY-MM-DD
-  endDate: string   // YYYY-MM-DD（含當日；all-day 事件以 23:59:59 表示）
+  startDate: string // YYYY-MM-DD（起始日，含當日）
+  endDate: string   // YYYY-MM-DD（結束日，含當日）
+}
+
+/**
+ * YYYY-MM-DD 加一天，回傳 YYYY-MM-DD。
+ * Graph all-day 事件的 end 是「排他邊界」，須為結束日隔天 00:00，故結束日 +1。
+ * 以 UTC 解析避免本機時區位移；日期字串本身不帶時區，加一天不受夏令時間影響。
+ */
+function nextDay(date: string): string {
+  const d = new Date(`${date}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
 }
 
 /**
@@ -84,8 +95,9 @@ export async function pushOutlookEvent(userId: string, input: OutlookEventInput)
         subject: input.subject,
         showAs: 'oof',
         isAllDay: true,
+        // all-day 事件 start/end 皆須為午夜；end 為結束日隔天 00:00（排他邊界）
         start: { dateTime: `${input.startDate}T00:00:00`, timeZone: 'Asia/Taipei' },
-        end: { dateTime: `${input.endDate}T23:59:59`, timeZone: 'Asia/Taipei' },
+        end: { dateTime: `${nextDay(input.endDate)}T00:00:00`, timeZone: 'Asia/Taipei' },
       }),
     })
     if (!res.ok) {

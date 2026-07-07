@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  // Audit log
-  await service.from('audit_logs').insert({
+  // Audit log（audit_logs 為 service-role only，須用 admin client）
+  await createAdminClient().from('audit_logs').insert({
     doc_id: data.id,
     user_id: user.id,
     action: 'upload',

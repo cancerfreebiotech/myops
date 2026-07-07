@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { requireInventoryUser, rpcErrorCode } from '../../helpers'
+import { applyInboundReceipt } from '@/lib/procurement/receipt-progress'
 
 // 庫存過帳 (inbound) — apply the order to warehouse_stock + ledger.
 // POST /api/procurement/inbound/[id]/post
@@ -44,6 +45,9 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     console.error('[procurement inbound] post failed:', error)
     return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
   }
+
+  // Sync the upstream PR's 已進貨/尚未進貨 progress (best-effort; never blocks posting)
+  await applyInboundReceipt(service, id, 'post')
 
   const { data: updated } = await service
     .from('inbound_orders')

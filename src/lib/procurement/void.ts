@@ -11,8 +11,9 @@
 // - clone=true additionally copies the main columns + line items into a fresh
 //   draft (approval/void/posting artifacts cleared) and returns its id.
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createServiceClient } from '@/lib/supabase/server'
 import { DOC_TYPE_META, type DocType } from './doc-types'
+import { applyInboundReceipt } from './receipt-progress'
 
 export type VoidErrorCode =
   | 'docNotFound'
@@ -160,6 +161,8 @@ export async function voidDocument(
     const arg = docType === 'inbound_order' ? 'p_inbound_id' : 'p_outbound_id'
     const { error } = await service.rpc(fn, { [arg]: docId, p_user_id: userId })
     if (error) throw new VoidError('unpostFailed', error.message)
+    // this path bypasses the unpost endpoint, so reverse the PR receipt cache here too
+    if (docType === 'inbound_order') await applyInboundReceipt(service, docId, 'unpost')
   }
 
   const { error: voidError } = await service
@@ -175,7 +178,8 @@ export async function voidDocument(
   if (voidError) throw new Error(`void update failed: ${voidError.message}`)
 
   // audit trail (procurement docs are not `documents` rows — reference goes in detail)
-  await service.from('audit_logs').insert({
+  // audit_logs 為 service-role only，須用 admin client
+  await createAdminClient().from('audit_logs').insert({
     doc_id: null,
     user_id: userId,
     action: 'archive',

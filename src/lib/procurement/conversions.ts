@@ -146,6 +146,7 @@ export type ConversionErrorCode =
   | 'invalidConversion'
   | 'docNotFound'
   | 'sourceNotApproved'
+  | 'alreadyConverted'
 
 export class ConversionError extends Error {
   constructor(public code: ConversionErrorCode, message?: string) {
@@ -258,21 +259,32 @@ async function buildInboundItems(service: Service, gr: Row, inboundOrderId: stri
     for (const p of (products as Row[] | null) ?? []) productById.set(p.id as string, p)
   }
 
-  const rows = prItems.map((item, index) => {
-    const product = item.product_id ? productById.get(item.product_id as string) : undefined
-    const ratio = Number(product?.units_per_purchase ?? 1) || 1
-    const purchaseQty = Number(item.quantity ?? 0) || 0
-    return {
-      inbound_order_id: inboundOrderId,
-      line_no: (item.line_no as number | null) ?? index + 1,
-      product_id: item.product_id ?? null,
-      product_code: item.product_code ?? product?.product_code ?? null,
-      product_name: item.product_name ?? product?.name ?? null,
-      spec: item.spec ?? product?.spec ?? null,
-      unit: product?.stock_unit ?? item.unit ?? null, // stock unit (庫存單位)
-      quantity: purchaseQty * ratio, // 採購數量 × 換算率 = 庫存單位數量
-    }
-  })
+  const rows = prItems
+    .map((item, index) => {
+      const product = item.product_id ? productById.get(item.product_id as string) : undefined
+      const ratio = Number(product?.units_per_purchase ?? 1) || 1
+      const purchaseQty = Number(item.quantity ?? 0) || 0
+      const receivedQty = Number(item.received_qty ?? 0) || 0
+      // 尚未進貨量 (採購單位): explicit pending_qty when present, else quantity − received.
+      // Capped ≥ 0 so an over-received line never brings a negative/full quantity again.
+      const pendingRaw = item.pending_qty != null ? Number(item.pending_qty) : purchaseQty - receivedQty
+      const pendingQty = Number.isFinite(pendingRaw) ? Math.max(pendingRaw, 0) : 0
+      return {
+        inbound_order_id: inboundOrderId,
+        line_no: (item.line_no as number | null) ?? index + 1,
+        product_id: item.product_id ?? null,
+        product_code: item.product_code ?? product?.product_code ?? null,
+        product_name: item.product_name ?? product?.name ?? null,
+        spec: item.spec ?? product?.spec ?? null,
+        unit: product?.stock_unit ?? item.unit ?? null, // stock unit (庫存單位)
+        quantity: pendingQty * ratio, // 尚未進貨量 × 換算率 = 庫存單位數量 (上限=剩餘採購量)
+      }
+    })
+    // Skip fully-received lines (nothing left to inbound) — avoids a poisoned
+    // inbound whose zero-qty line would later fail post_inbound.
+    .filter(r => Number(r.quantity) > 0)
+
+  if (rows.length === 0) return
 
   const { error } = await service.from('inbound_items').insert(rows)
   if (error) throw new Error(`inbound_items insert failed: ${error.message}`)
@@ -303,6 +315,22 @@ export async function convertDoc(
   // Source must have finished its approval chain (RFQ included — its single
   // notification step completing also lands on 'approved').
   if (source.status !== 'approved') throw new ConversionError('sourceNotApproved')
+
+  // GR→INB 防重轉: one goods receipt may only be converted to a single live
+  // inbound order. Re-converting the same GR would build a second full-quantity
+  // inbound and (once both posted) double the stock — block it here. A voided
+  // inbound is ignored so a mistaken conversion can be redone after voiding.
+  if (def.source === 'goods_receipt' && def.target === 'inbound_order') {
+    const { data: existingInbound } = await service
+      .from('inbound_orders')
+      .select('id')
+      .eq('gr_id', fromId)
+      .neq('status', 'voided')
+      .limit(1)
+    if (existingInbound && existingInbound.length > 0) {
+      throw new ConversionError('alreadyConverted', 'goods receipt already converted to an inbound order')
+    }
+  }
 
   const payload: Row = {
     status: 'draft',

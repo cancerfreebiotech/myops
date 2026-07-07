@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { sendProactiveMessages } from '@/lib/teams-bot'
@@ -81,17 +81,23 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   }
 
   // 只在確實送出至少一封時才蓋冷卻時間戳（送全失敗不應鎖住重試）；
-  // 並以「last_reminded_at 仍為讀取時的值」為條件更新，降低並發 TOCTOU 重複發送
+  // 並以「last_reminded_at 仍為讀取時的值」為條件更新，降低並發 TOCTOU 重複發送。
+  // 用真 service-role client 寫入：documents UPDATE RLS 僅放行 uploaded_by/admin/approve_contract，
+  // 不含 publish_announcement，若用帶使用者 JWT 的 service client，非上傳者身分的發布者會命中 0 列
+  // 且不報錯 → 冷卻戳永遠寫不進去 → 4 小時冷卻可被無限繞過。上方已做 canPublish 授權檢查。
   if (sent > 0) {
-    let stamp = service.from('documents').update({ last_reminded_at: new Date().toISOString() }).eq('id', id)
+    const admin = createAdminClient()
+    let stamp = admin.from('documents').update({ last_reminded_at: new Date().toISOString() }).eq('id', id)
     stamp = doc.last_reminded_at
       ? stamp.eq('last_reminded_at', doc.last_reminded_at)
       : stamp.is('last_reminded_at', null)
-    await stamp
+    const { error: stampErr, data: stamped } = await stamp.select('id')
+    if (stampErr) console.error('[B4 remind-unconfirmed] cooldown stamp failed:', stampErr)
+    else if (!stamped?.length) console.warn('[B4 remind-unconfirmed] cooldown stamp hit 0 rows (concurrent remind?)')
   }
 
-  // 稽核（best-effort，與 publish/confirm route 一致，不檢查錯誤）
-  await service.from('audit_logs').insert({
+  // 稽核（best-effort，與 publish/confirm route 一致，不檢查錯誤）；audit_logs 為 service-role only
+  await createAdminClient().from('audit_logs').insert({
     doc_id: id,
     user_id: user.id,
     action: 'remind',

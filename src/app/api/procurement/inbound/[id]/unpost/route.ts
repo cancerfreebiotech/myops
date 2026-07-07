@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { requireInventoryUser, rpcErrorCode } from '../../helpers'
+import { applyInboundReceipt } from '@/lib/procurement/receipt-progress'
 
 // 沖銷過帳 (inbound) — revert a posting with reversing 'void' ledger movements.
 // POST /api/procurement/inbound/[id]/unpost
@@ -39,6 +40,9 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     console.error('[procurement inbound] unpost failed:', error)
     return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
   }
+
+  // Reverse the upstream PR's 已進貨/尚未進貨 progress (best-effort)
+  await applyInboundReceipt(service, id, 'unpost')
 
   const { data: updated } = await service
     .from('inbound_orders')

@@ -66,7 +66,8 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       .single()
     isManager = target?.manager_id === user.id
   }
-  const canReviewAsManager = (isManager && !isOwner) || isHR
+  // 分權原則：評核者不得為受評人本人（即使具 HR/admin 身分也不得自評自核）
+  const canReviewAsManager = !isOwner && (isManager || isHR)
 
   const requireMfa = async () => {
     const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()

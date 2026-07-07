@@ -27,19 +27,24 @@ export default async function LeavePage() {
   const empType = currentUser?.employment_type ?? 'full_time'
   const { data: leaveTypes } = await service
     .from('leave_types')
-    .select('id, name, applies_to, pay_rate, max_days_per_year, advance_days_required')
+    .select('id, name:name_zh, applies_to:applicable_to, pay_rate:salary_ratio, max_days_per_year:default_quota_days, advance_days_required:advance_days, is_active')
     .eq('is_active', true)
-    .in('applies_to', empType === 'intern' ? ['all', 'intern'] : ['all', 'full_time'])
-    .is('deleted_at', null)
-    .order('name')
+    .in('applicable_to', empType === 'intern' ? ['all', 'intern'] : ['all', 'full_time'])
+    .order('sort_order')
 
-  // Leave balances
+  // Leave balances（leave_balances 無 allocated_days/remaining_days，以 total_days/used_days 換算）
   const currentYear = new Date().getFullYear()
   const { data: balances } = await service
     .from('leave_balances')
     .select(`*, leave_type:leave_types(name:name_zh)`)
     .eq('user_id', user.id)
     .eq('year', currentYear)
+
+  const mappedBalances = (balances ?? []).map(b => ({
+    ...b,
+    allocated_days: Number(b.total_days ?? 0),
+    remaining_days: Number(b.total_days ?? 0) - Number(b.used_days ?? 0),
+  }))
 
   // Potential deputy approvers (same department)
   const { data: colleagues } = await supabase
@@ -51,16 +56,31 @@ export default async function LeavePage() {
     .is('deleted_at', null)
     .order('display_name')
 
-  // For HR: all pending requests to approve
+  // 待審清單（leave_requests 無 approver_id）：
+  // - HR/admin：全公司 pending（排除自己的單，職責分離）
+  // - manager：其直屬部屬（users.manager_id = 自己）的 pending
+  const approvalSelect = `*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name:name_zh)`
   let pendingApprovals: LeaveRequest[] = []
-  if (isHR || currentUser?.role === 'manager') {
+  if (isHR) {
     const { data } = await service
       .from('leave_requests')
-      .select(`*, user:users!leave_requests_user_id_fkey(id, display_name), leave_type:leave_types(name:name_zh)`)
-      .eq('approver_id', user.id)
+      .select(approvalSelect)
       .eq('status', 'pending')
+      .neq('user_id', user.id)
       .order('created_at', { ascending: false })
     pendingApprovals = data ?? []
+  } else if (currentUser?.role === 'manager') {
+    const { data: reports } = await service.from('users').select('id').eq('manager_id', user.id)
+    const reportIds = (reports ?? []).map(r => r.id)
+    if (reportIds.length > 0) {
+      const { data } = await service
+        .from('leave_requests')
+        .select(approvalSelect)
+        .in('user_id', reportIds)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+      pendingApprovals = data ?? []
+    }
   }
 
   return (
@@ -69,7 +89,7 @@ export default async function LeavePage() {
       <LeaveClient
         currentUser={currentUser}
         leaveTypes={leaveTypes ?? []}
-        balances={balances ?? []}
+        balances={mappedBalances}
         colleagues={colleagues ?? []}
         pendingApprovals={pendingApprovals}
         isHR={isHR}

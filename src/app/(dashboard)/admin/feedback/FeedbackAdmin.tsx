@@ -18,7 +18,7 @@ interface FeedbackItem {
   title: string
   description: string | null
   status: string
-  screenshot_url: string | null
+  screenshot_urls: string[] | null
   created_at: string
   user: { id: string; display_name: string | null } | null
 }
@@ -27,8 +27,9 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
   const router = useRouter()
   const t = useTranslations('admin.feedbackAdmin')
   const tc = useTranslations('common')
+  // feedback.type 僅有 feature_request / bug_report（對齊 DB CHECK）
   const TYPE_LABELS: Record<string, string> = {
-    feature: t('types.feature'), bug: t('types.bug'), improvement: t('types.improvement'), other: t('types.other'),
+    feature_request: t('types.feature'), bug_report: t('types.bug'),
   }
   const [filterStatus, setFilterStatus] = useState('')
   const [filterType, setFilterType] = useState('')
@@ -63,7 +64,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
             <SelectItem value="open">{tc('open')}</SelectItem>
             <SelectItem value="in_progress">{tc('in_progress')}</SelectItem>
             <SelectItem value="done">{tc('done')}</SelectItem>
-            <SelectItem value="cancelled">{tc('cancelled')}</SelectItem>
+            <SelectItem value="rejected">{tc('rejected')}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterType} onValueChange={v => setFilterType(v ?? '')}>
@@ -93,7 +94,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
                 <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
                   <span>{f.user?.display_name}</span>
                   <span>{format(new Date(f.created_at), 'yyyy/MM/dd HH:mm')}</span>
-                  {f.screenshot_url && <span className="flex items-center gap-0.5"><ImageIcon size={11} /> {t('hasScreenshot')}</span>}
+                  {(f.screenshot_urls?.length ?? 0) > 0 && <span className="flex items-center gap-0.5"><ImageIcon size={11} /> {t('hasScreenshot')}</span>}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
@@ -106,7 +107,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
                       <SelectItem value="open">{tc('open')}</SelectItem>
                       <SelectItem value="in_progress">{tc('in_progress')}</SelectItem>
                       <SelectItem value="done">{tc('done')}</SelectItem>
-                      <SelectItem value="cancelled">{tc('cancelled')}</SelectItem>
+                      <SelectItem value="rejected">{tc('rejected')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -131,12 +132,12 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
                 <span>{format(new Date(selected.created_at), 'yyyy/MM/dd HH:mm')}</span>
               </div>
               <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{selected.description}</p>
-              {selected.screenshot_url && (
-                <div>
+              {(selected.screenshot_urls ?? []).map((path) => (
+                <div key={path}>
                   <p className="text-xs text-slate-400 mb-1">{t('screenshot')}</p>
                   <div className="relative w-full aspect-video rounded-md border border-slate-200 overflow-hidden">
                     <Image
-                      src={`/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(selected.screenshot_url)}`}
+                      src={`/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(path)}`}
                       alt={t('screenshot')}
                       fill
                       unoptimized
@@ -144,7 +145,7 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
                     />
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </DialogContent>
         )}

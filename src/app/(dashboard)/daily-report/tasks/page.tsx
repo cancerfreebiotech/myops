@@ -20,11 +20,14 @@ export default async function DailyReportTasksPage() {
   const featureFlags = await getFeatureFlags()
   if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'daily_report')) redirect('/no-permission')
 
+  // 只計入「未被 soft-delete」的群組，與 tasks POST API 的 viewer 判定一致，
+  // 避免所屬群組被刪除後仍顯示新增任務 UI、送出卻被後端 403。
   const { data: viewerMembership } = await service
     .from('daily_report_group_members')
-    .select('group_id')
+    .select('group_id, group:daily_report_groups!inner(id)')
     .eq('user_id', user.id)
     .eq('role', 'viewer')
+    .is('group.deleted_at', null)
     .limit(1)
 
   const isViewer = currentUser?.role === 'admin' || (viewerMembership?.length ?? 0) > 0

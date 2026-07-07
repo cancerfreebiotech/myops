@@ -1354,6 +1354,8 @@
     "view_payroll": "檢視全員薪資",
     "confirm_payroll": "薪資財務確認",
     "approve_payroll": "薪資最終核准",
+    "hr_manager": "人資管理",
+    "finance_payroll": "薪資財務管理",
     "training_manage": "訓練與證照管理",
     "lab_manage": "試劑耗材管理"
   },
@@ -2925,6 +2927,7 @@
     "closeCycle": "結束",
     "closeCycleConfirm": "確認結束此週期？",
     "cycleClosed": "週期已結束",
+    "cycleDeleted": "週期已刪除",
     "deleteCycle": "刪除",
     "deleteCycleConfirm": "確認刪除此草稿週期？"
   }

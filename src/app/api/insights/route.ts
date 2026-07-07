@@ -35,7 +35,7 @@ export async function GET() {
   const [ot, attendance, leaves, prs, expenses] = await Promise.all([
     supabase
       .from('overtime_requests')
-      .select('ot_date, total_hours, project:projects(name)')
+      .select('ot_date, total_hours:hours, project:projects(name)')
       .eq('status', 'approved')
       .gte('ot_date', rangeStart),
     supabase

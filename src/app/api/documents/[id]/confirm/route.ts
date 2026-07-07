@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
@@ -23,7 +23,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  await service.from('audit_logs').insert({
+  // audit_logs 無 authenticated INSERT policy（service role only），須用 admin client 才寫得進去
+  const admin = createAdminClient()
+  await admin.from('audit_logs').insert({
     doc_id: id,
     user_id: user.id,
     action: 'confirm',

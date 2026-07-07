@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
@@ -69,10 +69,14 @@ ${doc.content_zh}`
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  await service.from('audit_logs').insert({
+  // audit_logs 僅允許 service-role 寫入（無 authenticated INSERT policy），且 action 需在
+  // audit_logs_action_check 允許集合內：AI 翻譯的合法值為 'ai_translate'（非 'translate'）。
+  // 上方已做 canPublish 授權檢查，故此處用真 service-role client 寫稽核（比照 ocr route）。
+  const admin = createAdminClient()
+  await admin.from('audit_logs').insert({
     doc_id: id,
     user_id: user.id,
-    action: 'translate',
+    action: 'ai_translate',
     detail: { provider: 'gemini' },
   })
 

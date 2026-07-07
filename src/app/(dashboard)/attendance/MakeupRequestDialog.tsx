@@ -34,7 +34,7 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
     const res = await fetch('/api/attendance/makeup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clock_date: date, clock_type: clockType, clock_time: `${date}T${time}:00`, reason }),
+      body: JSON.stringify({ clock_date: date, clock_type: clockType, clock_time: `${date}T${time}:00+08:00`, reason }),
     })
     const { error } = await res.json()
     setLoading(false)

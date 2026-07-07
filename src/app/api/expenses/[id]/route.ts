@@ -52,6 +52,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
+  // 職責分離：不得核准／撥付自己送出的報支單（與請假/加班/出差一致）
+  if (claim.user_id === user.id) {
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+  }
+
   // 審批動作需要 MFA（同請假審批模式）
   const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
   if (aalData?.currentLevel !== 'aal2') {

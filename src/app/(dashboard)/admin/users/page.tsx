@@ -9,9 +9,10 @@ export default async function AdminUsersPage() {
   const { data: { user: authUser } } = await supabase.auth.getUser()
   if (!authUser) redirect('/login')
 
-  const { data: currentUser } = await supabase.from('users').select('role, job_role').eq('id', authUser.id).single()
+  const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', authUser.id).single()
   const isAdmin = currentUser?.role === 'admin'
-  const isHR = currentUser?.job_role === 'hr_manager'
+  // 與全站 HR 判定一致（lifecycle/recruiting/RLS has_feature('hr_manager')）
+  const isHR = !!(currentUser?.granted_features as string[] | null)?.includes('hr_manager')
   if (!isAdmin && !isHR) redirect('/no-permission')
 
   const service = await createServiceClient()

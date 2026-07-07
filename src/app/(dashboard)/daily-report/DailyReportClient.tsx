@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { format } from 'date-fns'
+import { format, addDays, parseISO } from 'date-fns'
 import { taipeiToday } from '@/lib/taipei-date'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Circle, ClipboardList, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -67,13 +67,19 @@ export function DailyReportClient({ userId }: Props) {
       }
     }
     loadAll()
-    return () => { cancelled = true }
+    const timers = kpiTimers.current
+    return () => {
+      cancelled = true
+      // 切換日期時取消所有尚未送出的 KPI debounce 計時器，
+      // 否則舊 closure 的計時器會以「舊日期」寫入 kpiEntries，污染新日期畫面。
+      Object.values(timers).forEach(clearTimeout)
+    }
   }, [date, userId, t])
 
   const shiftDate = (days: number) => {
-    const d = new Date(date)
-    d.setDate(d.getDate() + days)
-    setDate(format(d, 'yyyy-MM-dd'))
+    // parseISO 將 'YYYY-MM-DD' 解析為「本地」午夜（非 UTC），addDays 做日曆日加減，
+    // format 亦以本地欄位輸出 — 全程不經 UTC 換算，任何瀏覽器時區都得到正確日期。
+    setDate(format(addDays(parseISO(date), days), 'yyyy-MM-dd'))
   }
 
   // ── Schedule ─────────────────────────────────────────────────
@@ -137,7 +143,7 @@ export function DailyReportClient({ userId }: Props) {
 
   // ── KPI ──────────────────────────────────────────────────────
   const getKpiValue = (defId: string) =>
-    kpiEntries.find(e => e.kpi_def_id === defId)?.value ?? ''
+    kpiEntries.find(e => e.kpi_def_id === defId && e.date === date)?.value ?? ''
 
   // 每個 KPI 各自 debounce，避免每個按鍵都打一次 API（舊值可能晚到蓋掉新值）
   const kpiTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
@@ -159,7 +165,7 @@ export function DailyReportClient({ userId }: Props) {
         })
         if (!res.ok) throw new Error()
         setKpiEntries(prev => {
-          const existing = prev.findIndex(e => e.kpi_def_id === defId)
+          const existing = prev.findIndex(e => e.kpi_def_id === defId && e.date === date)
           if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
           return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
         })

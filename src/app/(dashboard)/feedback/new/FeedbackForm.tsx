@@ -14,7 +14,7 @@ export function FeedbackForm() {
   const router = useRouter()
   const t = useTranslations('feedback')
   const tc = useTranslations('common')
-  const [type, setType] = useState('feature')
+  const [type, setType] = useState('feature_request')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [screenshot, setScreenshot] = useState<File | null>(null)
@@ -58,13 +58,11 @@ export function FeedbackForm() {
     <div className="max-w-lg space-y-5">
       <div>
         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('formType')} <span className="text-red-500">*</span></label>
-        <Select value={type} onValueChange={v => setType(v ?? 'feature')}>
+        <Select value={type} onValueChange={v => setType(v ?? 'feature_request')}>
           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="feature">{t('typeFeature')}</SelectItem>
-            <SelectItem value="bug">{t('typeBug')}</SelectItem>
-            <SelectItem value="improvement">{t('typeImprovement')}</SelectItem>
-            <SelectItem value="other">{t('typeOther')}</SelectItem>
+            <SelectItem value="feature_request">{t('typeFeature')}</SelectItem>
+            <SelectItem value="bug_report">{t('typeBug')}</SelectItem>
           </SelectContent>
         </Select>
       </div>

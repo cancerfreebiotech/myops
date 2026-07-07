@@ -16,9 +16,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: currentUser } = await service.from('users').select('role, job_role').eq('id', user.id).single()
+  const { data: currentUser } = await service.from('users').select('role, granted_features').eq('id', user.id).single()
   const isAdmin = currentUser?.role === 'admin'
-  const isHR = currentUser?.job_role === 'hr_manager'
+  // 與全站 HR 判定一致（lifecycle/recruiting/RLS has_feature('hr_manager')）
+  const isHR = !!(currentUser?.granted_features as string[] | null)?.includes('hr_manager')
 
   if (!isAdmin && !isHR) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 

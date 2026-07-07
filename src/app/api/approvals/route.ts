@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { getApprovalScope, overtimeScopeOrFilter } from '@/lib/approval-scope'
 
 // GET /api/approvals — 彙總「待我審批」的項目（採購另由 client 呼叫 /api/procurement/inbox）
 export async function GET() {
@@ -19,22 +20,29 @@ export async function GET() {
   const feats = (me?.granted_features as string[] | null) ?? []
   const has = (f: string) => isAdmin || feats.includes(f)
 
+  // leave_requests / overtime_requests 無 approver_id 欄位；審核者以 manager_id / project_lead_id 判定
+  // （與 /api/leave/requests/[id]、/api/overtime/requests/[id] 的核准權限一致；儀表板統計亦共用此範圍）
+  const scope = await getApprovalScope(supabase, user.id, me?.role, feats)
+
   // 各模組沿用其既有的「待我審核」規則
   const leaveQuery = () => {
     let q = supabase
       .from('leave_requests')
       .select('id, start_date, end_date, total_days, reason, user:users!leave_requests_user_id_fkey(display_name), leave_type:leave_types(name:name_zh)')
       .eq('status', 'pending')
-    if (!isAdmin && !feats.includes('hr_manager')) q = q.eq('approver_id', user.id)
+    if (!scope.leaveApproveAll) q = q.in('user_id', scope.subordinateIds)
     return q
   }
 
   const overtimeQuery = () => {
     let q = supabase
       .from('overtime_requests')
-      .select('id, ot_date, total_hours, reason, user:users!overtime_requests_user_id_fkey(display_name)')
+      .select('id, ot_date, total_hours:hours, reason, user:users!overtime_requests_user_id_fkey(display_name)')
       .eq('status', 'pending')
-    if (!isAdmin) q = q.eq('approver_id', user.id)
+    if (!scope.overtimeApproveAll) {
+      const or = overtimeScopeOrFilter(scope)
+      q = or ? q.or(or) : q.in('id', [])
+    }
     return q
   }
 

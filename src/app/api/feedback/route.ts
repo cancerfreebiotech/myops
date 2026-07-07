@@ -11,11 +11,16 @@ export async function POST(request: NextRequest) {
 
   const { type, title, description, screenshot_url } = await request.json()
   if (!type || !title || !description) return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+  // feedback.type CHECK 僅允許 feature_request / bug_report
+  if (!['feature_request', 'bug_report'].includes(type)) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
 
   const { data, error } = await service.from('feedback').insert({
     submitted_by: user.id,
     type, title, description,
-    screenshot_url: screenshot_url ?? null,
+    // DB 欄位為 screenshot_urls TEXT[]（無單值 screenshot_url）
+    screenshot_urls: screenshot_url ? [screenshot_url] : [],
     status: 'open',
   }).select().single()
 

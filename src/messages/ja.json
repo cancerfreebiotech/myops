@@ -1354,6 +1354,8 @@
     "view_payroll": "全員給与の閲覧",
     "confirm_payroll": "給与の財務確認",
     "approve_payroll": "給与の最終承認",
+    "hr_manager": "人事管理",
+    "finance_payroll": "給与・財務管理",
     "training_manage": "研修・資格管理",
     "lab_manage": "試薬・消耗品管理"
   },
@@ -2925,6 +2927,7 @@
     "closeCycle": "終了",
     "closeCycleConfirm": "この期間を終了しますか？",
     "cycleClosed": "期間を終了しました",
+    "cycleDeleted": "期間を削除しました",
     "deleteCycle": "削除",
     "deleteCycleConfirm": "この下書き期間を削除しますか？"
   }

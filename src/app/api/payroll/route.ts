@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
   }
 
   const gross = (base_salary ?? 0) + (overtime_pay ?? 0) + (bonus ?? 0)
-  const net = gross - (deductions ?? 0)
+  const totalDeduction = deductions ?? 0
+  const net = gross - totalDeduction
 
   const { data, error } = await service.from('payroll_records').upsert({
     user_id,
@@ -69,12 +70,12 @@ export async function POST(request: NextRequest) {
     base_salary,
     overtime_pay: overtime_pay ?? 0,
     bonus: bonus ?? 0,
-    deductions: deductions ?? 0,
-    gross_salary: gross,
-    net_salary: net,
-    notes: notes ?? null,
+    other_deduction: totalDeduction,
+    gross_pay: gross,
+    total_deduction: totalDeduction,
+    net_pay: net,
+    note: notes ?? null,
     status: 'draft',
-    created_by: user.id,
   }, { onConflict: 'user_id,year,month' }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

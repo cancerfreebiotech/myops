@@ -109,14 +109,15 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     show('contracts')     && { href: '/contracts',     label: t('contracts'),     icon: FileSignature },
   ].filter(Boolean) as NavItem[]
 
+  // 依使用頻率排序：每日（打卡）→ 常用申請（假/加班/出差/報支）→ 定期（薪資）→ 發展（訓練/績效）
   const hrItems: NavItem[] = [
-    show('attendance') && { href: '/attendance', label: t('attendance'), icon: Clock },
-    show('leave')      && { href: '/leave',      label: t('leave'),      icon: CalendarDays },
-    show('overtime')   && { href: '/overtime',   label: t('overtime'),   icon: Timer },
-    show('payroll')    && { href: '/payroll',    label: t('payroll'),    icon: DollarSign },
-    show('expenses')   && { href: '/expenses',   label: t('expenses'),   icon: Receipt },
-    show('training')      && { href: '/training',       label: t('training'),     icon: GraduationCap },
+    show('attendance')    && { href: '/attendance',     label: t('attendance'),   icon: Clock },
+    show('leave')         && { href: '/leave',          label: t('leave'),        icon: CalendarDays },
+    show('overtime')      && { href: '/overtime',       label: t('overtime'),     icon: Timer },
     show('business_trip') && { href: '/business-trips', label: t('businessTrip'), icon: Plane },
+    show('expenses')      && { href: '/expenses',       label: t('expenses'),     icon: Receipt },
+    show('payroll')       && { href: '/payroll',        label: t('payroll'),      icon: DollarSign },
+    show('training')      && { href: '/training',       label: t('training'),     icon: GraduationCap },
     show('performance')   && { href: '/performance',    label: t('performance'),  icon: Target },
   ].filter(Boolean) as NavItem[]
 
@@ -138,23 +139,24 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     { href: '/daily-report/tasks', label: t('dailyReportTasks'), icon: CheckSquare },
   ].filter(Boolean) as NavItem[] : []
 
+  // 依領域分組排序：洞察 → 組織/人事 → 出勤設定 → 財務/營運設定 → 日報 → 系統
   const adminItems: NavItem[] = isAdmin ? [
-    { href: '/insights',               label: t('insights'),        icon: BarChart3 },
+    { href: '/insights',               label: t('insights'),         icon: BarChart3 },
     { href: '/admin/users',            label: t('adminUsers'),       icon: Users },
-    { href: '/admin/lifecycle',        label: t('lifecycle'),        icon: ListChecks },
-    { href: '/admin/recruiting',       label: t('recruiting'),       icon: UserPlus },
     { href: '/admin/departments',      label: t('adminDepartments'), icon: Building2 },
     { href: '/admin/companies',        label: t('adminCompanies'),   icon: Building2 },
-    { href: '/admin/feedback',         label: t('adminFeedback'),    icon: MessageCircle },
-    { href: '/admin/audit',            label: t('adminAudit'),       icon: BookOpen },
+    { href: '/admin/lifecycle',        label: t('lifecycle'),        icon: ListChecks },
+    { href: '/admin/recruiting',       label: t('recruiting'),       icon: UserPlus },
     { href: '/admin/shifts',           label: t('adminShifts'),      icon: Clock },
+    { href: '/admin/geofences',        label: t('geofences'),        icon: MapPin },
     { href: '/admin/hr-settings',      label: t('hrSettings'),       icon: SlidersHorizontal },
     { href: '/admin/finance-settings', label: t('financeSettings'),  icon: DollarSign },
     { href: '/admin/coo-settings',     label: t('cooSettings'),      icon: SlidersHorizontal },
-    { href: '/admin/bot-policy',               label: t('adminBotPolicy'),        icon: ShieldCheck },
-    { href: '/admin/settings',                 label: t('adminSettings'),         icon: Settings },
-    { href: '/admin/geofences',                label: t('geofences'),             icon: MapPin },
-    { href: '/admin/daily-report/groups',      label: t('adminDailyReportGroups'), icon: UsersRound },
+    { href: '/admin/daily-report/groups', label: t('adminDailyReportGroups'), icon: UsersRound },
+    { href: '/admin/feedback',         label: t('adminFeedback'),    icon: MessageCircle },
+    { href: '/admin/audit',            label: t('adminAudit'),       icon: BookOpen },
+    { href: '/admin/bot-policy',       label: t('adminBotPolicy'),   icon: ShieldCheck },
+    { href: '/admin/settings',         label: t('adminSettings'),    icon: Settings },
   ] : []
 
   return (
@@ -215,13 +217,13 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
           </>
         )}
 
-        <SectionHeader label={t('dms')} collapsed={collapsed} />
-        {dmsItems.map(item => (
+        <SectionHeader label={t('hr')} collapsed={collapsed} />
+        {hrItems.map(item => (
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
         ))}
 
-        <SectionHeader label={t('hr')} collapsed={collapsed} />
-        {hrItems.map(item => (
+        <SectionHeader label={t('dms')} collapsed={collapsed} />
+        {dmsItems.map(item => (
           <NavLink key={item.href} {...item} collapsed={collapsed} active={isActive(item.href)} />
         ))}
 

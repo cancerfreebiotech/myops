@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { isDocType } from '@/lib/procurement/doc-types'
@@ -37,7 +37,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   const supabase = await createClient()
-  const service = await createServiceClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
@@ -73,7 +72,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Audit trail (procurement docs are not `documents` rows — doc reference goes in detail)
-    await service.from('audit_logs').insert({
+    // audit_logs 為 service-role only，須用 admin client
+    await createAdminClient().from('audit_logs').insert({
       doc_id: null,
       user_id: user.id,
       action: action === 'submit' ? 'upload' : action === 'reject' ? 'reject' : 'approve',

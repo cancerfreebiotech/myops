@@ -10,9 +10,10 @@ export default async function ShiftsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: me } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
+  const { data: me } = await supabase.from('users').select('role, job_role, granted_features').eq('id', user.id).single()
+  const grantedFeatures = (me?.granted_features as string[] | null) ?? []
   const isAdmin = me?.role === 'admin'
-  const isHR = me?.job_role === 'hr_manager'
+  const isHR = me?.job_role === 'hr_manager' || grantedFeatures.includes('hr_manager')
   if (!isAdmin && !isHR) redirect('/no-permission')
 
   const { data: shifts } = await service

@@ -13,8 +13,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
+  // overtime_rates 實際欄位為 rate（無 multiplier/is_active）；前端傳 multiplier → rate，
+  // is_active 無對應欄位故忽略。
   const body = await request.json()
-  const { data, error } = await service.from('overtime_rates').update(body).eq('id', id).select().single()
+  const update: Record<string, unknown> = {}
+  if (body.multiplier !== undefined) update.rate = body.multiplier
+  if (body.rate !== undefined) update.rate = body.rate
+  const { data, error } = await service.from('overtime_rates').update(update).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ data })
 }

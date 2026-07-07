@@ -25,13 +25,14 @@ export default async function OvertimePage() {
   const { data: projects } = await supabase
     .from('projects')
     .select('id, name')
-    .eq('is_active', true)
+    .eq('status', 'active')
+    .is('deleted_at', null)
     .order('name')
 
+  // overtime_rates 無 is_active 欄位
   const { data: rates } = await service
     .from('overtime_rates')
     .select('*')
-    .eq('is_active', true)
     .order('sort_order')
 
   // Pending for approval（無 approver_id 欄位：由 RLS 限定可見範圍，列 pending 且排除自己的單）

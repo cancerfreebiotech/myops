@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendProactiveMessage, sendProactiveMessages } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
@@ -38,11 +38,26 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'No permitted fields' }, { status: 400 })
   }
 
+  // 職責分離：核准（status→approved）時不得核准自己上傳的文件（與請假/加班/出差/報帳一致）。
+  // documents_status_guard 與 UPDATE RLS 都不排除 uploaded_by=自己，故此把關必須在 app 層做。
+  if (updates.status === 'approved') {
+    const { data: target } = await service
+      .from('documents')
+      .select('uploaded_by')
+      .eq('id', id)
+      .single()
+    if (target?.uploaded_by === user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
   const { data, error } = await service.from('documents').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   if (action) {
-    await service.from('audit_logs').insert({
+    // audit_logs 無 authenticated INSERT policy（service role only），須用 admin client 才寫得進去
+    const admin = createAdminClient()
+    await admin.from('audit_logs').insert({
       doc_id: id, user_id: user.id, action,
       detail: action === 'reject' ? { reason: body.reject_reason } : null,
     })

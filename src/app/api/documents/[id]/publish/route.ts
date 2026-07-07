@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendProactiveMessages } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
@@ -17,8 +17,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const { recipient_user_ids, requires_confirmation, reminder_days } = await request.json()
 
+  // 需真正繞過 RLS + documents_status_guard 才能發布：
+  //   - documents_status_guard 只放行 is_admin()/approve_contract，會擋掉「僅具 publish_announcement」的發布者；
+  //   - documents UPDATE RLS 同樣不含 publish_announcement。
+  // 上方已做 canPublish 明確授權檢查（admin / publish_announcement），故此處用真 service-role client
+  // 執行狀態變更（比照 documents/[id]/ocr route 的 createAdminClient 用法）。
+  const admin = createAdminClient()
+
   // Approve the document
-  const { error: updateError } = await service.from('documents').update({
+  const { error: updateError } = await admin.from('documents').update({
     status: 'approved',
     approved_by: user.id,
     approved_at: new Date().toISOString(),
@@ -57,10 +64,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
   }
 
-  await service.from('audit_logs').insert({
+  // audit_logs 僅允許 service-role 寫入（無 authenticated INSERT policy），且 action 需在
+  // audit_logs_action_check 允許集合內（無 'publish'）。發布即核准，記為合法的 'approve'。
+  await admin.from('audit_logs').insert({
     doc_id: id,
     user_id: user.id,
-    action: 'publish',
+    action: 'approve',
     detail: { recipient_count: recipient_user_ids?.length ?? 0 },
   })
 

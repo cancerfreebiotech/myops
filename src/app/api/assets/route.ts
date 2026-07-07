@@ -80,6 +80,17 @@ export async function POST(request: NextRequest) {
   if (source_gr_id) {
     const { data: ok } = await supabase.rpc('gr_is_convertible', { p_gr_id: source_gr_id })
     if (!ok) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+
+    // 防重：一張 GR 只能轉一筆資產（app 層去重；避免採購金額被重複計入台帳）
+    const { data: existing } = await supabase
+      .from('assets')
+      .select('id')
+      .eq('source_gr_id', source_gr_id)
+      .is('deleted_at', null)
+      .limit(1)
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ error: t('common.invalidRequest') }, { status: 409 })
+    }
   }
 
   const { data, error } = await supabase

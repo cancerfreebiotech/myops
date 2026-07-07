@@ -1354,6 +1354,8 @@
     "view_payroll": "View all payroll",
     "confirm_payroll": "Payroll finance confirmation",
     "approve_payroll": "Payroll final approval",
+    "hr_manager": "HR management",
+    "finance_payroll": "Payroll & finance management",
     "training_manage": "Training & certification management",
     "lab_manage": "Lab supplies management"
   },
@@ -2925,6 +2927,7 @@
     "closeCycle": "Close",
     "closeCycleConfirm": "Close this cycle?",
     "cycleClosed": "Cycle closed",
+    "cycleDeleted": "Cycle deleted",
     "deleteCycle": "Delete",
     "deleteCycleConfirm": "Delete this draft cycle?"
   }

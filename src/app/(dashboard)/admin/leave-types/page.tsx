@@ -16,11 +16,21 @@ export default async function LeaveTypesPage() {
   const isCOO = currentUser?.job_role === 'coo'
   if (!isAdmin && !isHR && !isCOO) redirect('/no-permission')
 
-  const { data: leaveTypes } = await service
+  // leave_types 真實欄位為 name_zh/applicable_to/salary_ratio/...，映射成 LeaveTypesManager 期望的形狀
+  const { data: rawTypes } = await service
     .from('leave_types')
-    .select('*')
-    .is('deleted_at', null)
-    .order('name')
+    .select('id, name_zh, applicable_to, salary_ratio, default_quota_days, advance_days, is_active')
+    .order('sort_order')
+
+  const leaveTypes = (rawTypes ?? []).map(r => ({
+    id: r.id,
+    name: r.name_zh,
+    applies_to: r.applicable_to,
+    pay_rate: r.salary_ratio >= 1 ? 'full' : r.salary_ratio > 0 ? 'half' : 'none',
+    max_days_per_year: r.default_quota_days,
+    advance_days_required: r.advance_days,
+    is_active: r.is_active,
+  }))
 
   const t = await getTranslations('nav')
   const tAdmin = await getTranslations('admin.leaveTypes')
@@ -28,7 +38,7 @@ export default async function LeaveTypesPage() {
   return (
     <div>
       <PageHeader title={t('adminLeaveTypes')} description={tAdmin('description')} />
-      <LeaveTypesManager leaveTypes={leaveTypes ?? []} />
+      <LeaveTypesManager leaveTypes={leaveTypes} />
     </div>
   )
 }

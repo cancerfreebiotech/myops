@@ -87,8 +87,10 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
 
   const hours = startTime && endTime ? (() => {
     const s = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])
-    const e = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1])
-    return Math.max(0, (e - s) / 60).toFixed(1)
+    let e = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1])
+    // 跨午夜：結束時間 <= 開始時間視為隔日，+24h
+    if (e <= s) e += 24 * 60
+    return ((e - s) / 60).toFixed(1)
   })() : null
 
   const handleApply = async () => {

@@ -15,7 +15,7 @@ export interface AttendanceRecord {
   clock_out: string | null
   is_auto_in: boolean | null
   is_auto_out: boolean | null
-  notes: string | null
+  note: string | null
   user: {
     id: string
     display_name: string
@@ -317,7 +317,7 @@ export function AdminAttendanceClient({
 
                       {/* 備註 */}
                       <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">
-                        {r.notes || <span className="text-slate-300 dark:text-slate-600">—</span>}
+                        {r.note || <span className="text-slate-300 dark:text-slate-600">—</span>}
                       </td>
                     </tr>
                   )

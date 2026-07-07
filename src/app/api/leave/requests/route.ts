@@ -34,10 +34,13 @@ export async function POST(request: NextRequest) {
     .eq('id', leave_type_id)
     .single()
 
-  if (leaveType?.default_quota_days && balance) {
+  // 有 balance 記錄即代表該假別已配額（total_days 為可用額度），就檢查餘額；
+  // 不以 leaveType.default_quota_days 判斷（特休等 by_seniority 假別此欄為 NULL，
+  // 但仍會由 HR 建立 balance，必須控管餘額）。無 balance = 無限制假別，不檢查。
+  if (balance) {
     const remaining = Number(balance.total_days) - Number(balance.used_days ?? 0)
     if (remaining < total_days) {
-      return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType.name, remaining }) }, { status: 400 })
+      return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType?.name ?? '', remaining }) }, { status: 400 })
     }
   }
 
@@ -122,7 +125,12 @@ export async function GET(request: NextRequest) {
     if (isAdmin || isHR) {
       query = query.eq('status', 'pending')
     } else {
-      query = query.eq('approver_id', user.id).eq('status', 'pending')
+      // leave_requests 無 approver_id：主管只看直屬部屬（users.manager_id = 自己）的 pending
+      const { data: reports } = await service.from('users').select('id').eq('manager_id', user.id)
+      const reportIds = (reports ?? []).map(r => r.id)
+      query = query
+        .eq('status', 'pending')
+        .in('user_id', reportIds.length ? reportIds : ['00000000-0000-0000-0000-000000000000'])
     }
   } else if (view === 'team' && (isAdmin || isHR)) {
     // All requests

@@ -18,10 +18,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
-  // Calculate hours
+  // Calculate hours（跨午夜：結束時間 <= 開始時間視為隔日，+24h）
   const startMinutes = parseInt(start_time.split(':')[0]) * 60 + parseInt(start_time.split(':')[1])
-  const endMinutes = parseInt(end_time.split(':')[0]) * 60 + parseInt(end_time.split(':')[1])
-  const total_hours = Math.max(0, (endMinutes - startMinutes) / 60)
+  let endMinutes = parseInt(end_time.split(':')[0]) * 60 + parseInt(end_time.split(':')[1])
+  if (endMinutes <= startMinutes) endMinutes += 24 * 60
+  const total_hours = (endMinutes - startMinutes) / 60
 
   // DB 欄位為 hours / request_type（無 total_hours / ot_type / approver_id）
   const requestType = ot_type === 'project' ? 'project' : 'regular'

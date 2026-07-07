@@ -14,7 +14,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (currentUser?.role !== 'admin') return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const { status } = await request.json()
-  const validStatuses = ['open', 'in_progress', 'done', 'cancelled']
+  // 對齊 feedback.status CHECK ('open','in_progress','done','rejected')
+  const validStatuses = ['open', 'in_progress', 'done', 'rejected']
   if (!validStatuses.includes(status)) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
   const { error } = await service.from('feedback').update({ status }).eq('id', id)

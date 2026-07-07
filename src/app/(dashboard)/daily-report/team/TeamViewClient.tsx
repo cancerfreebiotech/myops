@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { format } from 'date-fns'
+import { format, addDays, parseISO } from 'date-fns'
 import { taipeiToday } from '@/lib/taipei-date'
 import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -50,9 +50,9 @@ export function TeamViewClient({ groups }: Props) {
   useEffect(() => { load() }, [load])
 
   const shiftDate = (days: number) => {
-    const d = new Date(date)
-    d.setDate(d.getDate() + days)
-    setDate(format(d, 'yyyy-MM-dd'))
+    // parseISO 將 'YYYY-MM-DD' 解析為「本地」午夜（非 UTC），addDays 做日曆日加減，
+    // format 亦以本地欄位輸出 — 全程不經 UTC 換算，任何瀏覽器時區都得到正確日期。
+    setDate(format(addDays(parseISO(date), days), 'yyyy-MM-dd'))
   }
 
   return (

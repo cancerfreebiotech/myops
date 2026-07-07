@@ -17,11 +17,14 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role')
+    .select('id, role, job_role, granted_features')
     .eq('id', user.id)
     .single()
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr_manager' || currentUser?.role === 'hr'
+  const grantedFeatures = (currentUser?.granted_features as string[] | null) ?? []
+  const isAdmin = currentUser?.role === 'admin'
+    || currentUser?.job_role === 'hr_manager'
+    || grantedFeatures.includes('hr_manager')
   if (!isAdmin) redirect('/no-permission')
 
   const sp = await searchParams
@@ -48,7 +51,7 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
       clock_out,
       is_auto_in,
       is_auto_out,
-      notes,
+      note,
       user:users!attendance_records_user_id_fkey(
         id,
         display_name,
