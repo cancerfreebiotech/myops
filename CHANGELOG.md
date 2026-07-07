@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.6.8 — Outlook 行事曆同步（2026-07-07）
+
+### Added
+- **請假 / 出差自動同步至 Outlook**：請假或出差經核准後，系統會自動在當事人的 Outlook 行事曆建立整天「不在辦公室」事件；退回則自動移除。單向同步（Outlook 端的變更不會回寫 myOPS），使用各自的 Microsoft 帳號授權。
+
+### Notes
+- 首次啟用需**重新登入一次** myOPS（以授權行事曆存取）；未連結者核准流程不受影響，只是不會建立 Outlook 事件
+
 ## v0.6.7 — 合約/公告流程強化與資產轉入（2026-07-07）
 
 ### Added

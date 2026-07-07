@@ -43,6 +43,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .select('role, granted_features')
     .eq('id', user.id)
     .single()
+  // 職責分離：不得核准自己的出差單（與請假/加班一致）
+  if (trip.user_id === user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   const canApprove = me?.role === 'admin'
     || (me?.granted_features as string[] | null)?.includes('hr_manager')
     || trip.approver_id === user.id
@@ -58,13 +60,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     ? { status: 'approved', approved_by: user.id, approved_at: new Date().toISOString() }
     : { status: 'rejected', approved_by: user.id, approved_at: new Date().toISOString(), reject_reason: reject_reason ?? null }
 
+  // compare-and-swap：只在仍為 pending 時轉換，擋並發/重複核准（避免重複推 Outlook）
   const { data, error } = await supabase
     .from('business_trips')
     .update(updates)
     .eq('id', id)
+    .eq('status', 'pending')
     .select()
-    .single()
+    .maybeSingle()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: t('common.forbidden'), code: 'ALREADY_PROCESSED' }, { status: 409 })
 
   // 單向同步：核准 → 在申請人 Outlook 建立出差事件；退回 → 清除既有事件（best-effort）
   if (action === 'approve') {

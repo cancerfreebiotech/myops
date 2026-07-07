@@ -53,12 +53,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   if (action === 'approve') {
-    const { error } = await service.from('leave_requests').update({
+    // compare-and-swap：只在仍為 pending 時核准，擋並發/重複核准（避免重複扣假與重複推 Outlook）
+    const { data: approved, error } = await service.from('leave_requests').update({
       status: 'approved',
       approved_by: user.id,
       approved_at: new Date().toISOString(),
-    }).eq('id', id)
+    }).eq('id', id).eq('status', 'pending').select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!approved || approved.length === 0) {
+      return NextResponse.json({ error: t('common.forbidden'), code: 'ALREADY_PROCESSED' }, { status: 409 })
+    }
 
     // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）
     const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
