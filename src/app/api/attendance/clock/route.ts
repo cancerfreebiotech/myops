@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
 
   if (action === 'in') {
     const shift = await resolveShiftStart(service, user.id, clockDate)
-    const lateMin = computeLateMinutes(now.toISOString(), shift.startTime, shift.flexMinutes)
+    // 非工作日（有班別但當日不在 work_days）不判遲到
+    const lateMin = shift.applies ? computeLateMinutes(now.toISOString(), shift.startTime, shift.flexMinutes) : 0
     const isLate = lateMin > 0
 
     // Check if already clocked in today

@@ -5,6 +5,8 @@ export interface ResolvedShift {
   startTime: string // 'HH:MM'
   flexMinutes: number
   source: 'shift' | 'default'
+  /** 是否應對當日打卡做遲到判定；指派班別但當日非工作日時為 false（不判遲到） */
+  applies: boolean
 }
 
 /** date: 'YYYY-MM-DD'（台北）→ ISO 星期幾 1=Mon..7=Sun */
@@ -37,15 +39,18 @@ export async function resolveShiftStart(
   } | null | undefined
 
   const dow = isoDow(date)
-  if (shift && shift.is_active && Array.isArray(shift.work_days) && shift.work_days.includes(dow)) {
+  if (shift && shift.is_active && Array.isArray(shift.work_days)) {
+    // 有指派且啟用的班別：當日在工作日內才判遲到；非工作日（加班日）不判遲到
     return {
       shiftId: shift.id,
       startTime: String(shift.start_time).slice(0, 5),
       flexMinutes: shift.flex_minutes ?? 0,
       source: 'shift',
+      applies: shift.work_days.includes(dow),
     }
   }
 
+  // 無指派班別：沿用系統預設上班時間並判遲到（既有行為）
   const { data: setting } = await service
     .from('system_settings').select('value').eq('key', 'default_clock_in_time').maybeSingle()
   return {
@@ -53,6 +58,7 @@ export async function resolveShiftStart(
     startTime: String(setting?.value ?? '09:00').slice(0, 5),
     flexMinutes: 0,
     source: 'default',
+    applies: true,
   }
 }
 

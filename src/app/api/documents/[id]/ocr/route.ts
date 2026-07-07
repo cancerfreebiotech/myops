@@ -34,6 +34,15 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     || features.includes('publish_announcement')
   if (!canManage) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  // 防 IDOR：OCR 觸發權限集合比 documents SELECT RLS 寬（publish_announcement 不在讀取授權內），
+  // 故先以「呼叫者本人身分」（RLS）確認確實可讀此文件，否則不得 OCR 其內容。
+  const { data: readable } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('id', id)
+    .maybeSingle()
+  if (!readable) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   // 需真正繞過 RLS：system_settings 非 feature.* key 僅 admin 可讀；
   // documents UPDATE RLS 也只允許 uploaded_by/admin/approve_contract。
   // 已於上方做明確授權檢查，故此處用真 service-role client。

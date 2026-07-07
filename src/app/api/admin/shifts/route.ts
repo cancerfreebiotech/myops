@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 async function requireHR(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  const { data } = await supabase.from('users').select('role, job_role').eq('id', user.id).single()
-  if (data?.role !== 'admin' && data?.job_role !== 'hr_manager') return null
+  const { data } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
+  if (data?.role !== 'admin' && !(data?.granted_features as string[] | null)?.includes('hr_manager')) return null
   return user
 }
 
