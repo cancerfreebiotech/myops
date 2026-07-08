@@ -1065,7 +1065,20 @@
       "aiStatusOcr": "文書OCR（ビジョンモデル）",
       "aiStatusReady": "利用可",
       "aiStatusNoKey": "API Key未設定",
-      "aiStatusFlagOff": "機能フラグ（ask_ai）が無効"
+      "aiStatusFlagOff": "機能フラグ（ask_ai）が無効",
+      "aiEmbedTitle": "Embedding（ベクトル検索）",
+      "aiEmbedHint": "embeddingモデルを設定するとポリシーQ&Aのベクトル検索が有効になります。エンドポイントとKeyは未入力の場合、上のAI接続を引き継ぎます",
+      "aiEmbedModel": "Embeddingモデル（必須で有効化）",
+      "aiEmbedBaseUrl": "Embeddingエンドポイント（任意）",
+      "aiEmbedApiKey": "Embedding API Key（任意）",
+      "aiEmbedInherit": "未入力＝AI接続を引き継ぐ",
+      "aiReindex": "文書インデックス再構築",
+      "aiReindexing": "インデックス中…",
+      "aiReindexDone": "{docs} 件の文書をインデックス（{chunks} セグメント）",
+      "aiTestEmbedOk": "Embedding成功（{model}、{ms} ms）",
+      "aiTestEmbedFail": "Embedding失敗：{error}",
+      "aiStatusVector": "ベクトル検索（ポリシーQ&A）",
+      "aiStatusNoEmbedModel": "Embeddingモデル未設定（全文モード）"
     },
     "audit": {
       "title": "監査ログ",

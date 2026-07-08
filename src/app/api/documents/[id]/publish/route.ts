@@ -33,6 +33,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
 
+  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
+  {
+    const { indexDocumentSafe } = await import('@/lib/doc-index')
+    await indexDocumentSafe(admin, id)
+  }
+
   // Create recipient records
   if (recipient_user_ids?.length) {
     const inserts = recipient_user_ids.map((uid: string) => ({

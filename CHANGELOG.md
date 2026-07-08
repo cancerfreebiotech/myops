@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.8.0 — AI 政策問答向量檢索（2026-07-08）
+
+### Added
+- **向量檢索（RAG）**：AI 政策問答改用 pgvector 語意檢索——文件切段建立向量索引，提問時取最相關段落作答，文件量大時仍精準快速；未設定 embedding 時自動退回原本的全文模式
+- **Embedding 設定**：「AI 連線」卡片新增 Embedding 小節（模型必填才啟用；端點與 Key 留空自動沿用 AI 連線）；測試連線按鈕會一併實測 embedding 並顯示結果與耗時
+- **重建文件索引按鈕**：初次設定 embedding 後一鍵回填既有文件的索引；之後文件核准、OCR、AI 翻譯完成時會自動增量更新索引
+
+### Notes
+- 向量索引僅含已核准未刪除文件；段落表僅服務端可存取，讀取授權一律走 API 層
+
 ## v0.7.8 — AI 設定整併：一條 AI 連線（2026-07-08）
 
 ### Changed

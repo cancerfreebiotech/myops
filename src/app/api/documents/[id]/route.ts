@@ -54,6 +54,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data, error } = await service.from('documents').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
+  // 核准時建向量索引（fire-and-forget；未設 embedding 時自動略過）
+  if (updates.status === 'approved') {
+    const { indexDocumentSafe } = await import('@/lib/doc-index')
+    await indexDocumentSafe(createAdminClient(), id)
+  }
+
   if (action) {
     // audit_logs 無 authenticated INSERT policy（service role only），須用 admin client 才寫得進去
     const admin = createAdminClient()

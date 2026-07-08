@@ -1,11 +1,13 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { buildLlmConfig, llmComplete } from '@/lib/llm'
+import { embedTexts } from '@/lib/embeddings'
 
 const TEST_TIMEOUT_MS = 20000
 
 // POST /api/admin/settings/ai-test — 測試 AI 連線（admin only）
-// body 帶表單目前的值 { provider, api_key, base_url, model }；api_key 空值時用已儲存的 key。
+// body 帶表單目前的值 { provider, api_key, base_url, model, embed_base_url, embed_api_key, embed_model }；
+// api_key 空值時用已儲存的 key。embed_model 有值時一併測 embedding。
 // 結果（成功/失敗 + 時間）持久化到 system_settings.ai_last_test，設定頁重整後仍可見。
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -26,7 +28,10 @@ export async function POST(request: NextRequest) {
   const cfg = buildLlmConfig({ provider: body.provider, apiKey, baseUrl: body.base_url, model: body.model })
   const at = new Date().toISOString()
 
-  let result: { ok: boolean; model?: string; ms?: number; error?: string; at: string }
+  let result: {
+    ok: boolean; model?: string; ms?: number; error?: string; at: string
+    embedOk?: boolean; embedModel?: string; embedMs?: number; embedError?: string
+  }
   if (!cfg) {
     result = { ok: false, error: 'API Key not set', at }
   } else {
@@ -39,6 +44,29 @@ export async function POST(request: NextRequest) {
       result = { ok: true, model: cfg.model, ms: Date.now() - started, at }
     } catch (e) {
       result = { ok: false, error: String(e instanceof Error ? e.message : e).slice(0, 300), at }
+    }
+  }
+
+  // Embedding 一併測（表單有填 embed_model 時；URL/Key 留空沿用 AI 連線的值）
+  const embedModel = (body.embed_model ?? '').trim()
+  if (embedModel && cfg) {
+    const embedCfg = {
+      baseUrl: ((body.embed_base_url ?? '').trim() || cfg.baseUrl).replace(/\/+$/, ''),
+      apiKey: (body.embed_api_key ?? '').trim() || apiKey,
+      model: embedModel,
+    }
+    const started = Date.now()
+    try {
+      await Promise.race([
+        embedTexts(embedCfg, ['ping']),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout (20s)')), TEST_TIMEOUT_MS)),
+      ])
+      result.embedOk = true
+      result.embedModel = embedModel
+      result.embedMs = Date.now() - started
+    } catch (e) {
+      result.embedOk = false
+      result.embedError = String(e instanceof Error ? e.message : e).slice(0, 300)
     }
   }
 

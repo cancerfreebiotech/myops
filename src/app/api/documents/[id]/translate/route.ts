@@ -67,5 +67,9 @@ ${doc.content_zh}`
     detail: { provider: llm.provider, model: llm.model },
   })
 
+  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
+  const { indexDocumentSafe } = await import('@/lib/doc-index')
+  await indexDocumentSafe(admin, id)
+
   return NextResponse.json({ data: translations })
 }

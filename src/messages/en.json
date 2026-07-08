@@ -1065,7 +1065,20 @@
       "aiStatusOcr": "Document OCR (vision model)",
       "aiStatusReady": "Ready",
       "aiStatusNoKey": "API Key not set",
-      "aiStatusFlagOff": "Feature flag (ask_ai) is off"
+      "aiStatusFlagOff": "Feature flag (ask_ai) is off",
+      "aiEmbedTitle": "Embedding (vector search)",
+      "aiEmbedHint": "Set an embedding model to enable vector retrieval for policy Q&A; endpoint and key fall back to the AI connection above when blank",
+      "aiEmbedModel": "Embedding model (required to enable)",
+      "aiEmbedBaseUrl": "Embedding endpoint (optional)",
+      "aiEmbedApiKey": "Embedding API Key (optional)",
+      "aiEmbedInherit": "Blank = inherit AI connection",
+      "aiReindex": "Rebuild document index",
+      "aiReindexing": "Indexing…",
+      "aiReindexDone": "Indexed {docs} documents ({chunks} chunks)",
+      "aiTestEmbedOk": "Embedding OK ({model}, {ms} ms)",
+      "aiTestEmbedFail": "Embedding failed: {error}",
+      "aiStatusVector": "Vector search (policy Q&A)",
+      "aiStatusNoEmbedModel": "Embedding model not set (full-text mode)"
     },
     "audit": {
       "title": "Audit Logs",

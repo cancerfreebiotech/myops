@@ -13,7 +13,7 @@ import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flag-keys'
 const SENSITIVE_KEYS = ['teams_bot_secret', 'ai_api_key']
 
 // AI 連線設定由專屬卡片渲染（不走通用欄位列表）
-const AI_KEYS = ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model', 'ai_last_test']
+const AI_KEYS = ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model', 'ai_last_test', 'ai_embed_base_url', 'ai_embed_api_key', 'ai_embed_model']
 
 const AI_PROVIDERS = ['openai', 'anthropic', 'gemini', 'custom'] as const
 const AI_DEFAULT_MODEL: Record<string, string> = {
@@ -23,7 +23,10 @@ const AI_DEFAULT_MODEL: Record<string, string> = {
   custom: '',
 }
 
-interface AiTestResult { ok: boolean; model?: string; ms?: number; error?: string; at: string }
+interface AiTestResult {
+  ok: boolean; model?: string; ms?: number; error?: string; at: string
+  embedOk?: boolean; embedModel?: string; embedMs?: number; embedError?: string
+}
 
 /** Map DB setting keys to i18n keys under admin.settings.* */
 const SETTING_I18N_KEY: Record<string, string> = {
@@ -76,10 +79,21 @@ export function SettingsClient({ settings, featureFlags }: Props) {
 
   const aiProvider = values['ai_provider'] || 'gemini'
   const aiKeySet = !!(values['ai_api_key'] ?? '').trim()
+  const embedModelSet = !!(values['ai_embed_model'] ?? '').trim()
+  const [reindexing, setReindexing] = useState(false)
+
+  const handleReindex = async () => {
+    setReindexing(true)
+    const res = await fetch('/api/admin/settings/reindex-docs', { method: 'POST' })
+    const { data, error } = await res.json()
+    setReindexing(false)
+    if (error) { toast.error(error); return }
+    toast.success(t('aiReindexDone', { docs: data.docs, chunks: data.chunks }))
+  }
 
   const handleSaveAi = async () => {
     setAiSaving(true)
-    for (const key of ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model']) {
+    for (const key of ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model', 'ai_embed_base_url', 'ai_embed_api_key', 'ai_embed_model']) {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,6 +117,9 @@ export function SettingsClient({ settings, featureFlags }: Props) {
         api_key: values['ai_api_key'],
         base_url: values['ai_base_url'],
         model: values['ai_model'],
+        embed_base_url: values['ai_embed_base_url'],
+        embed_api_key: values['ai_embed_api_key'],
+        embed_model: values['ai_embed_model'],
       }),
     })
     const { data, error } = await res.json()
@@ -196,6 +213,11 @@ export function SettingsClient({ settings, featureFlags }: Props) {
       note: !aiKeySet ? t('aiStatusNoKey') : !flags.ask_ai ? t('aiStatusFlagOff') : t('aiStatusReady'),
     },
     { label: t('aiStatusOcr'), ok: aiKeySet, note: aiKeySet ? t('aiStatusReady') : t('aiStatusNoKey') },
+    {
+      label: t('aiStatusVector'),
+      ok: aiKeySet && embedModelSet,
+      note: !aiKeySet ? t('aiStatusNoKey') : embedModelSet ? t('aiStatusReady') : t('aiStatusNoEmbedModel'),
+    },
   ]
 
   return (
@@ -302,6 +324,40 @@ export function SettingsClient({ settings, featureFlags }: Props) {
               />
             </div>
           )}
+
+          {/* Embedding（向量檢索）：URL/Key 留空沿用上方 AI 連線；model 必填才啟用 */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('aiEmbedTitle')}</p>
+            <p className="text-xs text-slate-400 mt-0.5 mb-3">{t('aiEmbedHint')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">{t('aiEmbedModel')}</label>
+                <Input
+                  value={values['ai_embed_model'] ?? ''}
+                  onChange={e => setValues(s => ({ ...s, ai_embed_model: e.target.value }))}
+                  placeholder="text-embedding-3-small / text-embedding-004 / …"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">{t('aiEmbedBaseUrl')}</label>
+                <Input
+                  value={values['ai_embed_base_url'] ?? ''}
+                  onChange={e => setValues(s => ({ ...s, ai_embed_base_url: e.target.value }))}
+                  placeholder={t('aiEmbedInherit')}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 block mb-1">{t('aiEmbedApiKey')}</label>
+                <Input
+                  type="password"
+                  value={values['ai_embed_api_key'] ?? ''}
+                  onChange={e => setValues(s => ({ ...s, ai_embed_api_key: e.target.value }))}
+                  placeholder={t('aiEmbedInherit')}
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <Button size="sm" className="min-h-[36px]" onClick={handleSaveAi} disabled={aiSaving}>
               <Save size={13} className="mr-1" />{aiSaving ? tc('saving') : tc('save')}
@@ -309,15 +365,29 @@ export function SettingsClient({ settings, featureFlags }: Props) {
             <Button size="sm" variant="outline" className="min-h-[36px]" onClick={handleTestAi} disabled={aiTesting}>
               <PlugZap size={13} className="mr-1" />{aiTesting ? t('aiTesting') : t('aiTest')}
             </Button>
-            {aiLastTest && (
-              <span className={`inline-flex items-center gap-1 text-xs ${aiLastTest.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+            {embedModelSet && (
+              <Button size="sm" variant="outline" className="min-h-[36px]" onClick={handleReindex} disabled={reindexing}>
+                {reindexing ? t('aiReindexing') : t('aiReindex')}
+              </Button>
+            )}
+          </div>
+          {aiLastTest && (
+            <div className="space-y-1">
+              <p className={`inline-flex items-center gap-1 text-xs ${aiLastTest.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                 {aiLastTest.ok
                   ? <><CheckCircle2 size={13} /> {t('aiTestOk', { model: aiLastTest.model ?? '', ms: aiLastTest.ms ?? 0 })}</>
                   : <><XCircle size={13} /> {t('aiTestFail', { error: aiLastTest.error ?? '' })}</>}
                 <span className="text-slate-400">· {formatTestTime(aiLastTest.at)}</span>
-              </span>
-            )}
-          </div>
+              </p>
+              {aiLastTest.embedOk !== undefined && (
+                <p className={`flex items-center gap-1 text-xs ${aiLastTest.embedOk ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                  {aiLastTest.embedOk
+                    ? <><CheckCircle2 size={13} /> {t('aiTestEmbedOk', { model: aiLastTest.embedModel ?? '', ms: aiLastTest.embedMs ?? 0 })}</>
+                    : <><XCircle size={13} /> {t('aiTestEmbedFail', { error: aiLastTest.embedError ?? '' })}</>}
+                </p>
+              )}
+            </div>
+          )}
           {/* 功能狀態一覽 */}
           <div className="rounded-md border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
             {aiStatusRows.map(row => (

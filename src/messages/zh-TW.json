@@ -1065,7 +1065,20 @@
       "aiStatusOcr": "文件 OCR（視覺模型）",
       "aiStatusReady": "可用",
       "aiStatusNoKey": "未設定 API Key",
-      "aiStatusFlagOff": "功能開關（ask_ai）未開啟"
+      "aiStatusFlagOff": "功能開關（ask_ai）未開啟",
+      "aiEmbedTitle": "Embedding（向量檢索）",
+      "aiEmbedHint": "填入 embedding 模型即啟用政策問答的向量檢索；端點與 Key 留空時沿用上方 AI 連線",
+      "aiEmbedModel": "Embedding 模型（必填才啟用）",
+      "aiEmbedBaseUrl": "Embedding 端點（選填）",
+      "aiEmbedApiKey": "Embedding API Key（選填）",
+      "aiEmbedInherit": "留空沿用 AI 連線",
+      "aiReindex": "重建文件索引",
+      "aiReindexing": "索引中…",
+      "aiReindexDone": "已索引 {docs} 份文件（{chunks} 段）",
+      "aiTestEmbedOk": "Embedding 測試成功（{model}，{ms} ms）",
+      "aiTestEmbedFail": "Embedding 測試失敗：{error}",
+      "aiStatusVector": "向量檢索（政策問答）",
+      "aiStatusNoEmbedModel": "未設定 Embedding 模型（使用全文模式）"
     },
     "audit": {
       "title": "稽核紀錄",

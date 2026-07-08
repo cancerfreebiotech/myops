@@ -101,5 +101,9 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     doc_id: id, user_id: user.id, action: 'ocr', detail: { chars: text.length },
   })
 
+  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
+  const { indexDocumentSafe } = await import('@/lib/doc-index')
+  await indexDocumentSafe(admin, id)
+
   return NextResponse.json({ data: { ocr_text: text, chars: text.length } })
 }
