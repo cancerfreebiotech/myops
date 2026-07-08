@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.7.8 — AI 設定整併：一條 AI 連線（2026-07-08）
+
+### Changed
+- **AI 設定大幅簡化**：原本 7 個欄位（兩把 Key、獨立 OCR 端點）整併成一張「AI 連線」卡片——供應商下拉（OpenAI / Anthropic / Google Gemini / 自訂 OpenAI 相容）、API Key、模型（留空用預設）；端點欄位只在選「自訂」時出現
+- **測試連線按鈕**：一鍵實測，按鈕旁顯示成功（所用模型＋耗時）或失敗原因，附測試時間；結果會保存，重新整理後仍可見上次測試紀錄
+- **AI 功能狀態一覽**：設定卡下方直接顯示 AI 翻譯／AI 政策問答／文件 OCR 目前是「可用」還是缺什麼（未設 Key、flag 未開）
+- **文件 OCR 改用 AI 連線的視覺模型**：不再需要獨立 OCR 服務端點；Gemini／Anthropic 支援圖片與 PDF，OpenAI 相容端點支援圖片
+- 舊的 Gemini API Key 設定自動搬移到新的 AI 連線後移除
+
 ## v0.7.7 — AI 供應商通用設定（2026-07-08）
 
 ### Changed

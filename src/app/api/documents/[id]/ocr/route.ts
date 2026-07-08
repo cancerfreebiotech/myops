@@ -1,19 +1,23 @@
 import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { getLlmConfig, llmComplete } from '@/lib/llm'
 
-// OCR 抽取逾時（ms）：多模態 LLM / Vision 代理可能較慢
-const OCR_TIMEOUT_MS = 60000
+// 檔案大小上限（base64 入 prompt；再大的掃描檔請分割）
+const OCR_MAX_FILE_BYTES = 15 * 1024 * 1024
+
+const MIME_BY_EXT: Record<string, string> = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+}
 
 /**
  * 對單一文件執行 OCR 抽取並存回 documents.ocr_text。
- *
- * OCR ADAPTER 契約（通用、可由管理員設定 endpoint）：
- *   POST {ocr_api_url}
- *     Header: Authorization: Bearer {ocr_api_key}（未設 key 則不帶）
- *     Body(JSON): { file_url: string(短期 signed URL), file_name: string|null, doc_id: string }
- *     預期回應(JSON): { text: string }
- *   管理員可把 endpoint 指向：自架 OCR HTTP 服務、雲端 Vision 代理、
- *   或多模態 LLM 代理（收 signed URL → 下載檔案 → 回純文字）。
+ * 使用 /admin/settings「AI 連線」的視覺模型（gemini / anthropic 支援圖片與 PDF；
+ * openai 相容端點支援圖片，PDF 會回明確錯誤）。無獨立 OCR 服務。
  */
 export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -56,48 +60,36 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   if (!doc || doc.deleted_at) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!doc.file_url) return NextResponse.json({ error: 'No file to OCR', code: 'NO_FILE' }, { status: 400 })
 
-  const { data: settings } = await admin
-    .from('system_settings')
-    .select('key, value')
-    .in('key', ['ocr_api_url', 'ocr_api_key'])
-  const ocrUrl = settings?.find(s => s.key === 'ocr_api_url')?.value?.trim()
-  const ocrKey = settings?.find(s => s.key === 'ocr_api_key')?.value?.trim()
-  if (!ocrUrl) {
-    return NextResponse.json({ error: 'OCR endpoint not configured', code: 'NO_OCR_ENDPOINT' }, { status: 400 })
+  const llm = await getLlmConfig(admin)
+  if (!llm) {
+    return NextResponse.json({ error: 'AI API Key not configured', code: 'NO_AI_KEY' }, { status: 400 })
   }
 
-  // file_url 為 'documents' bucket 內的相對路徑；產生短期 signed URL 供 OCR 服務抓檔
-  const { data: signed } = await admin.storage
-    .from('documents')
-    .createSignedUrl(doc.file_url, 600)
-  if (!signed?.signedUrl) return NextResponse.json({ error: 'Failed to sign file URL' }, { status: 400 })
+  // 判斷檔案型別（依副檔名）；file_url 為 'documents' bucket 內的相對路徑
+  const ext = (doc.file_name ?? doc.file_url).split('.').pop()?.toLowerCase() ?? ''
+  const mimeType = MIME_BY_EXT[ext]
+  if (!mimeType) {
+    return NextResponse.json({ error: `Unsupported file type for OCR: .${ext}`, code: 'OCR_ERROR' }, { status: 400 })
+  }
+
+  const { data: blob, error: dlErr } = await admin.storage.from('documents').download(doc.file_url)
+  if (dlErr || !blob) return NextResponse.json({ error: 'Failed to download file' }, { status: 400 })
+  if (blob.size > OCR_MAX_FILE_BYTES) {
+    return NextResponse.json({ error: 'File too large for OCR (max 15MB)', code: 'OCR_ERROR' }, { status: 400 })
+  }
+  const base64 = Buffer.from(await blob.arrayBuffer()).toString('base64')
 
   let text = ''
   try {
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), OCR_TIMEOUT_MS)
-    const res = await fetch(ocrUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(ocrKey ? { Authorization: `Bearer ${ocrKey}` } : {}),
-      },
-      body: JSON.stringify({
-        file_url: signed.signedUrl,
-        file_name: doc.file_name,
-        doc_id: doc.id,
-      }),
-      signal: ctrl.signal,
-    })
-    clearTimeout(timer)
-    if (!res.ok) {
-      return NextResponse.json({ error: `OCR endpoint error (${res.status})`, code: 'OCR_ERROR' }, { status: 502 })
-    }
-    const json = await res.json().catch(() => null)
-    text = (json?.text ?? '').toString().trim()
+    text = (await llmComplete(
+      llm,
+      '抽取這份文件中的所有文字。盡量保持原始段落與排版順序，僅輸出抽取到的文字本身，不要加任何說明或評論。若完全沒有文字，輸出空字串。',
+      { temperature: 0, maxTokens: 8192 },
+      { mimeType, base64 }
+    )).trim()
   } catch (e) {
-    const msg = e instanceof Error && e.name === 'AbortError' ? 'OCR timeout' : 'OCR request failed'
-    return NextResponse.json({ error: msg, code: 'OCR_ERROR' }, { status: 502 })
+    console.error('[ocr] vision LLM error:', e)
+    return NextResponse.json({ error: `OCR failed: ${String(e).slice(0, 200)}`, code: 'OCR_ERROR' }, { status: 502 })
   }
 
   if (!text) return NextResponse.json({ error: 'OCR returned empty text', code: 'OCR_EMPTY' }, { status: 422 })

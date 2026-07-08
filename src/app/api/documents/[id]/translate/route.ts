@@ -21,7 +21,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
   if (!doc.content_zh) return NextResponse.json({ error: t('documentTranslate.noChineseContent') }, { status: 400 })
 
-  // AI 設定（供應商/key/端點/模型由 /admin/settings 配置；舊 gemini_api_key 向下相容）
+  // AI 連線（供應商/key/端點/模型由 /admin/settings 的「AI 連線」配置）
   const llm = await getLlmConfig(service)
   if (!llm) return NextResponse.json({ error: t('documentTranslate.geminiKeyNotSet') }, { status: 400 })
 

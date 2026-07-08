@@ -3,23 +3,30 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Eye, EyeOff, Save } from 'lucide-react'
+import { Eye, EyeOff, Save, PlugZap, CheckCircle2, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { FEATURE_KEYS, type FeatureFlagKey } from '@/lib/feature-flag-keys'
 
-const SENSITIVE_KEYS = ['gemini_api_key', 'teams_bot_secret', 'ocr_api_key', 'ai_api_key']
+const SENSITIVE_KEYS = ['teams_bot_secret', 'ai_api_key']
+
+// AI 連線設定由專屬卡片渲染（不走通用欄位列表）
+const AI_KEYS = ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model', 'ai_last_test']
+
+const AI_PROVIDERS = ['openai', 'anthropic', 'gemini', 'custom'] as const
+const AI_DEFAULT_MODEL: Record<string, string> = {
+  openai: 'gpt-4o-mini',
+  anthropic: 'claude-haiku-4-5-20251001',
+  gemini: 'gemini-1.5-flash',
+  custom: '',
+}
+
+interface AiTestResult { ok: boolean; model?: string; ms?: number; error?: string; at: string }
 
 /** Map DB setting keys to i18n keys under admin.settings.* */
 const SETTING_I18N_KEY: Record<string, string> = {
-  ai_provider: 'aiProvider',
-  ai_api_key: 'aiApiKey',
-  ai_base_url: 'aiBaseUrl',
-  ai_model: 'aiModel',
-  gemini_api_key: 'geminiApiKey',
-  ocr_api_url: 'ocrApiUrl',
-  ocr_api_key: 'ocrApiKey',
   default_clock_in_time: 'defaultClockIn',
   default_clock_out_time: 'defaultClockOut',
   auto_clock_check_delay_minutes: 'autoClockCheckDelay',
@@ -58,6 +65,54 @@ export function SettingsClient({ settings, featureFlags }: Props) {
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
   const [saving, setSaving] = useState<string | null>(null)
   const [togglingFeature, setTogglingFeature] = useState<string | null>(null)
+  const [aiTesting, setAiTesting] = useState(false)
+  const [aiSaving, setAiSaving] = useState(false)
+  const [aiLastTest, setAiLastTest] = useState<AiTestResult | null>(() => {
+    try {
+      const raw = settings.find(s => s.key === 'ai_last_test')?.value
+      return raw ? (JSON.parse(raw) as AiTestResult) : null
+    } catch { return null }
+  })
+
+  const aiProvider = values['ai_provider'] || 'gemini'
+  const aiKeySet = !!(values['ai_api_key'] ?? '').trim()
+
+  const handleSaveAi = async () => {
+    setAiSaving(true)
+    for (const key of ['ai_provider', 'ai_api_key', 'ai_base_url', 'ai_model']) {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, value: values[key] ?? '' }),
+      })
+      const { error } = await res.json()
+      if (error) { toast.error(error); setAiSaving(false); return }
+    }
+    setAiSaving(false)
+    toast.success(tc('saved'))
+    router.refresh()
+  }
+
+  const handleTestAi = async () => {
+    setAiTesting(true)
+    const res = await fetch('/api/admin/settings/ai-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: values['ai_provider'],
+        api_key: values['ai_api_key'],
+        base_url: values['ai_base_url'],
+        model: values['ai_model'],
+      }),
+    })
+    const { data, error } = await res.json()
+    setAiTesting(false)
+    if (error) { toast.error(error); return }
+    setAiLastTest(data)
+  }
+
+  const formatTestTime = (iso: string) =>
+    new Date(iso).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false })
 
   const handleSave = async (key: string) => {
     setSaving(key)
@@ -115,8 +170,9 @@ export function SettingsClient({ settings, featureFlags }: Props) {
     performance: 'performance',
   }
 
+  const generalSettings = settings.filter(s => !AI_KEYS.includes(s.key))
+
   const groupDefs: [string, (key: string) => boolean][] = [
-    [t('groupAi'), k => k.startsWith('ai_') || k.includes('gemini') || k.includes('ocr')],
     [t('groupClock'), k => k.includes('clock') || k.includes('intern_missed') || k.includes('fulltime_auto')],
     [t('groupNotification'), k => k.includes('contract_reminder') || k.includes('daily_digest') || k.includes('teams_')],
     [t('groupSystem'), k => ['maintenance_mode', 'mfa_approval_session_minutes', 'overtime_min_advance_hours', 'project_ot_coo_threshold_hours', 'payroll_pay_day', 'payroll_auto_generate_day'].includes(k)],
@@ -124,13 +180,23 @@ export function SettingsClient({ settings, featureFlags }: Props) {
   const grouped = new Set<string>()
   const groups: Record<string, Setting[]> = {}
   for (const [name, matcher] of groupDefs) {
-    groups[name] = settings.filter(s => {
+    groups[name] = generalSettings.filter(s => {
       if (matcher(s.key)) { grouped.add(s.key); return true }
       return false
     })
   }
-  const ungrouped = settings.filter(s => !grouped.has(s.key))
+  const ungrouped = generalSettings.filter(s => !grouped.has(s.key))
   if (ungrouped.length > 0) groups[t('groupOther')] = ungrouped
+
+  const aiStatusRows: { label: string; ok: boolean; note: string }[] = [
+    { label: t('aiStatusTranslate'), ok: aiKeySet, note: aiKeySet ? t('aiStatusReady') : t('aiStatusNoKey') },
+    {
+      label: t('aiStatusAskAi'),
+      ok: aiKeySet && !!flags.ask_ai,
+      note: !aiKeySet ? t('aiStatusNoKey') : !flags.ask_ai ? t('aiStatusFlagOff') : t('aiStatusReady'),
+    },
+    { label: t('aiStatusOcr'), ok: aiKeySet, note: aiKeySet ? t('aiStatusReady') : t('aiStatusNoKey') },
+  ]
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -174,6 +240,95 @@ export function SettingsClient({ settings, featureFlags }: Props) {
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* AI 連線（翻譯 / 政策問答 / OCR 共用） */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden">
+        <div className="px-5 py-3 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('aiConnTitle')}</h3>
+          <p className="text-xs text-slate-400 mt-0.5">{t('aiConnDesc')}</p>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">{t('aiProvider')}</label>
+              <Select value={aiProvider} onValueChange={v => setValues(s => ({ ...s, ai_provider: v ?? 'gemini' }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {AI_PROVIDERS.map(p => (
+                    <SelectItem key={p} value={p}>
+                      {p === 'openai' ? 'OpenAI' : p === 'anthropic' ? 'Anthropic' : p === 'gemini' ? 'Google Gemini' : t('aiProviderCustom')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">{t('aiModel')}</label>
+              <Input
+                value={values['ai_model'] ?? ''}
+                onChange={e => setValues(s => ({ ...s, ai_model: e.target.value }))}
+                placeholder={AI_DEFAULT_MODEL[aiProvider] || t('aiModelCustomPlaceholder')}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">{t('aiApiKey')}</label>
+            <div className="relative">
+              <Input
+                type={showKeys['ai_api_key'] ? 'text' : 'password'}
+                value={showKeys['ai_api_key'] ? (values['ai_api_key'] ?? '') : '•'.repeat(Math.min((values['ai_api_key'] ?? '').length, 24))}
+                onChange={e => showKeys['ai_api_key'] && setValues(s => ({ ...s, ai_api_key: e.target.value }))}
+                onFocus={() => setShowKeys(k => ({ ...k, ai_api_key: true }))}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowKeys(k => ({ ...k, ai_api_key: !k.ai_api_key }))}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                {showKeys['ai_api_key'] ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+          {aiProvider === 'custom' && (
+            <div>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 block mb-1.5">{t('aiBaseUrl')}</label>
+              <Input
+                value={values['ai_base_url'] ?? ''}
+                onChange={e => setValues(s => ({ ...s, ai_base_url: e.target.value }))}
+                placeholder="https://your-endpoint.example.com"
+              />
+            </div>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button size="sm" className="min-h-[36px]" onClick={handleSaveAi} disabled={aiSaving}>
+              <Save size={13} className="mr-1" />{aiSaving ? tc('saving') : tc('save')}
+            </Button>
+            <Button size="sm" variant="outline" className="min-h-[36px]" onClick={handleTestAi} disabled={aiTesting}>
+              <PlugZap size={13} className="mr-1" />{aiTesting ? t('aiTesting') : t('aiTest')}
+            </Button>
+            {aiLastTest && (
+              <span className={`inline-flex items-center gap-1 text-xs ${aiLastTest.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                {aiLastTest.ok
+                  ? <><CheckCircle2 size={13} /> {t('aiTestOk', { model: aiLastTest.model ?? '', ms: aiLastTest.ms ?? 0 })}</>
+                  : <><XCircle size={13} /> {t('aiTestFail', { error: aiLastTest.error ?? '' })}</>}
+                <span className="text-slate-400">· {formatTestTime(aiLastTest.at)}</span>
+              </span>
+            )}
+          </div>
+          {/* 功能狀態一覽 */}
+          <div className="rounded-md border border-slate-100 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
+            {aiStatusRows.map(row => (
+              <div key={row.label} className="px-3 py-2 flex items-center justify-between text-sm">
+                <span className="text-slate-600 dark:text-slate-300">{row.label}</span>
+                <span className={`text-xs inline-flex items-center gap-1 ${row.ok ? 'text-green-600 dark:text-green-400' : 'text-amber-500'}`}>
+                  {row.ok ? <CheckCircle2 size={12} /> : <XCircle size={12} />}{row.note}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
