@@ -105,7 +105,10 @@ export async function llmComplete(
           { type: 'image_url', image_url: { url: `data:${media.mimeType};base64,${media.base64}` } },
         ]
       : prompt
-    const res = await fetch(`${cfg.baseUrl}/v1/chat/completions`, {
+    // 端點容錯：使用者常照 OpenAI SDK 慣例貼含 /v1（甚至完整 /v1/chat/completions）的 URL，
+    // 一律正規化成 base 再補完整路徑，避免 /v1/v1/... 的 404
+    const chatUrl = cfg.baseUrl.replace(/\/v1(\/chat\/completions)?$/, '') + '/v1/chat/completions'
+    const res = await fetch(chatUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cfg.apiKey}` },
       body: JSON.stringify({
@@ -115,7 +118,7 @@ export async function llmComplete(
         max_tokens: maxTokens,
       }),
     })
-    if (!res.ok) throw new Error(`${cfg.provider} ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    if (!res.ok) throw new Error(`${cfg.provider} ${res.status} (${chatUrl}): ${(await res.text()).slice(0, 300)}`)
     const data = await res.json()
     const text = data.choices?.[0]?.message?.content?.trim()
     if (!text) throw new Error(`${cfg.provider}: empty response`)
