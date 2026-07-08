@@ -36,6 +36,7 @@ export interface OvertimeRequest {
   end_time: string
   total_hours: number
   ot_type: string
+  day_type: string
   status: string
   reason: string | null
   user?: { id: string; display_name: string | null } | null
@@ -54,9 +55,9 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const t = useTranslations('overtime')
   const tc = useTranslations('common')
 
-  const OT_TYPE_LABELS: Record<string, string> = {
-    weekday: t('typeWeekday'), weekend: t('typeWeekend'), holiday: t('typeHoliday'),
-    project: t('typeProject'), on_call: t('typeOnCall'), emergency: t('typeEmergency'),
+  // 勞基法日別（分段計薪依據）：工作日 / 休息日 / 國定假日
+  const DAY_TYPE_LABELS: Record<string, string> = {
+    weekday: t('dayTypeWeekday'), rest_day: t('dayTypeRestDay'), holiday: t('dayTypeHoliday'),
   }
 
   const [tab, setTab] = useState<'apply' | 'records' | 'approve'>('records')
@@ -69,9 +70,18 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const [otDate, setOtDate] = useState('')
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
-  const [otType, setOtType] = useState('weekday')
+  const [dayType, setDayType] = useState('weekday')
   const [projectId, setProjectId] = useState('')
   const [reason, setReason] = useState('')
+
+  // 選日期時自動判日別（週六日 → 休息日）；國定假日無資料來源，由申請人手動改選
+  const handleDateChange = (v: string) => {
+    setOtDate(v)
+    if (v) {
+      const dow = new Date(`${v}T00:00:00`).getDay()
+      setDayType(dow === 0 || dow === 6 ? 'rest_day' : 'weekday')
+    }
+  }
 
   const fetchRecords = useCallback(async () => {
     const res = await fetch('/api/overtime/requests?view=mine')
@@ -102,14 +112,14 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
     const res = await fetch('/api/overtime/requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ot_date: otDate, start_time: startTime, end_time: endTime, reason, ot_type: otType, project_id: projectId || null }),
+      body: JSON.stringify({ ot_date: otDate, start_time: startTime, end_time: endTime, reason, day_type: dayType, project_id: projectId || null }),
     })
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
     toast.success(t('applicationSubmitted'))
     setApplyOpen(false)
-    setOtDate(''); setStartTime(''); setEndTime(''); setReason(''); setOtType('weekday'); setProjectId('')
+    setOtDate(''); setStartTime(''); setEndTime(''); setReason(''); setDayType('weekday'); setProjectId('')
     fetchRecords()
   }
 
@@ -171,7 +181,10 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
               ) : records.map((r) => (
                 <tr key={r.id} className="bg-white dark:bg-slate-800">
                   <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{r.ot_date}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{OT_TYPE_LABELS[r.ot_type] ?? r.ot_type}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                    {DAY_TYPE_LABELS[r.day_type] ?? r.day_type}
+                    {r.project && <span className="ml-1 text-xs text-slate-400">· {r.project.name}</span>}
+                  </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_time} ~ {r.end_time}</td>
                   <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.total_hours} h</td>
                   <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
@@ -211,16 +224,17 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('overtimeDate')}</label>
-                <Input type="date" value={otDate} onChange={e => setOtDate(e.target.value)} className="mt-1" />
+                <Input type="date" value={otDate} onChange={e => handleDateChange(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('overtimeType')}</label>
-                <Select value={otType} onValueChange={v => setOtType(v ?? 'weekday')}>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('dayType')}</label>
+                <Select value={dayType} onValueChange={v => setDayType(v ?? 'weekday')}>
                   <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(OT_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                    {Object.entries(DAY_TYPE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-slate-400 mt-1">{t('dayTypeAutoHint')}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { notifyCooOverThreshold } from '@/lib/overtime-coo-notify'
+import { DAY_TYPES, suggestDayType, type OvertimeDayType } from '@/lib/overtime-pay'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -12,9 +13,9 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
-  const { ot_date, start_time, end_time, reason, ot_type, project_id } = body
+  const { ot_date, start_time, end_time, reason, day_type, project_id } = body
 
-  if (!ot_date || !start_time || !end_time || !reason || !ot_type) {
+  if (!ot_date || !start_time || !end_time || !reason) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
@@ -24,8 +25,11 @@ export async function POST(request: NextRequest) {
   if (endMinutes <= startMinutes) endMinutes += 24 * 60
   const total_hours = (endMinutes - startMinutes) / 60
 
-  // DB 欄位為 hours / request_type（無 total_hours / ot_type / approver_id）
-  const requestType = ot_type === 'project' ? 'project' : 'regular'
+  // 日別（勞基法分段計薪依據）：未給或非法值時依日期自動判斷（週六日 → rest_day）
+  const dayType: OvertimeDayType = DAY_TYPES.includes(day_type) ? day_type : suggestDayType(ot_date)
+
+  // request_type 管「是否掛專案」，由 project_id 決定（與日別正交）
+  const requestType = project_id ? 'project' : 'regular'
   const { data, error } = await service.from('overtime_requests').insert({
     user_id: user.id,
     ot_date,
@@ -34,6 +38,7 @@ export async function POST(request: NextRequest) {
     hours: total_hours,
     reason,
     request_type: requestType,
+    day_type: dayType,
     project_id: project_id ?? null,
     status: 'pending',
   }).select().single()

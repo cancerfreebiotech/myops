@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
+import { weightedOvertimeHours, type OvertimeDayType } from '@/lib/overtime-pay'
 
 interface InsuranceBracket {
   insured_salary: number
@@ -90,18 +91,20 @@ export async function POST(request: NextRequest) {
   // 3. Get approved overtime for the month
   const { data: overtimeRecords } = await service
     .from('overtime_requests')
-    .select('user_id, hours, overtime_rate_id')
+    .select('user_id, hours, day_type')
     .in('user_id', userIds)
     .in('status', ['approved', 'coo_approved', 'lead_approved'])
     .gte('ot_date', `${year}-${String(month).padStart(2, '0')}-01`)
     .lte('ot_date', `${lastDayOfMonth(year, month)}`)
 
-  // 4. Get overtime rates
+  // 4. Get overtime rates（依 tier_key 分段對應；查無時 weightedOvertimeHours 退回法定倍率）
   const { data: rates } = await service
     .from('overtime_rates')
-    .select('id, rate')
+    .select('tier_key, rate')
 
-  const rateMap = new Map(rates?.map(r => [r.id, Number(r.rate)]) ?? [])
+  const tierRateMap = new Map(
+    (rates ?? []).filter(r => r.tier_key).map(r => [r.tier_key as string, Number(r.rate)])
+  )
 
   // 5. Get unpaid leave days (salary_ratio = 0)
   const { data: leaveRequests } = await service
@@ -156,13 +159,18 @@ export async function POST(request: NextRequest) {
     const baseSalary = Number(profile?.monthly_salary ?? 0)
     if (baseSalary === 0) continue
 
-    // Calculate overtime pay
+    // Calculate overtime pay（勞基法 §24/§39 依日別分段：平日前2h×1.34/後2h×1.67、
+    // 休息日 2h/2-8h/8h+ 三段、國定假日 ×2；倍率可由 overtime_rates 調整）
     const empOT = overtimeRecords?.filter(o => o.user_id === emp.id) ?? []
     let overtimePay = 0
+    const hourlyBase = baseSalary / 30 / 8
     for (const ot of empOT) {
-      const rate = rateMap.get(ot.overtime_rate_id) ?? 1.34
-      const hourlyBase = baseSalary / 30 / 8
-      overtimePay += hourlyBase * rate * Number(ot.hours)
+      const weighted = weightedOvertimeHours(
+        (ot.day_type ?? 'weekday') as OvertimeDayType,
+        Number(ot.hours),
+        k => tierRateMap.get(k)
+      )
+      overtimePay += hourlyBase * weighted
     }
 
     // Calculate unpaid leave deduction

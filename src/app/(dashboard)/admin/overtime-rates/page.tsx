@@ -27,7 +27,6 @@ export default async function OvertimeRatesPage() {
     id: r.id,
     ot_type: locale === 'en' ? r.name_en : locale === 'ja' ? r.name_ja : r.name_zh,
     multiplier: r.rate,
-    is_active: true,
   }))
 
   const t = await getTranslations('nav')

@@ -1,6 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { RoleSettingsSection } from '@/components/admin/RoleSettingsSection'
 import { LeaveTypesManager } from '@/app/(dashboard)/admin/leave-types/LeaveTypesManager'
@@ -46,18 +46,34 @@ export default async function HRSettingsPage() {
   const byKey = Object.fromEntries((rows ?? []).map(r => [r.key, r.value ?? '']))
   const pick = (keys: readonly string[]) => keys.map(k => ({ key: k, value: byKey[k] ?? '' }))
 
-  // Leave types
-  const { data: leaveTypes } = await service
+  // Leave types（真實欄位 name_zh/applicable_to/salary_ratio/...，映射成 LeaveTypesManager 期望的形狀）
+  const locale = await getLocale()
+  const { data: rawLeaveTypes } = await service
     .from('leave_types')
-    .select('*')
-    .is('deleted_at', null)
-    .order('name')
+    .select('id, name_zh, applicable_to, salary_ratio, default_quota_days, advance_days, is_active')
+    .order('sort_order')
 
-  // Overtime rates
-  const { data: rates } = await service
+  const leaveTypes = (rawLeaveTypes ?? []).map(r => ({
+    id: r.id,
+    name: r.name_zh,
+    applies_to: r.applicable_to,
+    pay_rate: r.salary_ratio >= 1 ? 'full' : r.salary_ratio > 0 ? 'half' : 'none',
+    max_days_per_year: r.default_quota_days,
+    advance_days_required: r.advance_days,
+    is_active: r.is_active,
+  }))
+
+  // Overtime rates（真實欄位 name_zh/name_en/name_ja/rate，映射成 OvertimeRatesManager 期望的形狀）
+  const { data: rawRates } = await service
     .from('overtime_rates')
-    .select('*')
-    .order('ot_type')
+    .select('id, name_zh, name_en, name_ja, rate')
+    .order('sort_order')
+
+  const rates = (rawRates ?? []).map(r => ({
+    id: r.id,
+    ot_type: locale === 'en' ? r.name_en : locale === 'ja' ? r.name_ja : r.name_zh,
+    multiplier: r.rate,
+  }))
 
   // Leave balances
   const currentYear = new Date().getFullYear()
@@ -70,10 +86,9 @@ export default async function HRSettingsPage() {
 
   const { data: leaveTypesForBalance } = await service
     .from('leave_types')
-    .select('id, name, applies_to')
+    .select('id, name:name_zh, applies_to:applicable_to')
     .eq('is_active', true)
-    .is('deleted_at', null)
-    .order('name')
+    .order('sort_order')
 
   const { data: balances } = await service
     .from('leave_balances')
