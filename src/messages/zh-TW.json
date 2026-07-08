@@ -1022,6 +1022,10 @@
     "settings": {
       "title": "系統設定",
       "description": "管理系統參數設定",
+      "aiProvider": "AI 供應商（openai / anthropic / gemini）",
+      "aiApiKey": "AI API Key（翻譯與政策問答）",
+      "aiBaseUrl": "AI API 端點（選填，支援 OpenAI 相容端點）",
+      "aiModel": "AI 模型（選填，未設用供應商預設）",
       "geminiApiKey": "Gemini API Key（AI 翻譯）",
       "defaultClockIn": "預設上班時間（HH:MM，台灣時間）",
       "defaultClockOut": "預設下班時間（HH:MM，台灣時間）",
@@ -1396,8 +1400,8 @@
     },
     "documentTranslate": {
       "noChineseContent": "無中文內容可翻譯",
-      "geminiKeyNotSet": "尚未設定 Gemini API Key，請至系統設定填入",
-      "geminiApiError": "Gemini API 錯誤: {error}",
+      "geminiKeyNotSet": "尚未設定 AI API Key，請至系統設定填入",
+      "geminiApiError": "AI API 錯誤: {error}",
       "parseFailed": "AI 翻譯結果解析失敗，請重試"
     },
     "leaveRequestItem": {

@@ -1,6 +1,7 @@
 import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { getLlmConfig, llmComplete } from '@/lib/llm'
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const t = await getTranslations('apiErrors')
@@ -20,10 +21,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
   if (!doc.content_zh) return NextResponse.json({ error: t('documentTranslate.noChineseContent') }, { status: 400 })
 
-  // Get Gemini API key from system_settings
-  const { data: setting } = await service.from('system_settings').select('value').eq('key', 'gemini_api_key').single()
-  const geminiKey = setting?.value || process.env.GEMINI_API_KEY
-  if (!geminiKey) return NextResponse.json({ error: t('documentTranslate.geminiKeyNotSet') }, { status: 400 })
+  // AI 設定（供應商/key/端點/模型由 /admin/settings 配置；舊 gemini_api_key 向下相容）
+  const llm = await getLlmConfig(service)
+  if (!llm) return NextResponse.json({ error: t('documentTranslate.geminiKeyNotSet') }, { status: 400 })
 
   const prompt = `You are a professional translator for a biotech company's internal operations system.
 Translate the following Chinese text into both English and Japanese.
@@ -33,25 +33,12 @@ Return ONLY valid JSON in this exact format (no markdown, no explanation):
 Chinese text to translate:
 ${doc.content_zh}`
 
-  const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 },
-      }),
-    }
-  )
-
-  if (!geminiRes.ok) {
-    const err = await geminiRes.text()
-    return NextResponse.json({ error: t('documentTranslate.geminiApiError', { error: err }) }, { status: 502 })
+  let rawText: string
+  try {
+    rawText = await llmComplete(llm, prompt, { temperature: 0.2, maxTokens: 2048 })
+  } catch (e) {
+    return NextResponse.json({ error: t('documentTranslate.geminiApiError', { error: String(e).slice(0, 200) }) }, { status: 502 })
   }
-
-  const geminiData = await geminiRes.json()
-  const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
   let translations: { en: string; ja: string }
   try {
@@ -77,7 +64,7 @@ ${doc.content_zh}`
     doc_id: id,
     user_id: user.id,
     action: 'ai_translate',
-    detail: { provider: 'gemini' },
+    detail: { provider: llm.provider, model: llm.model },
   })
 
   return NextResponse.json({ data: translations })

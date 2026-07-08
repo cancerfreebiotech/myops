@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { getLlmConfig, llmComplete } from '@/lib/llm'
 
 /**
  * 政策問答：以文件庫（已發布且有文字內容的規章/公告/內部文件）為根據回答問題。
@@ -16,9 +17,8 @@ export interface PolicyAnswer {
 export async function answerPolicyQuestion(question: string, lang: string): Promise<PolicyAnswer | { error: 'no_key' | 'no_docs' | 'llm_error' }> {
   const service = await createServiceClient()
 
-  const { data: setting } = await service.from('system_settings').select('value').eq('key', 'gemini_api_key').single()
-  const geminiKey = setting?.value || process.env.GEMINI_API_KEY
-  if (!geminiKey) return { error: 'no_key' }
+  const llm = await getLlmConfig(service)
+  if (!llm) return { error: 'no_key' }
 
   const { data: docs } = await service
     .from('documents')
@@ -55,22 +55,13 @@ ${context}
 
 員工問題：${question}`
 
-  const geminiRes = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 1024 },
-      }),
-    }
-  )
-  if (!geminiRes.ok) return { error: 'llm_error' }
-
-  const geminiData = await geminiRes.json()
-  const answer = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-  if (!answer) return { error: 'llm_error' }
+  let answer: string
+  try {
+    answer = await llmComplete(llm, prompt, { temperature: 0.2, maxTokens: 1024 })
+  } catch (e) {
+    console.error('[policy-qa] LLM error:', e)
+    return { error: 'llm_error' }
+  }
 
   return { answer, sources: included }
 }

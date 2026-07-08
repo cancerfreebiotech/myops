@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.7.7 — AI 供應商通用設定（2026-07-08）
+
+### Changed
+- **AI 設定不再綁定 Gemini**：系統設定新增「AI 供應商」（openai / anthropic / gemini）、「AI API Key」、「AI API 端點」（選填，支援 OpenAI 相容端點如 Groq / Ollama / LiteLLM / 自架 proxy）、「AI 模型」（選填，未設用供應商預設）。AI 翻譯與 AI 政策問答皆改走此設定
+- 舊的 Gemini API Key 設定保留、向下相容（新 Key 未設時自動沿用）
+
+### Notes
+- AI 功能（翻譯／政策問答／OCR）程式碼皆已完成，啟用只需在系統設定填入對應的 Key／端點
+
 ## v0.7.6 — 加班費依勞基法分段計算（2026-07-08）
 
 ### Added

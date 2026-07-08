@@ -1022,6 +1022,10 @@
     "settings": {
       "title": "System Settings",
       "description": "Manage system configuration parameters",
+      "aiProvider": "AI provider (openai / anthropic / gemini)",
+      "aiApiKey": "AI API Key (translation & policy Q&A)",
+      "aiBaseUrl": "AI API endpoint (optional; OpenAI-compatible endpoints supported)",
+      "aiModel": "AI model (optional; provider default if empty)",
       "geminiApiKey": "Gemini API Key (AI Translation)",
       "defaultClockIn": "Default clock-in time (HH:MM, Taipei time)",
       "defaultClockOut": "Default clock-out time (HH:MM, Taipei time)",
@@ -1396,8 +1400,8 @@
     },
     "documentTranslate": {
       "noChineseContent": "No Chinese content available to translate",
-      "geminiKeyNotSet": "Gemini API Key is not set. Please configure it in System Settings",
-      "geminiApiError": "Gemini API error: {error}",
+      "geminiKeyNotSet": "AI API Key is not set. Please configure it in System Settings",
+      "geminiApiError": "AI API error: {error}",
       "parseFailed": "Failed to parse the AI translation result. Please try again"
     },
     "leaveRequestItem": {

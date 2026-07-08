@@ -1022,6 +1022,10 @@
     "settings": {
       "title": "システム設定",
       "description": "システムパラメータの管理",
+      "aiProvider": "AIプロバイダー（openai / anthropic / gemini）",
+      "aiApiKey": "AI API Key（翻訳・ポリシーQ&A）",
+      "aiBaseUrl": "AI APIエンドポイント（任意、OpenAI互換エンドポイント対応）",
+      "aiModel": "AIモデル（任意、未設定時はプロバイダー既定）",
       "geminiApiKey": "Gemini API Key（AI翻訳）",
       "defaultClockIn": "デフォルト出勤時間（HH:MM、台北時間）",
       "defaultClockOut": "デフォルト退勤時間（HH:MM、台北時間）",
@@ -1396,8 +1400,8 @@
     },
     "documentTranslate": {
       "noChineseContent": "翻訳できる中国語コンテンツがありません",
-      "geminiKeyNotSet": "Gemini API Key が未設定です。システム設定で入力してください",
-      "geminiApiError": "Gemini API エラー: {error}",
+      "geminiKeyNotSet": "AI API Key が未設定です。システム設定で入力してください",
+      "geminiApiError": "AI API エラー: {error}",
       "parseFailed": "AI 翻訳結果の解析に失敗しました。再試行してください"
     },
     "leaveRequestItem": {
