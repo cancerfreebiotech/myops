@@ -1,5 +1,5 @@
 import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { sendProactiveMessages } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 
@@ -33,11 +33,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 })
 
-  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
-  {
+  // 向量索引（回應後在背景執行；未設 embedding 時自動略過）
+  after(async () => {
     const { indexDocumentSafe } = await import('@/lib/doc-index')
     await indexDocumentSafe(admin, id)
-  }
+  })
 
   // Create recipient records
   if (recipient_user_ids?.length) {

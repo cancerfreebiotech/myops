@@ -1067,7 +1067,7 @@
       "aiStatusNoKey": "API Key not set",
       "aiStatusFlagOff": "Feature flag (ask_ai) is off",
       "aiEmbedTitle": "Embedding (vector search)",
-      "aiEmbedHint": "Set an embedding model to enable vector retrieval for policy Q&A; endpoint and key fall back to the AI connection above when blank",
+      "aiEmbedHint": "Set an embedding model to enable vector retrieval for policy Q&A; endpoint and key fall back to the AI connection above when blank. After changing the model, click \"Rebuild document index\" (old vectors are incompatible; Q&A falls back to full-text mode until rebuilt)",
       "aiEmbedModel": "Embedding model (required to enable)",
       "aiEmbedBaseUrl": "Embedding endpoint (optional)",
       "aiEmbedApiKey": "Embedding API Key (optional)",
@@ -1078,7 +1078,9 @@
       "aiTestEmbedOk": "Embedding OK ({model}, {ms} ms)",
       "aiTestEmbedFail": "Embedding failed: {error}",
       "aiStatusVector": "Vector search (policy Q&A)",
-      "aiStatusNoEmbedModel": "Embedding model not set (full-text mode)"
+      "aiStatusNoEmbedModel": "Embedding model not set (full-text mode)",
+      "secretSetPlaceholder": "Set (enter a new value to replace)",
+      "secretUnsetPlaceholder": "Not set"
     },
     "audit": {
       "title": "Audit Logs",

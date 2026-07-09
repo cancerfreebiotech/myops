@@ -1,5 +1,5 @@
 import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { getLlmConfig, llmComplete } from '@/lib/llm'
 
@@ -67,9 +67,11 @@ ${doc.content_zh}`
     detail: { provider: llm.provider, model: llm.model },
   })
 
-  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
-  const { indexDocumentSafe } = await import('@/lib/doc-index')
-  await indexDocumentSafe(admin, id)
+  // 向量索引（回應後在背景執行；未設 embedding 時自動略過）
+  after(async () => {
+    const { indexDocumentSafe } = await import('@/lib/doc-index')
+    await indexDocumentSafe(admin, id)
+  })
 
   return NextResponse.json({ data: translations })
 }

@@ -19,11 +19,14 @@ export async function POST(request: NextRequest) {
   if (me?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await request.json().catch(() => ({}))
-  let apiKey: string = (body.api_key ?? '').trim()
-  if (!apiKey) {
-    const { data: saved } = await service.from('system_settings').select('value').eq('key', 'ai_api_key').single()
-    apiKey = saved?.value?.trim() ?? ''
-  }
+  const { data: savedRows } = await service
+    .from('system_settings')
+    .select('key, value')
+    .in('key', ['ai_api_key', 'ai_embed_api_key'])
+  const saved = (k: string) => savedRows?.find(r => r.key === k)?.value?.trim() ?? ''
+
+  // 前端不再持有真實 key：空值一律沿用已儲存的值
+  const apiKey: string = (body.api_key ?? '').trim() || saved('ai_api_key')
 
   const cfg = buildLlmConfig({ provider: body.provider, apiKey, baseUrl: body.base_url, model: body.model })
   const at = new Date().toISOString()
@@ -52,7 +55,7 @@ export async function POST(request: NextRequest) {
   if (embedModel && cfg) {
     const embedCfg = {
       baseUrl: ((body.embed_base_url ?? '').trim() || cfg.baseUrl).replace(/\/+$/, ''),
-      apiKey: (body.embed_api_key ?? '').trim() || apiKey,
+      apiKey: (body.embed_api_key ?? '').trim() || saved('ai_embed_api_key') || apiKey,
       model: embedModel,
     }
     const started = Date.now()

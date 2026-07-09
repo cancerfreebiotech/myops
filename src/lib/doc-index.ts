@@ -12,6 +12,10 @@ const CHUNK_SIZE = 1000
 const CHUNK_OVERLAP = 150
 const EMBED_BATCH = 32
 
+// 只索引政策類文件（與 policy-qa 全文模式的 DOC_TYPES 一致）。
+// 合約/NDA/MOU 等機密文件絕不入索引——問答對全體員工開放，索引到就等於洩漏。
+export const INDEXABLE_DOC_TYPES = ['REG', 'ANN', 'INTERNAL']
+
 function chunkText(text: string): string[] {
   const clean = text.replace(/\r/g, '').trim()
   if (!clean) return []
@@ -34,10 +38,16 @@ export async function indexDocument(admin: SupabaseClient, docId: string): Promi
 
   const { data: doc } = await admin
     .from('documents')
-    .select('id, title, status, deleted_at, content_zh, content_en, content_ja, ocr_text')
+    .select('id, title, doc_type, status, deleted_at, content_zh, content_en, content_ja, ocr_text')
     .eq('id', docId)
     .single()
   if (!doc || doc.deleted_at) return 0
+
+  // 非政策類文件（合約/NDA/MOU…）不入索引，且清掉可能存在的舊段
+  if (!INDEXABLE_DOC_TYPES.includes(doc.doc_type)) {
+    await admin.from('doc_chunks').delete().eq('doc_id', doc.id)
+    return 0
+  }
 
   const parts: { lang: string; text: string }[] = [
     { lang: 'zh', text: doc.content_zh ?? '' },

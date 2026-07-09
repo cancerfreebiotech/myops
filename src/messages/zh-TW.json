@@ -1067,7 +1067,7 @@
       "aiStatusNoKey": "未設定 API Key",
       "aiStatusFlagOff": "功能開關（ask_ai）未開啟",
       "aiEmbedTitle": "Embedding（向量檢索）",
-      "aiEmbedHint": "填入 embedding 模型即啟用政策問答的向量檢索；端點與 Key 留空時沿用上方 AI 連線",
+      "aiEmbedHint": "填入 embedding 模型即啟用政策問答的向量檢索；端點與 Key 留空時沿用上方 AI 連線。更換模型後請按「重建文件索引」（否則新舊向量不相容，會自動退回全文模式）",
       "aiEmbedModel": "Embedding 模型（必填才啟用）",
       "aiEmbedBaseUrl": "Embedding 端點（選填）",
       "aiEmbedApiKey": "Embedding API Key（選填）",
@@ -1078,7 +1078,9 @@
       "aiTestEmbedOk": "Embedding 測試成功（{model}，{ms} ms）",
       "aiTestEmbedFail": "Embedding 測試失敗：{error}",
       "aiStatusVector": "向量檢索（政策問答）",
-      "aiStatusNoEmbedModel": "未設定 Embedding 模型（使用全文模式）"
+      "aiStatusNoEmbedModel": "未設定 Embedding 模型（使用全文模式）",
+      "secretSetPlaceholder": "已設定（輸入新值可更換）",
+      "secretUnsetPlaceholder": "未設定"
     },
     "audit": {
       "title": "稽核紀錄",

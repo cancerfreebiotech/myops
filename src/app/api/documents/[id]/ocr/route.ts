@@ -1,5 +1,5 @@
 import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { getLlmConfig, llmComplete } from '@/lib/llm'
 
 // 檔案大小上限（base64 入 prompt；再大的掃描檔請分割）
@@ -72,6 +72,14 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: `Unsupported file type for OCR: .${ext}`, code: 'OCR_ERROR' }, { status: 400 })
   }
 
+  // PDF 在 OpenAI 相容端點不支援 → 前置檢查回 4xx（輸入問題，非上游錯誤）
+  if (mimeType === 'application/pdf' && (llm.provider === 'openai' || llm.provider === 'custom')) {
+    return NextResponse.json({
+      error: 'PDF OCR is not supported on OpenAI-compatible endpoints; use image files or the anthropic/gemini provider',
+      code: 'OCR_PDF_UNSUPPORTED',
+    }, { status: 400 })
+  }
+
   const { data: blob, error: dlErr } = await admin.storage.from('documents').download(doc.file_url)
   if (dlErr || !blob) return NextResponse.json({ error: 'Failed to download file' }, { status: 400 })
   if (blob.size > OCR_MAX_FILE_BYTES) {
@@ -89,6 +97,10 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     )).trim()
   } catch (e) {
     console.error('[ocr] vision LLM error:', e)
+    // llmComplete 對空回應會 throw 'empty response' → 視為「文件無文字」（422），非上游故障
+    if (String(e).includes('empty response')) {
+      return NextResponse.json({ error: 'OCR returned empty text', code: 'OCR_EMPTY' }, { status: 422 })
+    }
     return NextResponse.json({ error: `OCR failed: ${String(e).slice(0, 200)}`, code: 'OCR_ERROR' }, { status: 502 })
   }
 
@@ -101,9 +113,11 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
     doc_id: id, user_id: user.id, action: 'ocr', detail: { chars: text.length },
   })
 
-  // 向量索引（fire-and-forget；未設 embedding 時自動略過）
-  const { indexDocumentSafe } = await import('@/lib/doc-index')
-  await indexDocumentSafe(admin, id)
+  // 向量索引（回應後在背景執行；未設 embedding 時自動略過）
+  after(async () => {
+    const { indexDocumentSafe } = await import('@/lib/doc-index')
+    await indexDocumentSafe(admin, id)
+  })
 
   return NextResponse.json({ data: { ocr_text: text, chars: text.length } })
 }

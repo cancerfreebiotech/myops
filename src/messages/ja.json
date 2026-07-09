@@ -1067,7 +1067,7 @@
       "aiStatusNoKey": "API Key未設定",
       "aiStatusFlagOff": "機能フラグ（ask_ai）が無効",
       "aiEmbedTitle": "Embedding（ベクトル検索）",
-      "aiEmbedHint": "embeddingモデルを設定するとポリシーQ&Aのベクトル検索が有効になります。エンドポイントとKeyは未入力の場合、上のAI接続を引き継ぎます",
+      "aiEmbedHint": "embeddingモデルを設定するとポリシーQ&Aのベクトル検索が有効になります。エンドポイントとKeyは未入力の場合、上のAI接続を引き継ぎます。モデル変更後は「文書インデックス再構築」を押してください（旧ベクトルと互換性がないため、再構築まで全文モードに自動フォールバックします）",
       "aiEmbedModel": "Embeddingモデル（必須で有効化）",
       "aiEmbedBaseUrl": "Embeddingエンドポイント（任意）",
       "aiEmbedApiKey": "Embedding API Key（任意）",
@@ -1078,7 +1078,9 @@
       "aiTestEmbedOk": "Embedding成功（{model}、{ms} ms）",
       "aiTestEmbedFail": "Embedding失敗：{error}",
       "aiStatusVector": "ベクトル検索（ポリシーQ&A）",
-      "aiStatusNoEmbedModel": "Embeddingモデル未設定（全文モード）"
+      "aiStatusNoEmbedModel": "Embeddingモデル未設定（全文モード）",
+      "secretSetPlaceholder": "設定済み（新しい値を入力で更新）",
+      "secretUnsetPlaceholder": "未設定"
     },
     "audit": {
       "title": "監査ログ",

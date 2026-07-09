@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { lastDayOfMonth } from '@/lib/date-utils'
-import { weightedOvertimeHours, type OvertimeDayType } from '@/lib/overtime-pay'
+import { splitOvertimeSegments, weightedOvertimeHours, type OvertimeDayType } from '@/lib/overtime-pay'
 
 interface InsuranceBracket {
   insured_salary: number
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
   // 3. Get approved overtime for the month
   const { data: overtimeRecords } = await service
     .from('overtime_requests')
-    .select('user_id, hours, day_type')
+    .select('user_id, hours, day_type, ot_date, start_time, end_time')
     .in('user_id', userIds)
     .in('status', ['approved', 'coo_approved', 'lead_approved'])
     .gte('ot_date', `${year}-${String(month).padStart(2, '0')}-01`)
@@ -160,17 +160,19 @@ export async function POST(request: NextRequest) {
     if (baseSalary === 0) continue
 
     // Calculate overtime pay（勞基法 §24/§39 依日別分段：平日前2h×1.34/後2h×1.67、
-    // 休息日 2h/2-8h/8h+ 三段、國定假日 ×2；倍率可由 overtime_rates 調整）
+    // 休息日 2h/2-8h/8h+ 三段、國定假日 ×2；倍率可由 overtime_rates 調整）。
+    // 跨午夜且跨日別（如週五 22:00–02:00）依午夜切段，各段套當日日別計價。
     const empOT = overtimeRecords?.filter(o => o.user_id === emp.id) ?? []
     let overtimePay = 0
     const hourlyBase = baseSalary / 30 / 8
     for (const ot of empOT) {
-      const weighted = weightedOvertimeHours(
-        (ot.day_type ?? 'weekday') as OvertimeDayType,
-        Number(ot.hours),
-        k => tierRateMap.get(k)
-      )
-      overtimePay += hourlyBase * weighted
+      const dayType = (ot.day_type ?? 'weekday') as OvertimeDayType
+      const segments = (ot.ot_date && ot.start_time && ot.end_time)
+        ? splitOvertimeSegments(dayType, ot.ot_date, ot.start_time, ot.end_time)
+        : [{ dayType, hours: Number(ot.hours) }]
+      for (const seg of segments) {
+        overtimePay += hourlyBase * weightedOvertimeHours(seg.dayType, seg.hours, k => tierRateMap.get(k))
+      }
     }
 
     // Calculate unpaid leave deduction

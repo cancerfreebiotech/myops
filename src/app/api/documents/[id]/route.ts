@@ -1,5 +1,5 @@
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { sendProactiveMessage, sendProactiveMessages } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 
@@ -54,10 +54,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data, error } = await service.from('documents').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  // 核准時建向量索引（fire-and-forget；未設 embedding 時自動略過）
+  // 核准時建向量索引（回應後在背景執行；未設 embedding 時自動略過）
   if (updates.status === 'approved') {
-    const { indexDocumentSafe } = await import('@/lib/doc-index')
-    await indexDocumentSafe(createAdminClient(), id)
+    after(async () => {
+      const { indexDocumentSafe } = await import('@/lib/doc-index')
+      await indexDocumentSafe(createAdminClient(), id)
+    })
   }
 
   if (action) {
