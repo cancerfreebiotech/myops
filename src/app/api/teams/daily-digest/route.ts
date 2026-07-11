@@ -40,18 +40,16 @@ export async function POST(request: NextRequest) {
 
   for (const u of users) {
     // Get pending items scoped to this user's responsibilities
-    // Leave approvals: only count leaves where this user is the manager of the requester
-    const leaveQuery = service
-      .from('leave_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending')
-
-    // Only managers/HR/admin see pending leaves
     const isAdmin = u.role === 'admin'
     const isHR = (u.granted_features as string[] ?? []).includes('hr_manager')
+
+    // 非 admin/HR 的一般主管：只算「直屬部屬」的待簽假。
+    // 注意：PostgREST 對嵌入資源的過濾若無 !inner 不會限縮父層 count，
+    // 故改用兩段式——先撈部屬 id，再以 user_id in (...) 過濾（與 leave/requests 一致）。
+    let reportIds: string[] = []
     if (!isAdmin && !isHR) {
-      // Regular managers: only see leaves from their direct reports
-      leaveQuery.eq('user_id', '__skip__') // will be filtered below
+      const { data: reports } = await service.from('users').select('id').eq('manager_id', u.id)
+      reportIds = (reports ?? []).map(r => r.id)
     }
 
     // Contracts: only users with approve_contract or admin see pending contracts
@@ -59,10 +57,12 @@ export async function POST(request: NextRequest) {
 
     // Unconfirmed announcements for this specific user
     const [leaveRes, contractRes, announcementRes] = await Promise.all([
-      // Pending leaves where this user is the approver (manager_id of the requester)
+      // Pending leaves this user can approve：admin/HR 看全部；一般主管只看直屬部屬（無部屬則 0）
       isAdmin || isHR
         ? service.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending')
-        : service.from('leave_requests').select('id, user:users!leave_requests_user_id_fkey(manager_id)', { count: 'exact', head: true }).eq('status', 'pending').eq('user.manager_id', u.id),
+        : reportIds.length
+          ? service.from('leave_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending').in('user_id', reportIds)
+          : Promise.resolve({ count: 0 }),
       // Pending contracts (only if user can approve)
       canApproveContracts
         ? service.from('documents').select('id', { count: 'exact', head: true }).eq('status', 'pending').in('doc_type', ['NDA', 'MOU', 'CONTRACT', 'AMEND']).is('deleted_at', null)

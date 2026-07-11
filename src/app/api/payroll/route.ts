@@ -59,20 +59,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
-  const gross = (base_salary ?? 0) + (overtime_pay ?? 0) + (bonus ?? 0)
-  const totalDeduction = deductions ?? 0
-  const net = gross - totalDeduction
+  // 金額欄位一律轉數字並驗證：須為有限、非負（避免字串串接放大 gross、負扣款灌高 net）
+  const nBase = Number(base_salary)
+  const nOt = Number(overtime_pay ?? 0)
+  const nBonus = Number(bonus ?? 0)
+  const nDeduct = Number(deductions ?? 0)
+  if (![nBase, nOt, nBonus, nDeduct].every(n => Number.isFinite(n) && n >= 0)) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
+
+  const gross = nBase + nOt + nBonus
+  const net = gross - nDeduct
 
   const { data, error } = await service.from('payroll_records').upsert({
     user_id,
     year,
     month,
-    base_salary,
-    overtime_pay: overtime_pay ?? 0,
-    bonus: bonus ?? 0,
-    other_deduction: totalDeduction,
+    base_salary: nBase,
+    overtime_pay: nOt,
+    bonus: nBonus,
+    other_deduction: nDeduct,
     gross_pay: gross,
-    total_deduction: totalDeduction,
+    total_deduction: nDeduct,
     net_pay: net,
     note: notes ?? null,
     status: 'draft',

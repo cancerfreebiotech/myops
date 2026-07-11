@@ -69,7 +69,8 @@ export function PayrollClient({
   }
 
   const [tab, setTab] = useState<'records' | 'payslips' | 'create'>(canViewPayroll ? 'records' : 'payslips')
-  const [records] = useState(payrollRecords)
+  // 直接用 props，router.refresh() 帶回的新資料才會反映到表格（勿用 useState 凍結）
+  const records = payrollRecords
   const [loading, setLoading] = useState(false)
 
   // Create form

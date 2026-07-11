@@ -51,7 +51,9 @@ export async function answerPolicyQuestion(question: string, lang: string): Prom
     included = []
   }
 
-  // Fallback：全文入 prompt（未設 embedding / 索引為空 / 檢索失敗）
+  // Fallback：全文入 prompt（未設 embedding / 索引為空 / 檢索失敗）。
+  // 加 limit 界定：只取最新 N 份，避免文件庫成長後每次問答都下傳整庫全文
+  // （下方迴圈仍以 MAX_CONTEXT_CHARS 截斷，取最新的先入）。
   if (!context) {
     const { data: docs } = await service
       .from('documents')
@@ -60,6 +62,7 @@ export async function answerPolicyQuestion(question: string, lang: string): Prom
       .in('doc_type', DOC_TYPES)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
+      .limit(50)
 
     const withContent = (docs ?? []).filter(d => d.content_zh || d.content_en || d.content_ja || d.ocr_text)
     if (!withContent.length) return { error: 'no_docs' }

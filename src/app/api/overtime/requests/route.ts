@@ -19,11 +19,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
 
+  // 格式驗證：ot_date 為 YYYY-MM-DD 合法日期、start/end 為 HH:MM
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/
+  const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/
+  if (!dateRe.test(ot_date) || Number.isNaN(Date.parse(`${ot_date}T00:00:00`))
+      || !timeRe.test(start_time) || !timeRe.test(end_time)) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
+
   // Calculate hours（跨午夜：結束時間 <= 開始時間視為隔日，+24h）
   const startMinutes = parseInt(start_time.split(':')[0]) * 60 + parseInt(start_time.split(':')[1])
   let endMinutes = parseInt(end_time.split(':')[0]) * 60 + parseInt(end_time.split(':')[1])
   if (endMinutes <= startMinutes) endMinutes += 24 * 60
   const total_hours = (endMinutes - startMinutes) / 60
+
+  // 單筆加班時數上限 24 小時（跨午夜最多一整天），避免異常值灌入計薪
+  if (total_hours <= 0 || total_hours > 24) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
 
   // 日別（勞基法分段計薪依據）：未給或非法值時依日期自動判斷（週六日 → rest_day）
   const dayType: OvertimeDayType = DAY_TYPES.includes(day_type) ? day_type : suggestDayType(ot_date)

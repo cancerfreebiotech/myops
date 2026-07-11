@@ -6,7 +6,10 @@ import { LOCALE_COOKIE, SUPPORTED_LOCALES } from '@/i18n/config'
 // This is the most reliable way to set cookies across all environments.
 export async function GET(req: NextRequest) {
   const lang = req.nextUrl.searchParams.get('lang')
-  const redirectTo = req.nextUrl.searchParams.get('redirect') || '/'
+  const rawRedirect = req.nextUrl.searchParams.get('redirect') || '/'
+
+  // 防開放重導向：只接受站內相對路徑（單一 '/' 開頭、非 '//'、非含 scheme），否則退回 '/'
+  const redirectTo = (rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')) ? rawRedirect : '/'
 
   if (!lang || !(SUPPORTED_LOCALES as readonly string[]).includes(lang)) {
     return NextResponse.redirect(new URL(redirectTo, req.url))

@@ -56,6 +56,7 @@ export function ApprovalsClient() {
   const [data, setData] = useState<ApprovalData>(EMPTY)
   const [procurement, setProcurement] = useState<ProcurementItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [acting, setActing] = useState(false)
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -87,18 +88,24 @@ export function ApprovalsClient() {
   }, [loadAll])
 
   const act = async (url: string, body: Record<string, unknown>, method = 'PATCH') => {
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    if (!res.ok) {
-      const json = await res.json().catch(() => null)
-      toast.error(json?.code === 'MFA_REQUIRED' ? t('mfaRequired') : (json?.error ?? t('actionFailed')))
-      return
+    if (acting) return  // 防重複點擊：動作進行中直接忽略
+    setActing(true)
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        toast.error(json?.code === 'MFA_REQUIRED' ? t('mfaRequired') : (json?.error ?? t('actionFailed')))
+        return
+      }
+      toast.success(t('done'))
+      await loadAll()
+    } finally {
+      setActing(false)
     }
-    toast.success(t('done'))
-    await loadAll()
   }
 
   const rejectWithReason = (fn: (reason: string) => void) => {
@@ -142,10 +149,10 @@ export function ApprovalsClient() {
 
   const ApproveRejectButtons = ({ onApprove, onReject }: { onApprove: () => void; onReject: () => void }) => (
     <>
-      <Button variant="ghost" size="sm" onClick={onApprove} className="text-xs text-green-600 hover:text-green-700">
+      <Button variant="ghost" size="sm" onClick={onApprove} disabled={acting} className="text-xs text-green-600 hover:text-green-700">
         <Check size={14} className="mr-1" />{t('approve')}
       </Button>
-      <Button variant="ghost" size="sm" onClick={onReject} className="text-xs text-red-500 hover:text-red-600">
+      <Button variant="ghost" size="sm" onClick={onReject} disabled={acting} className="text-xs text-red-500 hover:text-red-600">
         <X size={14} className="mr-1" />{t('reject')}
       </Button>
     </>
@@ -242,7 +249,7 @@ export function ApprovalsClient() {
                 onReject={() => rejectWithReason(reason => act(`/api/expenses/${r.id}`, { action: 'reject', review_note: reason }))}
               />
             ) : (
-              <Button variant="ghost" size="sm" onClick={() => act(`/api/expenses/${r.id}`, { action: 'pay' })} className="text-xs text-blue-600 hover:text-blue-700">
+              <Button variant="ghost" size="sm" disabled={acting} onClick={() => act(`/api/expenses/${r.id}`, { action: 'pay' })} className="text-xs text-blue-600 hover:text-blue-700">
                 <Check size={14} className="mr-1" />{t('markPaid')}
               </Button>
             )}
@@ -282,7 +289,7 @@ export function ApprovalsClient() {
             actions={
               <>
                 <Button
-                  variant="ghost" size="sm"
+                  variant="ghost" size="sm" disabled={acting}
                   onClick={() => act(`/api/payroll/${p.id}`, { action: PAYROLL_NEXT_ACTION[p.status] })}
                   className="text-xs text-green-600 hover:text-green-700"
                 >
