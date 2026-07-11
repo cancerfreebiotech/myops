@@ -1135,7 +1135,12 @@
         "archive": "アーカイブ",
         "publish": "公開",
         "translate": "AI 翻訳",
-        "confirm": "既読確認"
+        "confirm": "既読確認",
+        "restore": "復元",
+        "download": "ダウンロード",
+        "ai_translate": "AI 翻訳",
+        "remind": "リマインド",
+        "ocr": "OCR"
       },
       "pageInfo": "{page} ページ目・全 {count} 件",
       "prevPage": "前へ",

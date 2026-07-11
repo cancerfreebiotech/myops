@@ -8,15 +8,20 @@ import { Button } from '@/components/ui/button'
 import { Search } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 
-const ACTION_TYPES = ['upload', 'approve', 'reject', 'archive', 'publish', 'translate', 'confirm'] as const
+// 對齊 audit_logs_action_check 約束的完整 action 集合（見 migrations）：
+// upload/approve/reject/confirm/archive/restore/download/ai_translate/remind/ocr
+const ACTION_TYPES = ['upload', 'approve', 'reject', 'confirm', 'archive', 'restore', 'download', 'ai_translate', 'remind', 'ocr'] as const
 const ACTION_COLORS: Record<string, string> = {
   approve: 'bg-green-50 text-green-700 border-green-200',
   reject: 'bg-red-50 text-red-700 border-red-200',
-  publish: 'bg-blue-50 text-blue-700 border-blue-200',
+  confirm: 'bg-green-50 text-green-700 border-green-200',
   upload: 'bg-slate-50 text-slate-600 border-slate-200',
   archive: 'bg-slate-50 text-slate-600 border-slate-200',
-  translate: 'bg-purple-50 text-purple-700 border-purple-200',
-  confirm: 'bg-green-50 text-green-700 border-green-200',
+  restore: 'bg-blue-50 text-blue-700 border-blue-200',
+  download: 'bg-slate-50 text-slate-600 border-slate-200',
+  ai_translate: 'bg-purple-50 text-purple-700 border-purple-200',
+  remind: 'bg-amber-50 text-amber-700 border-amber-200',
+  ocr: 'bg-indigo-50 text-indigo-700 border-indigo-200',
 }
 
 interface AuditLog {

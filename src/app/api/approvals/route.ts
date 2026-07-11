@@ -60,7 +60,9 @@ export async function GET() {
       .from('attendance_makeup_requests')
       .select('id, clock_date, clock_type, clock_time, reason, user:users!attendance_makeup_requests_user_id_fkey(display_name)')
       .eq('status', 'pending')
-    if (!isAdmin) q = q.eq('approver_id', user.id)
+    // 補打卡核准人以「即時 manager_id」（申請人的直屬主管）判定，與 approve_makeup_request()
+    // 及請假/加班待審一致；不用可能過期的 approver_id 快照（主管異動後快照會指向舊主管）。
+    if (!isAdmin) q = q.in('user_id', scope.subordinateIds)
     return q
   }
 

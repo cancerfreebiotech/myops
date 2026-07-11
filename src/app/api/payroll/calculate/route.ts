@@ -32,6 +32,27 @@ interface PayrollRecordInsert {
   status: string
 }
 
+// 計算一筆請假落在 [monthStart, monthEnd] 當月的天數（含頭尾、以日曆天計）。
+// 以整段日曆天為分母、當月重疊日曆天為分子，按比例攤 totalDays，
+// 與請假端 total_days 的算法（含頭尾日曆天；單日半天=0.5）一致：
+// 整段落在當月 → 重疊=整段 → 回傳原 totalDays；完全不重疊 → 0。
+const DAY_MS = 86_400_000
+function leaveDaysInMonth(
+  startDate: string, endDate: string, totalDays: number, monthStart: string, monthEnd: string
+): number {
+  const s = Date.parse(`${startDate}T00:00:00Z`)
+  const e = Date.parse(`${endDate}T00:00:00Z`)
+  const ms = Date.parse(`${monthStart}T00:00:00Z`)
+  const me = Date.parse(`${monthEnd}T00:00:00Z`)
+  if (Number.isNaN(s) || Number.isNaN(e) || e < s) return 0
+  const spanDays = Math.round((e - s) / DAY_MS) + 1
+  const os = Math.max(s, ms)
+  const oe = Math.min(e, me)
+  if (oe < os) return 0
+  const overlapDays = Math.round((oe - os) / DAY_MS) + 1
+  return totalDays * (overlapDays / spanDays)
+}
+
 // T48: Payroll auto-calculation API
 // Generates draft payroll records for all active TW full-time employees
 export async function POST(request: NextRequest) {
@@ -107,13 +128,17 @@ export async function POST(request: NextRequest) {
   )
 
   // 5. Get unpaid leave days (salary_ratio = 0)
+  // 抓「與當月有重疊」的請假（start_date <= 月底 且 end_date >= 月初），
+  // 而非只抓 start_date 落在當月者——否則跨月請假（上月起、延伸到本月）會整段漏算。
+  const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
+  const monthEnd = lastDayOfMonth(year, month)
   const { data: leaveRequests } = await service
     .from('leave_requests')
-    .select('user_id, total_days, leave_type_id')
+    .select('user_id, total_days, leave_type_id, start_date, end_date')
     .in('user_id', userIds)
     .eq('status', 'approved')
-    .gte('start_date', `${year}-${String(month).padStart(2, '0')}-01`)
-    .lte('start_date', `${lastDayOfMonth(year, month)}`)
+    .lte('start_date', monthEnd)
+    .gte('end_date', monthStart)
 
   const { data: leaveTypes } = await service
     .from('leave_types')
@@ -179,11 +204,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate unpaid leave deduction
+    // 跨月請假只計入「落在當月」的天數：以請假整段（含頭尾的日曆天）為分母，
+    // 當月重疊日曆天為分子，按比例攤 total_days（total_days 由請假端以含頭尾日曆天計，
+    // 單日半天則為 0.5，此比例攤法對兩者皆正確）。
     const empLeaves = leaveRequests?.filter(l => l.user_id === emp.id) ?? []
     let unpaidLeaveDays = 0
     for (const leave of empLeaves) {
       const ratio = leaveTypeMap.get(leave.leave_type_id) ?? 1
-      if (ratio === 0) unpaidLeaveDays += Number(leave.total_days)
+      if (ratio === 0) {
+        unpaidLeaveDays += leaveDaysInMonth(
+          leave.start_date, leave.end_date, Number(leave.total_days), monthStart, monthEnd
+        )
+      }
     }
     const unpaidLeaveDeduct = (baseSalary / 30) * unpaidLeaveDays
 

@@ -36,14 +36,18 @@ export async function POST(request: NextRequest) {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role, granted_features')
     .eq('id', user.id)
     .single()
 
+  // 與頁面 admin/payroll/anomalies/page.tsx 的判準對齊：admin、財務/營運長職務（job_role）、
+  // 或具 hr_manager / finance_payroll 功能旗標者皆可。否則 coo/finance 可進頁卻掃描 403。
   const isAdmin = currentUser?.role === 'admin'
+  const isFinanceJobRole = currentUser?.job_role === 'finance'
+  const isCOO = currentUser?.job_role === 'coo'
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !isHR && !isFinance) {
+  if (!isAdmin && !isFinanceJobRole && !isCOO && !isHR && !isFinance) {
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
@@ -186,14 +190,18 @@ export async function GET(request: NextRequest) {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('role, granted_features')
+    .select('role, job_role, granted_features')
     .eq('id', user.id)
     .single()
 
+  // 與頁面 admin/payroll/anomalies/page.tsx 的判準對齊：admin、財務/營運長職務（job_role）、
+  // 或具 hr_manager / finance_payroll 功能旗標者皆可。否則 coo/finance 可進頁卻掃描 403。
   const isAdmin = currentUser?.role === 'admin'
+  const isFinanceJobRole = currentUser?.job_role === 'finance'
+  const isCOO = currentUser?.job_role === 'coo'
   const isHR = currentUser?.granted_features?.includes('hr_manager')
   const isFinance = currentUser?.granted_features?.includes('finance_payroll')
-  if (!isAdmin && !isHR && !isFinance) {
+  if (!isAdmin && !isFinanceJobRole && !isCOO && !isHR && !isFinance) {
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 

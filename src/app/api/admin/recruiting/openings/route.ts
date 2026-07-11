@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
+
 const STATUSES = ['open', 'paused', 'closed']
 
 async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
@@ -10,7 +12,11 @@ async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, use
     .select('role, granted_features')
     .eq('id', userId)
     .single()
-  return data?.role === 'admin' || !!(data?.granted_features as string[] | null)?.includes('hr_manager')
+  const role = data?.role ?? ''
+  // 模組關閉時（feature.recruiting off）非 admin 一律擋下，與頁面 canAccessFeature 一致
+  const flags = await getFeatureFlags()
+  if (!canAccessFeature(role, flags, 'recruiting')) return false
+  return role === 'admin' || !!(data?.granted_features as string[] | null)?.includes('hr_manager')
 }
 
 // GET /api/admin/recruiting/openings — 職缺列表（含各應徵者階段）

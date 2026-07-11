@@ -68,11 +68,14 @@ export function DailyReportClient({ userId }: Props) {
     }
     loadAll()
     const timers = kpiTimers.current
+    const pending = kpiPending.current
     return () => {
       cancelled = true
-      // 切換日期時取消所有尚未送出的 KPI debounce 計時器，
-      // 否則舊 closure 的計時器會以「舊日期」寫入 kpiEntries，污染新日期畫面。
+      // 切日前先取消 debounce 計時器，再把「尚未送出」的 KPI 值 flush 到其輸入當下的日期。
+      // 每個 flush 都帶著輸入時捕捉的舊日期送存，故不會污染新日期畫面，也不會靜默丟棄未存值。
       Object.values(timers).forEach(clearTimeout)
+      Object.values(pending).forEach((flush) => flush())
+      kpiPending.current = {}
     }
   }, [date, userId, t])
 
@@ -147,32 +150,45 @@ export function DailyReportClient({ userId }: Props) {
 
   // 每個 KPI 各自 debounce，避免每個按鍵都打一次 API（舊值可能晚到蓋掉新值）
   const kpiTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  // 尚未送出（debounce 中）的 flush 函式，keyed by defId；切日時據此把未存值送存到其原本日期
+  const kpiPending = useRef<Record<string, () => void>>({})
   // 輸入中的原始字串（允許清空欄位而不誤存 0）
   const [kpiDrafts, setKpiDrafts] = useState<Record<string, string>>({})
+
+  // 以「輸入當下捕捉的日期 d」送存，故切日 flush 時仍寫回正確日期。
+  const saveKpi = async (d: string, defId: string, value: number) => {
+    try {
+      const res = await fetch('/api/daily-report/kpi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: d, kpi_def_id: defId, value }),
+      })
+      if (!res.ok) throw new Error()
+      setKpiEntries(prev => {
+        const existing = prev.findIndex(e => e.kpi_def_id === defId && e.date === d)
+        if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
+        return [...prev, { id: '', user_id: userId, date: d, kpi_def_id: defId, value }]
+      })
+    } catch {
+      toast.error(t('saveFailed'))
+    }
+  }
 
   const setKpiValue = (defId: string, raw: string) => {
     setKpiDrafts(prev => ({ ...prev, [defId]: raw }))
     clearTimeout(kpiTimers.current[defId])
-    if (raw === '') return
+    if (raw === '') { delete kpiPending.current[defId]; return }
     const value = Number(raw)
     if (Number.isNaN(value)) return
-    kpiTimers.current[defId] = setTimeout(async () => {
-      try {
-        const res = await fetch('/api/daily-report/kpi', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ date, kpi_def_id: defId, value }),
-        })
-        if (!res.ok) throw new Error()
-        setKpiEntries(prev => {
-          const existing = prev.findIndex(e => e.kpi_def_id === defId && e.date === date)
-          if (existing >= 0) return prev.map((e, i) => i === existing ? { ...e, value } : e)
-          return [...prev, { id: '', user_id: userId, date, kpi_def_id: defId, value }]
-        })
-      } catch {
-        toast.error(t('saveFailed'))
-      }
-    }, 600)
+    const d = date
+    // flush：清掉自己的 pending/timer 註記後送存。debounce 到時或切日時皆走同一條路徑。
+    const flush = () => {
+      delete kpiPending.current[defId]
+      delete kpiTimers.current[defId]
+      saveKpi(d, defId, value)
+    }
+    kpiPending.current[defId] = flush
+    kpiTimers.current[defId] = setTimeout(flush, 600)
   }
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [

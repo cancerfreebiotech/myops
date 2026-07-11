@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { isValidDateString, taipeiToday } from '@/lib/taipei-date'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 const CATEGORIES = ['it_equipment', 'instrument', 'furniture', 'other']
 const STATUSES = ['in_use', 'idle', 'repair', 'retired']
@@ -15,12 +16,22 @@ async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, use
   return data?.role === 'admin' || !!(data?.granted_features as string[] | null)?.includes('asset_manage')
 }
 
+// 模組關閉時（feature.assets off）非 admin 一律擋下，與頁面 canAccessFeature 一致
+async function featureEnabled(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data } = await supabase.from('users').select('role').eq('id', userId).single()
+  const flags = await getFeatureFlags()
+  return canAccessFeature(data?.role ?? '', flags, 'assets')
+}
+
 // GET /api/assets?category=&status=&due=1
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const t = await getTranslations('apiErrors')
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
+  if (!(await featureEnabled(supabase, user.id))) {
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+  }
 
   const { searchParams } = new URL(request.url)
   const category = searchParams.get('category')
@@ -54,6 +65,9 @@ export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
+  if (!(await featureEnabled(supabase, user.id))) {
+    return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+  }
 
   if (!(await canManage(supabase, user.id))) {
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })

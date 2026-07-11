@@ -1135,7 +1135,12 @@
         "archive": "Archive",
         "publish": "Publish",
         "translate": "AI translation",
-        "confirm": "Confirm read"
+        "confirm": "Confirm read",
+        "restore": "Restore",
+        "download": "Download",
+        "ai_translate": "AI translation",
+        "remind": "Remind",
+        "ocr": "OCR"
       },
       "pageInfo": "Page {page}, {count} records",
       "prevPage": "Previous",

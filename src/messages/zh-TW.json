@@ -1135,7 +1135,12 @@
         "archive": "封存",
         "publish": "發佈",
         "translate": "AI 翻譯",
-        "confirm": "確認閱讀"
+        "confirm": "確認閱讀",
+        "restore": "還原",
+        "download": "下載",
+        "ai_translate": "AI 翻譯",
+        "remind": "催確認",
+        "ocr": "OCR 辨識"
       },
       "pageInfo": "第 {page} 頁，共 {count} 筆",
       "prevPage": "上一頁",

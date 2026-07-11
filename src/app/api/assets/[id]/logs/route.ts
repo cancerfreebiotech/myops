@@ -49,6 +49,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       log_date,
       performed_by: performed_by || null,
       user_id: user.id,
+      // checkout/checkin 保存當下借用人 id，供歷史記錄追溯（其他類型不適用）
+      custodian_id: (log_type === 'checkout' || log_type === 'checkin') ? (custodian_id || null) : null,
       next_due_date: next_due_date || null,
       note: note || null,
       attachment_paths: Array.isArray(attachment_paths) ? attachment_paths : [],

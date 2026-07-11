@@ -146,14 +146,22 @@ export function LifecycleClient({ allUsers }: Props) {
     })
     if (!res.ok) {
       toast.error(t('saveFailed'))
-      return
+      return false
     }
     if (successMsg) toast.success(successMsg)
     await loadChecklists()
+    return true
   }
 
-  const toggleItemDone = (checklistId: string, item: ChecklistItem) =>
-    patchChecklist(checklistId, { item_id: item.id, done: !item.done })
+  const toggleItemDone = async (checklist: Checklist, item: ChecklistItem) => {
+    const willBeDone = !item.done
+    const ok = await patchChecklist(checklist.id, { item_id: item.id, done: willBeDone })
+    // 反勾「已完成」清單中的項目時，同步把清單狀態回退為 active，
+    // 避免出現「狀態=已完成」卻仍有未完成項的不一致。
+    if (ok && !willBeDone && checklist.status === 'completed') {
+      await patchChecklist(checklist.id, { status: 'active' }, t('reopened'))
+    }
+  }
 
   const editNote = async (checklistId: string, item: ChecklistItem) => {
     const note = prompt(t('notePrompt'), item.note ?? '')
@@ -258,7 +266,7 @@ export function LifecycleClient({ allUsers }: Props) {
                   <input
                     type="checkbox"
                     checked={item.done}
-                    onChange={() => toggleItemDone(c.id, item)}
+                    onChange={() => toggleItemDone(c, item)}
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus-visible:ring-2 focus-visible:ring-blue-600 cursor-pointer"
                     aria-label={item.title}
                   />

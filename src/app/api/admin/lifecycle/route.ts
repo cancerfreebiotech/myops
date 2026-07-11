@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { ONBOARDING_TEMPLATE, OFFBOARDING_TEMPLATE } from '@/lib/lifecycle-templates'
+import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 
 async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -9,7 +10,11 @@ async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, use
     .select('role, granted_features')
     .eq('id', userId)
     .single()
-  return data?.role === 'admin' || !!(data?.granted_features as string[] | null)?.includes('hr_manager')
+  const role = data?.role ?? ''
+  // 模組關閉時（feature.lifecycle off）非 admin 一律擋下，與頁面 canAccessFeature 一致
+  const flags = await getFeatureFlags()
+  if (!canAccessFeature(role, flags, 'lifecycle')) return false
+  return role === 'admin' || !!(data?.granted_features as string[] | null)?.includes('hr_manager')
 }
 
 // GET /api/admin/lifecycle — 清單（含 items）

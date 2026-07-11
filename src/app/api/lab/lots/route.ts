@@ -63,6 +63,13 @@ export async function POST(request: NextRequest) {
       user_id: user.id,
     })
 
-  if (logError) return NextResponse.json({ error: logError.message }, { status: 500 })
+  if (logError) {
+    // The two inserts aren't in one transaction, so a failed audit log would
+    // otherwise leave an orphan lot with no receive record — and a client retry
+    // would then create a duplicate lot for the same batch. Roll the lot back so
+    // the receive is all-or-nothing.
+    await supabase.from('lab_lots').delete().eq('id', lot.id)
+    return NextResponse.json({ error: logError.message }, { status: 500 })
+  }
   return NextResponse.json({ data: lot })
 }

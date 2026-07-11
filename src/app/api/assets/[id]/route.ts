@@ -1,13 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { isValidDateString } from '@/lib/taipei-date'
 
-const EDITABLE_FIELDS = [
-  'asset_no', 'name', 'category', 'serial_no', 'location', 'custodian_id', 'status',
-  'purchase_date', 'purchase_amount', 'vendor_name',
-  'calibration_cycle_months', 'next_calibration_date',
-  'maintenance_cycle_months', 'next_maintenance_date', 'note',
-]
+const CATEGORIES = ['it_equipment', 'instrument', 'furniture', 'other']
+const STATUSES = ['in_use', 'idle', 'repair', 'retired']
 
 async function canManage(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -60,7 +57,59 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!manage) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   const body = await request.json()
-  const updates = Object.fromEntries(Object.entries(body).filter(([k]) => EDITABLE_FIELDS.includes(k)))
+  const invalid = () => NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+
+  // 只允許白名單欄位，並比照 POST 驗證/正規化每個值，避免非法值落 DB 或外洩 PG 錯誤
+  const updates: Record<string, unknown> = {}
+
+  if ('asset_no' in body) {
+    if (typeof body.asset_no !== 'string' || !body.asset_no.trim()) return invalid()
+    updates.asset_no = body.asset_no.trim()
+  }
+  if ('name' in body) {
+    if (typeof body.name !== 'string' || !body.name.trim()) return invalid()
+    updates.name = body.name.trim()
+  }
+  if ('category' in body) {
+    if (!CATEGORIES.includes(body.category)) return invalid()
+    updates.category = body.category
+  }
+  if ('status' in body) {
+    if (!STATUSES.includes(body.status)) return invalid()
+    updates.status = body.status
+  }
+  for (const f of ['serial_no', 'location', 'custodian_id', 'vendor_name', 'note'] as const) {
+    if (f in body) updates[f] = body[f] || null
+  }
+  for (const f of ['purchase_date', 'next_calibration_date', 'next_maintenance_date'] as const) {
+    if (f in body) {
+      if (body[f] && !isValidDateString(body[f])) return invalid()
+      updates[f] = body[f] || null
+    }
+  }
+  if ('purchase_amount' in body) {
+    const v = body.purchase_amount
+    if (v === '' || v === null || v === undefined) {
+      updates.purchase_amount = null
+    } else if (Number.isFinite(Number(v))) {
+      updates.purchase_amount = Number(v)
+    } else {
+      return invalid()
+    }
+  }
+  for (const f of ['calibration_cycle_months', 'maintenance_cycle_months'] as const) {
+    if (f in body) {
+      const v = body[f]
+      if (v === '' || v === null || v === undefined) {
+        updates[f] = null
+      } else if (Number.isFinite(Number(v))) {
+        updates[f] = Number(v)
+      } else {
+        return invalid()
+      }
+    }
+  }
+
   if (!Object.keys(updates).length) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
@@ -71,9 +120,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .eq('id', id)
     .is('deleted_at', null)
     .select()
-    .single()
+    .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+  if (!data) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
   return NextResponse.json({ data })
 }
 

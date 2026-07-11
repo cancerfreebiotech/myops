@@ -41,6 +41,13 @@ export interface ConversionDef {
   fieldMap: Record<string, string>
   /** Source column counting created targets (incremented after a successful conversion) */
   counterField?: string
+  /**
+   * 1:1 conversion: a source may have at most one *non-voided* target. Blocks
+   * re-converting the same source into a duplicate downstream document (e.g. a
+   * second inbound that double-counts stock, or a second AP that double-bills).
+   * A voided target is ignored so a mistaken conversion can be redone.
+   */
+  dedupeTarget?: boolean
   postProcess?: ConversionPostProcess[]
 }
 
@@ -111,6 +118,7 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
     fieldMap: {
       notes: 'notes',
     },
+    dedupeTarget: true,
     postProcess: ['buildInboundItems'],
   },
 
@@ -127,6 +135,8 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
       ap_total_amount: 'total_amount',
       total_amount: 'total_amount',
     },
+    // 一張進貨驗收單只能請款一次：防止重複轉採購請款單 → 重複付款
+    dedupeTarget: true,
     postProcess: ['fillVendorBankInfo'],
   },
 
@@ -316,19 +326,22 @@ export async function convertDoc(
   // notification step completing also lands on 'approved').
   if (source.status !== 'approved') throw new ConversionError('sourceNotApproved')
 
-  // GR→INB 防重轉: one goods receipt may only be converted to a single live
-  // inbound order. Re-converting the same GR would build a second full-quantity
-  // inbound and (once both posted) double the stock — block it here. A voided
-  // inbound is ignored so a mistaken conversion can be redone after voiding.
-  if (def.source === 'goods_receipt' && def.target === 'inbound_order') {
-    const { data: existingInbound } = await service
-      .from('inbound_orders')
+  // 防重轉 (1:1 conversions): a flagged source may have at most one non-voided
+  // target. Re-converting would create a duplicate downstream document — e.g. a
+  // second inbound that double-counts stock (GR→INB) or a second AP that
+  // double-bills the same goods receipt (GR→AP). A voided target is ignored so
+  // a mistaken conversion can be redone after voiding.
+  // NOTE: this is an app-layer check with a residual TOCTOU window; the paired
+  // migration adds partial unique indexes on the FK for the DB-level guarantee.
+  if (def.dedupeTarget) {
+    const { data: existingTarget } = await service
+      .from(DOC_TYPE_META[toType].table)
       .select('id')
-      .eq('gr_id', fromId)
+      .eq(def.fkField, fromId)
       .neq('status', 'voided')
       .limit(1)
-    if (existingInbound && existingInbound.length > 0) {
-      throw new ConversionError('alreadyConverted', 'goods receipt already converted to an inbound order')
+    if (existingTarget && existingTarget.length > 0) {
+      throw new ConversionError('alreadyConverted', `${fromType} already converted to ${toType}`)
     }
   }
 
@@ -349,16 +362,39 @@ export async function convertDoc(
     if (step === 'assignInstallmentNo') await assignInstallmentNo(service, fromId, payload)
   }
 
-  const { data: created, error: insertError } = await service
-    .from(DOC_TYPE_META[toType].table)
-    .insert(payload)
-    .select('id, doc_no')
-    .single()
-  if (insertError || !created) {
-    throw new Error(`conversion insert failed: ${insertError?.message ?? 'no row returned'}`)
+  // AP→INS assigns a per-AP installment_no. Two concurrent conversions can read
+  // the same count and race to the same number, so we lean on the partial unique
+  // index (ap_id, installment_no) added in the paired migration: on a unique
+  // violation (23505) we recompute the next number — which now sees the row the
+  // racing txn just committed — and retry. Non-installment conversions run a
+  // single pass (maxAttempts = 1), identical to before.
+  const usesInstallmentNo = (def.postProcess ?? []).includes('assignInstallmentNo')
+  const maxAttempts = usesInstallmentNo ? 5 : 1
+  let created: { id: string; doc_no: string } | null = null
+  let lastInsertError: { message: string; code?: string } | null = null
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const { data, error } = await service
+      .from(DOC_TYPE_META[toType].table)
+      .insert(payload)
+      .select('id, doc_no')
+      .single()
+    if (!error && data) {
+      created = data as { id: string; doc_no: string }
+      break
+    }
+    lastInsertError = error
+    // Retry only the installment-number collision; recompute then loop.
+    if (usesInstallmentNo && error?.code === '23505' && attempt < maxAttempts - 1) {
+      await assignInstallmentNo(service, fromId, payload)
+      continue
+    }
+    break
   }
-  const newId = created.id as string
-  const docNo = created.doc_no as string
+  if (!created) {
+    throw new Error(`conversion insert failed: ${lastInsertError?.message ?? 'no row returned'}`)
+  }
+  const newId = created.id
+  const docNo = created.doc_no
 
   // post-insert post-processing (line items)
   if ((def.postProcess ?? []).includes('buildInboundItems')) {

@@ -51,20 +51,25 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 
   if (action === 'approve') {
-    const { error } = await service.from('overtime_requests').update({
+    // Compare-and-swap on status='pending' so two concurrent approvers can't
+    // both flip the same request (double approval). Zero affected rows ⇒ the
+    // request was already approved/rejected by a racing request.
+    const { data: updated, error } = await service.from('overtime_requests').update({
       status: 'approved',
       approved_by: user.id,
       approved_at: new Date().toISOString(),
-    }).eq('id', id)
+    }).eq('id', id).eq('status', 'pending').select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!updated || updated.length === 0) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   } else if (action === 'reject') {
-    const { error } = await service.from('overtime_requests').update({
+    const { data: updated, error } = await service.from('overtime_requests').update({
       status: 'rejected',
       reject_reason: reject_reason ?? null,
       approved_by: user.id,
       approved_at: new Date().toISOString(),
-    }).eq('id', id)
+    }).eq('id', id).eq('status', 'pending').select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!updated || updated.length === 0) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
   return NextResponse.json({ data: { ok: true } })

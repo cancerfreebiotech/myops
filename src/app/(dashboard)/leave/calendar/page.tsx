@@ -30,28 +30,13 @@ export default async function LeaveCalendarPage() {
   const lastDay = new Date(year, month + 1, 0).getDate()
   const monthEndStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-  // Build base query
-  let query = service
-    .from('leave_requests')
-    .select(
-      `id, user_id, leave_type_id, start_date, end_date, status, reason,
-       users!leave_requests_user_id_fkey(id, display_name, department_id),
-       leave_types!leave_requests_leave_type_id_fkey(id, name_zh)`
-    )
-    .in('status', ['approved', 'pending'])
-    .lte('start_date', monthEndStr)
-    .gte('end_date', monthStartStr)
-
-  // Scope by role — admin and HR see all
-  if (!isAdmin && !isHR) {
-    query = query.eq(
-      'users.department_id',
-      currentUser?.department_id ?? ''
-    )
-  }
-
-  const { data: leaveRequests } = await query.order('start_date', {
-    ascending: true,
+  // 初次載入與「換月」皆走 calendar_dept_leaves（SECURITY DEFINER）以確保口徑一致：
+  // 一般成員看整個部門、admin/HR 看全公司（部門範圍與欄位由 DB 端把關）。
+  // 直接查 leave_requests 會受 RLS 限制（僅本人 / 直屬部屬可讀，且已移除「已核准全員可讀」
+  // policy），導致一般成員初次載入只看得到自己的假，與換月後 fetchMonth 用同一 RPC 不一致。
+  const { data: calRows } = await service.rpc('calendar_dept_leaves', {
+    p_from: monthStartStr,
+    p_to: monthEndStr,
   })
 
   // Fetch all departments for admin/HR filter bar
@@ -60,8 +45,6 @@ export default async function LeaveCalendarPage() {
     .select('id, name')
     .order('name')
 
-  // PostgREST returns single objects (not arrays) for these many-to-one FK
-  // embeds at runtime, so we assert the actual row shape here.
   interface CalendarLeaveRow {
     id: string
     user_id: string
@@ -69,22 +52,23 @@ export default async function LeaveCalendarPage() {
     start_date: string
     end_date: string
     status: 'approved' | 'pending'
-    reason: string
-    users: { id: string; display_name: string | null; department_id: string | null } | null
-    leave_types: { id: string; name_zh: string | null } | null
+    reason: string | null
+    display_name: string | null
+    department_id: string | null
+    leave_type_name: string | null
   }
 
-  const normalised = ((leaveRequests ?? []) as unknown as CalendarLeaveRow[]).map((lr) => ({
+  const normalised = ((calRows ?? []) as CalendarLeaveRow[]).map((lr) => ({
     id: lr.id,
     user_id: lr.user_id,
     leave_type_id: lr.leave_type_id,
     start_date: lr.start_date,
     end_date: lr.end_date,
     status: lr.status,
-    reason: lr.reason,
-    display_name: lr.users?.display_name ?? '',
-    department_id: lr.users?.department_id ?? '',
-    leave_type_name: lr.leave_types?.name_zh ?? '',
+    reason: lr.reason ?? '',
+    display_name: lr.display_name ?? '',
+    department_id: lr.department_id ?? '',
+    leave_type_name: lr.leave_type_name ?? '',
   }))
 
   const t = await getTranslations('leave')

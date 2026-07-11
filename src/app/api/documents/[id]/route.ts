@@ -69,28 +69,35 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
   }
 
+  // 是否為「真實」的審核狀態轉移：唯有通過上方狀態機把關的 status 變更才算。
+  // 所有副作用（稽核、向量索引、Teams/COO 通知）一律綁定真實轉移，而非前端傳來的
+  // _action 字串——否則帶 _action 卻無 status 轉移的純 metadata 更新（如改 folder）
+  // 會重複觸發 COO 通知與向量重建。
+  const approvedNow = updates.status === 'approved'
+  const rejectedNow = updates.status === 'rejected'
+
   const { data, error } = await service.from('documents').update(updates).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
   // 核准時建向量索引（回應後在背景執行；未設 embedding 時自動略過）
-  if (updates.status === 'approved') {
+  if (approvedNow) {
     after(async () => {
       const { indexDocumentSafe } = await import('@/lib/doc-index')
       await indexDocumentSafe(createAdminClient(), id)
     })
   }
 
-  if (action) {
+  if (action && (approvedNow || rejectedNow)) {
     // audit_logs 無 authenticated INSERT policy（service role only），須用 admin client 才寫得進去
     const admin = createAdminClient()
     await admin.from('audit_logs').insert({
       doc_id: id, user_id: user.id, action,
-      detail: action === 'reject' ? { reason: body.reject_reason } : null,
+      detail: rejectedNow ? { reason: body.reject_reason } : null,
     })
   }
 
   // Teams 通知（fire-and-forget：永不讓通知錯誤影響審核回應）
-  if (action === 'approve' || action === 'reject') {
+  if (approvedNow || rejectedNow) {
     try {
       const doc = data as {
         uploaded_by: string | null
@@ -115,7 +122,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           .single()
         uploaderName = applicant?.display_name ?? '-'
         const title = pickTitle(applicant?.language)
-        const text = action === 'approve'
+        const text = approvedNow
           ? teamsText(applicant?.language, 'documentApproved', { title })
           : teamsText(applicant?.language, 'documentRejected', { title, reason: doc.reject_reason ?? '-' })
         await sendProactiveMessage(doc.uploaded_by, text)
@@ -135,7 +142,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             const lang = c.language as string | null
             return {
               userId: c.id as string,
-              text: action === 'approve'
+              text: approvedNow
                 ? teamsText(lang, 'contractApprovedCoo', { title: pickTitle(lang), applicant: uploaderName })
                 : teamsText(lang, 'contractRejectedCoo', { title: pickTitle(lang), applicant: uploaderName, reason: doc.reject_reason ?? '-' }),
             }
