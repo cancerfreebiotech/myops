@@ -10,14 +10,15 @@ export async function GET() {
     .from('document_recipients')
     .select(`
       id, document_id, requires_confirmation, created_at,
-      document:documents!document_recipients_document_id_fkey(
+      document:documents!document_recipients_document_id_fkey!inner(
         id, title, content_zh, announcement_category, created_at, status
       )
     `)
     .eq('user_id', user.id)
     .eq('requires_confirmation', true)
     .is('confirmed_at', null)
-    .not('document', 'is', null)
+    .eq('document.status', 'approved')
+    .is('document.deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

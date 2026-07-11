@@ -22,10 +22,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     .from('projects')
     .select(`
       *,
-      owner:users!projects_owner_id_fkey(id, display_name),
+      owner:users!projects_project_lead_id_fkey(id, display_name),
       members:project_members(
         user_id,
-        role,
         user:users!project_members_user_id_fkey(id, display_name)
       )
     `)
@@ -49,7 +48,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       user:users!overtime_requests_user_id_fkey(id, display_name)
     `)
     .eq('project_id', id)
-    .order('date', { ascending: false })
+    .order('ot_date', { ascending: false })
 
   // All active users for "add member" dialog
   const { data: allUsers } = await service
@@ -60,9 +59,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     .order('display_name')
 
   const isAdmin = currentUser?.role === 'admin'
-  const isLead =
-    project.owner_id === currentUser?.id ||
-    project.members?.some((m: { user_id: string; role: string }) => m.user_id === currentUser?.id && m.role === 'lead')
+  const isLead = project.project_lead_id === currentUser?.id
 
   const t = await getTranslations('projects')
 

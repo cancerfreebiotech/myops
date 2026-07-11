@@ -38,7 +38,11 @@ export async function GET(request: NextRequest) {
   } else if (target_user_id) {
     query = query.eq('user_id', target_user_id)
   } else if (department_id) {
-    query = query.eq('user.department_id', department_id)
+    // 對巢狀 user 的過濾若無 !inner 不會限縮父層列（會回傳全部門紀錄，user 欄變 null）；
+    // 改先查該部門 user id 再以 user_id in (...) 過濾
+    const { data: deptUsers } = await service.from('users').select('id').eq('department_id', department_id)
+    const ids = (deptUsers ?? []).map(u => u.id)
+    query = query.in('user_id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000'])
   }
 
   const { data, error } = await query

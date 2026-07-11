@@ -25,10 +25,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const body = await request.json()
 
-  // HR can only update allowed fields
+  // HR：只能改允許欄位，且不得操作 admin 帳號（含停用/改主管），也不得把任何人提升為 admin
   if (!isAdmin) {
     const restricted = Object.keys(body).filter(k => !HR_ALLOWED_FIELDS.has(k))
     if (restricted.length > 0) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    const { data: target } = await service.from('users').select('role').eq('id', id).single()
+    if (target?.role === 'admin') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
   }

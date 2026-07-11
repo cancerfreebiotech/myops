@@ -8,8 +8,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  if (!['admin', 'hr'].includes(currentUser?.role ?? '')) {
+  // 與費率設定頁一致：admin，或 job_role hr_manager/coo，或 granted_features 含 hr_manager
+  const { data: currentUser } = await supabase.from('users').select('role, job_role, granted_features').eq('id', user.id).single()
+  const gf = (currentUser?.granted_features as string[] | null) ?? []
+  const canEdit = currentUser?.role === 'admin'
+    || currentUser?.job_role === 'hr_manager' || currentUser?.job_role === 'coo'
+    || gf.includes('hr_manager')
+  if (!canEdit) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 

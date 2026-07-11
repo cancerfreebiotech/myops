@@ -14,14 +14,16 @@ export default async function LeavePage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role, employment_type, department_id, manager_id, display_name')
+    .select('id, role, granted_features, employment_type, department_id, manager_id, display_name')
     .eq('id', user.id)
     .single()
 
   const featureFlags = await getFeatureFlags()
   if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'leave')) redirect('/no-permission')
 
-  const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
+  // 全站慣例：HR = admin 或 granted_features 含 'hr_manager'（role 的 CHECK 僅 member/admin）
+  const isHR = currentUser?.role === 'admin'
+    || ((currentUser?.granted_features as string[] | null) ?? []).includes('hr_manager')
 
   // Leave types available to this user
   const empType = currentUser?.employment_type ?? 'full_time'
@@ -69,7 +71,9 @@ export default async function LeavePage() {
       .neq('user_id', user.id)
       .order('created_at', { ascending: false })
     pendingApprovals = data ?? []
-  } else if (currentUser?.role === 'manager') {
+  } else {
+    // 主管靠 users.manager_id = 自己 判定（role 無 'manager' 死值）；
+    // 非主管者部屬清單為空，pendingApprovals 維持 []。
     const { data: reports } = await service.from('users').select('id').eq('manager_id', user.id)
     const reportIds = (reports ?? []).map(r => r.id)
     if (reportIds.length > 0) {

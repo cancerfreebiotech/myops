@@ -26,8 +26,8 @@ export default async function ProjectsPage() {
     .from('projects')
     .select(`
       *,
-      owner:users!projects_owner_id_fkey(id, display_name),
-      members:project_members(user_id, role, user:users!project_members_user_id_fkey(id, display_name))
+      owner:users!projects_project_lead_id_fkey(id, display_name),
+      members:project_members(user_id, user:users!project_members_user_id_fkey(id, display_name))
     `)
     .is('deleted_at', null)
     .order('created_at', { ascending: false })

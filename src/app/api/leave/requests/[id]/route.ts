@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { sendProactiveMessage } from '@/lib/teams-bot'
@@ -55,8 +55,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (action === 'approve') {
     // 核准前先驗餘額（leave_balances 無 remaining_days，以 total_days - used_days 判斷）；
     // 有 balance 記錄即代表該假別受額度控管，核准後 used_days 不得超過 total_days。
+    // 餘額讀取/扣除改用真 service（createAdminClient，繞過 RLS）：leave_balances 的 RLS
+    // 只允許 self/hr_manager/admin 讀寫，一般直屬主管核准時用 createServiceClient 會讀到 null、
+    // 扣除被靜默擋掉（授權檢查已於上方完成）。
+    const admin = createAdminClient()
     const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
-    const { data: balance } = await service
+    const { data: balance } = await admin
       .from('leave_balances')
       .select('id, used_days, total_days')
       .eq('user_id', leaveReq.user_id)
@@ -83,11 +87,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: t('common.forbidden'), code: 'ALREADY_PROCESSED' }, { status: 409 })
     }
 
-    // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）
+    // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）；
+    // 以 admin client 扣除並檢查 affected rows，確保未被 RLS 靜默擋下（命中 0 列即報錯）。
     if (balance) {
-      await service.from('leave_balances').update({
+      const { data: deducted, error: dedErr } = await admin.from('leave_balances').update({
         used_days: Number(balance.used_days ?? 0) + Number(leaveReq.total_days),
-      }).eq('id', balance.id)
+      }).eq('id', balance.id).select('id')
+      if (dedErr || !deducted || deducted.length === 0) {
+        console.error('[leave] balance deduction failed:', dedErr, 'balanceId:', balance.id)
+        return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+      }
     }
 
     // 單向同步：在申請人 Outlook 建立請假事件（best-effort，永不影響核准回應）

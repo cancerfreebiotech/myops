@@ -1899,6 +1899,7 @@
       "errors": {
         "itemInvalid": "明細の形式が正しくありません",
         "grNotFound": "入荷検収書が見つかりません",
+        "grAlreadyInbound": "この入荷検収書には既に入庫伝票があります",
         "onlyDraftEditable": "下書きのみ編集できます",
         "onlyDraftDeletable": "下書きのみ削除できます",
         "notApprovedForPosting": "承認が完了していないため記帳できません",

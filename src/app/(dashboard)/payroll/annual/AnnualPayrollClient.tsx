@@ -19,8 +19,8 @@ export interface PayrollRecord {
   base_salary: number | null
   overtime_pay: number | null
   bonus: number | null
-  deductions: number | null
-  net_salary: number | null
+  total_deduction: number | null
+  net_pay: number | null
   status: string
 }
 
@@ -112,8 +112,8 @@ export function AnnualPayrollClient({
       base += r.base_salary ?? 0
       ot += r.overtime_pay ?? 0
       bonus += r.bonus ?? 0
-      deductions += r.deductions ?? 0
-      net += r.net_salary ?? 0
+      deductions += r.total_deduction ?? 0
+      net += r.net_pay ?? 0
     })
     return { base, ot, bonus, deductions, net, hasAny }
   }, [displayRecords])
@@ -257,10 +257,10 @@ export function AnnualPayrollClient({
                       {r ? formatCurrency(r.bonus) : <span className="text-slate-300 dark:text-slate-600">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-red-500 whitespace-nowrap">
-                      {r ? formatCurrency(r.deductions) : <span className="text-slate-300 dark:text-slate-600">—</span>}
+                      {r ? formatCurrency(r.total_deduction) : <span className="text-slate-300 dark:text-slate-600">—</span>}
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-semibold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
-                      {r ? formatCurrency(r.net_salary) : <span className="text-slate-300 dark:text-slate-600 font-normal">—</span>}
+                      {r ? formatCurrency(r.net_pay) : <span className="text-slate-300 dark:text-slate-600 font-normal">—</span>}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {r ? (

@@ -12,16 +12,18 @@ export async function POST(request: NextRequest) {
   const { name, description, owner_id } = await request.json()
   if (!name) return NextResponse.json({ error: t('projects.missingName') }, { status: 400 })
 
+  const leadId = owner_id ?? user.id
   const { data, error } = await service.from('projects').insert({
     name, description: description ?? null,
-    owner_id: owner_id ?? user.id,
-    is_active: true,
+    project_lead_id: leadId,
+    status: 'active',
+    created_by: user.id,
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
 
-  // Add creator as lead member
-  await service.from('project_members').insert({ project_id: data.id, user_id: user.id, role: 'lead' })
+  // Add the project lead as a member
+  await service.from('project_members').insert({ project_id: data.id, user_id: leadId })
 
   return NextResponse.json({ data })
 }

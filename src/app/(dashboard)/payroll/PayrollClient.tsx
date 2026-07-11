@@ -20,10 +20,10 @@ export interface PayrollRecord {
   base_salary: number | null
   overtime_pay: number | null
   bonus: number | null
-  deductions: number | null
-  net_salary: number | null
+  total_deduction: number | null
+  net_pay: number | null
   status: string
-  notes: string | null
+  note: string | null
   user?: { id: string; display_name: string | null; department?: { name: string } | null } | null
 }
 
@@ -186,8 +186,8 @@ export function PayrollClient({
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.base_salary)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.overtime_pay)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums text-red-500">{formatCurrency(r.deductions)}</td>
-                    <td className="px-4 py-3 text-right tabular-nums font-bold text-slate-800 dark:text-slate-200">{formatCurrency(r.net_salary)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-red-500">{formatCurrency(r.total_deduction)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-bold text-slate-800 dark:text-slate-200">{formatCurrency(r.net_pay)}</td>
                     <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                     <td className="px-4 py-3">
                       {canAct(r.status) && FLOW_ACTIONS[r.status] && (
@@ -236,11 +236,11 @@ export function PayrollClient({
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">{t('deductions')}</p>
-                  <p className="font-medium tabular-nums text-red-500">{formatCurrency(r.deductions)}</p>
+                  <p className="font-medium tabular-nums text-red-500">{formatCurrency(r.total_deduction)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400">{t('netPay')}</p>
-                  <p className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(r.net_salary)}</p>
+                  <p className="font-bold tabular-nums text-blue-600 dark:text-blue-400">{formatCurrency(r.net_pay)}</p>
                 </div>
               </div>
             </div>

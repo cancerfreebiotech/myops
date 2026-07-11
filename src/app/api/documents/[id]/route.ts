@@ -38,16 +38,34 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: 'No permitted fields' }, { status: 400 })
   }
 
-  // 職責分離：核准（status→approved）時不得核准自己上傳的文件（與請假/加班/出差/報帳一致）。
-  // documents_status_guard 與 UPDATE RLS 都不排除 uploaded_by=自己，故此把關必須在 app 層做。
-  if (updates.status === 'approved') {
+  // 涉及狀態變更時，讀取當前文件做把關（狀態機 + 職責分離）。
+  if (typeof updates.status === 'string') {
     const { data: target } = await service
       .from('documents')
-      .select('uploaded_by')
+      .select('uploaded_by, status')
       .eq('id', id)
       .single()
-    if (target?.uploaded_by === user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+    // 狀態機把關：僅允許合法轉移，禁止回退/跳關與對終態文件重複核准
+    // （避免重複觸發 COO 通知與向量重建）。
+    const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+      pending: ['approved', 'rejected'],
+      approved: ['archived'],
+    }
+    const allowed = ALLOWED_TRANSITIONS[target.status] ?? []
+    if (!allowed.includes(updates.status as string)) {
+      return NextResponse.json({ error: 'Invalid status transition', code: 'INVALID_TRANSITION' }, { status: 409 })
+    }
+
+    // 職責分離：核准（status→approved）時不得核准自己上傳的文件（與請假/加班/出差/報帳一致）。
+    // documents_status_guard 與 UPDATE RLS 都不排除 uploaded_by=自己，故此把關必須在 app 層做。
+    if (updates.status === 'approved') {
+      if (target.uploaded_by === user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      // 核准人由 server 端補寫，不依賴前端傳入（與 publish route 一致）。
+      updates.approved_by = user.id
     }
   }
 

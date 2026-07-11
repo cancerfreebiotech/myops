@@ -1899,6 +1899,7 @@
       "errors": {
         "itemInvalid": "Invalid items",
         "grNotFound": "Goods receipt doc no. not found",
+        "grAlreadyInbound": "This goods receipt already has an inbound order",
         "onlyDraftEditable": "Only drafts can be edited",
         "onlyDraftDeletable": "Only drafts can be deleted",
         "notApprovedForPosting": "The document must be fully approved before posting",

@@ -141,13 +141,16 @@ export async function POST(request: NextRequest) {
     .eq('year', year)
     .eq('month', month)
 
-  // Helper: find bracket
+  // Helper: 投保級距＝「涵蓋薪資的級距」——insured_salary（投保金額）為級距上限，
+  // 取 insured_salary >= 實際薪資的最低級距（而非 floor <= salary 的最高級距，
+  // 後者會把跨級距薪資投保在較低級距、少扣保費）。薪資超過最高級距 → 用最高級距。
   function findBracket(brackets: InsuranceBracket[] | null, salary: number) {
     if (!brackets?.length) return { employee_share: 0, employer_share: 0 }
-    for (let i = brackets.length - 1; i >= 0; i--) {
-      if (salary >= Number(brackets[i].insured_salary)) return brackets[i]
+    const asc = [...brackets].sort((a, b) => Number(a.insured_salary) - Number(b.insured_salary))
+    for (const b of asc) {
+      if (Number(b.insured_salary) >= salary) return b
     }
-    return brackets[0]
+    return asc[asc.length - 1]
   }
 
   // 8. Build payroll records

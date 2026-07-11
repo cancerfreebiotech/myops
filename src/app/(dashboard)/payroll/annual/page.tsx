@@ -29,12 +29,13 @@ export default async function AnnualPayrollPage({ searchParams }: PageProps) {
   const year = parseInt(sp.year ?? String(now.getFullYear()))
 
   // Fetch current user's annual payroll records (all months)
-  const { data: myAnnualRecords } = await supabase
+  const { data: myAnnualRecords, error: myAnnualError } = await supabase
     .from('payroll_records')
-    .select('id, year, month, base_salary, overtime_pay, bonus, deductions, net_salary, status')
+    .select('id, year, month, base_salary, overtime_pay, bonus, total_deduction, net_pay, status')
     .eq('user_id', user.id)
     .eq('year', year)
     .order('month', { ascending: true })
+  if (myAnnualError) console.error('[payroll/annual] myAnnualRecords query failed:', myAnnualError.message)
 
   // HR/admin: fetch all active users + their annual records
   let allUsers: User[] = []
@@ -49,11 +50,12 @@ export default async function AnnualPayrollPage({ searchParams }: PageProps) {
       .order('display_name')
     allUsers = usersData ?? []
 
-    const { data: allRecordsData } = await service
+    const { data: allRecordsData, error: allRecordsError } = await service
       .from('payroll_records')
-      .select('id, user_id, year, month, base_salary, overtime_pay, bonus, deductions, net_salary, status')
+      .select('id, user_id, year, month, base_salary, overtime_pay, bonus, total_deduction, net_pay, status')
       .eq('year', year)
       .order('month', { ascending: true })
+    if (allRecordsError) console.error('[payroll/annual] allAnnualRecords query failed:', allRecordsError.message)
     allAnnualRecords = allRecordsData ?? []
   }
 

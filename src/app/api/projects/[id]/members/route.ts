@@ -8,9 +8,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { user_id, role } = await request.json()
+  const { user_id } = await request.json()
   const { error } = await service.from('project_members').upsert(
-    { project_id: id, user_id, role: role ?? 'member' },
+    { project_id: id, user_id },
     { onConflict: 'project_id,user_id' }
   )
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })

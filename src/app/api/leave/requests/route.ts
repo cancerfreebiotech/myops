@@ -1,7 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
-import { taipeiToday } from '@/lib/taipei-date'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -12,14 +11,37 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
-  const { leave_type_id, start_date, end_date, half_day, total_days, reason, deputy_id } = body
+  // total_days 一律由 server 依 start_date/end_date + 半天重算，不採用前端傳來的值。
+  const { leave_type_id, start_date, end_date, half_day, reason, deputy_id } = body
 
-  if (!leave_type_id || !start_date || !end_date || !total_days || !reason) {
+  if (!leave_type_id || !start_date || !end_date || !reason) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
   }
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/
+  if (!dateRe.test(start_date) || !dateRe.test(end_date)
+      || Number.isNaN(Date.parse(`${start_date}T00:00:00Z`)) || Number.isNaN(Date.parse(`${end_date}T00:00:00Z`))) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
 
-  // Check leave balance（leave_balances 無 remaining_days，以 total_days - used_days 計算）
-  const currentYear = Number(taipeiToday().slice(0, 4))
+  // 依日期重算天數（含半天）：以台北日曆日計，含頭尾（與前端 differenceInCalendarDays+1 一致）；
+  // 半天僅單日有效（start_date === end_date），多日區間一律以整天計。
+  const startMs = Date.parse(`${start_date}T00:00:00Z`)
+  const endMs = Date.parse(`${end_date}T00:00:00Z`)
+  if (endMs < startMs) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
+  const calendarDays = Math.round((endMs - startMs) / 86_400_000) + 1
+  const isSingleDay = calendarDays === 1
+  // 半天假：client 傳 half_day（morning/afternoon）；DB 用 start_half/end_half
+  const half = isSingleDay && (half_day === 'morning' || half_day === 'afternoon') ? half_day : 'full'
+  const total_days = half === 'full' ? calendarDays : 0.5
+  if (!(total_days > 0)) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+  }
+
+  // Check leave balance（leave_balances 無 remaining_days，以 total_days - used_days 計算）；
+  // 年度依請假 start_date 推導（與核准端 [id]/route.ts 一致），避免跨年假餘額歸屬錯置。
+  const currentYear = Number(String(start_date).slice(0, 4))
   const { data: balance } = await service
     .from('leave_balances')
     .select('id, total_days, used_days')
@@ -43,9 +65,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType?.name ?? '', remaining }) }, { status: 400 })
     }
   }
-
-  // 半天假：client 傳 half_day（morning/afternoon）；DB 用 start_half/end_half
-  const half = half_day === 'morning' || half_day === 'afternoon' ? half_day : 'full'
 
   const { data, error } = await service.from('leave_requests').insert({
     user_id: user.id,

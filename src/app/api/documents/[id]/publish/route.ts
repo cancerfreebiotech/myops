@@ -15,6 +15,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const canPublish = currentUser?.role === 'admin' || currentUser?.granted_features?.includes('publish_announcement')
   if (!canPublish) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  // 發布即核准，需 MFA（aal2），與 PATCH 審核路徑一致
+  const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aalData?.currentLevel !== 'aal2') {
+    return NextResponse.json({ error: 'MFA required', code: 'MFA_REQUIRED' }, { status: 403 })
+  }
+
+  // 此端點僅處理公告類文件（ANN/REG）。合約/NDA/MOU/AMEND 類須走 documents/[id] 的
+  // approve_contract + MFA + 職責分離審核路徑，不得經 publish_announcement 核准。
+  // 同時做職責分離：不得發布/核准自己上傳的文件。
+  const { data: target } = await service
+    .from('documents')
+    .select('doc_type, uploaded_by')
+    .eq('id', id)
+    .single()
+  if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const ANNOUNCEMENT_TYPES = ['ANN', 'REG']
+  if (!ANNOUNCEMENT_TYPES.includes(target.doc_type)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  if (target.uploaded_by === user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { recipient_user_ids, requires_confirmation, reminder_days } = await request.json()
 
   // 需真正繞過 RLS + documents_status_guard 才能發布：

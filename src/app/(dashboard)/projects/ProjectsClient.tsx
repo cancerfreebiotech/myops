@@ -20,7 +20,6 @@ interface UserOption {
 
 interface ProjectMember {
   user_id: string
-  role: string
   user: UserOption | null
 }
 
@@ -28,7 +27,8 @@ interface Project {
   id: string
   name: string
   description: string | null
-  is_active: boolean
+  status: string
+  project_lead_id: string | null
   created_at: string
   owner: UserOption | null
   members: ProjectMember[] | null
@@ -52,7 +52,6 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
   const [ownerId, setOwnerId] = useState(currentUser?.id ?? '')
   const [loading, setLoading] = useState(false)
   const [newMember, setNewMember] = useState('')
-  const [newMemberRole, setNewMemberRole] = useState('member')
 
   const handleCreate = async () => {
     if (!name.trim()) { toast.error(t('errorNameRequired')); return }
@@ -76,7 +75,7 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
     const res = await fetch(`/api/projects/${projectId}/members`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: newMember, role: newMemberRole }),
+      body: JSON.stringify({ user_id: newMember }),
     })
     const { error } = await res.json()
     if (error) { toast.error(error); return }
@@ -105,8 +104,8 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200">{p.name}</h3>
                 <p className="text-xs text-slate-400 mt-0.5">{t('ownerPrefix')}{p.owner?.display_name ?? '—'}</p>
               </div>
-              <Badge variant="outline" className={`text-xs shrink-0 ${p.is_active ? 'border-green-200 text-green-700' : 'border-slate-200 text-slate-500'}`}>
-                {p.is_active ? t('active') : t('closed')}
+              <Badge variant="outline" className={`text-xs shrink-0 ${p.status === 'active' ? 'border-green-200 text-green-700' : 'border-slate-200 text-slate-500'}`}>
+                {p.status === 'active' ? t('active') : t('closed')}
               </Badge>
             </div>
             {p.description && (
@@ -167,7 +166,7 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
               {selectedProject?.members?.map(m => (
                 <div key={m.user_id} className="flex items-center justify-between text-sm">
                   <span className="text-slate-700 dark:text-slate-300">{m.user?.display_name}</span>
-                  <Badge variant="outline" className="text-xs">{m.role === 'lead' ? t('roleLead') : t('roleMember')}</Badge>
+                  <Badge variant="outline" className="text-xs">{m.user_id === selectedProject?.project_lead_id ? t('roleLead') : t('roleMember')}</Badge>
                 </div>
               ))}
               {!selectedProject?.members?.length && <p className="text-slate-400 text-sm">{t('noMembers')}</p>}
@@ -177,13 +176,6 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
                 <SelectTrigger className="flex-1"><SelectValue placeholder={t('selectMemberPlaceholder')} /></SelectTrigger>
                 <SelectContent>
                   {allUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.display_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={newMemberRole} onValueChange={v => setNewMemberRole(v ?? 'member')}>
-                <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="member">{t('roleMember')}</SelectItem>
-                  <SelectItem value="lead">{t('roleLead')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button size="sm" onClick={() => handleAddMember(membersOpen!)} className="min-h-[36px]">{t('addMember')}</Button>

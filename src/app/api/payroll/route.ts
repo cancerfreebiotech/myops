@@ -71,6 +71,17 @@ export async function POST(request: NextRequest) {
   const gross = nBase + nOt + nBonus
   const net = gross - nDeduct
 
+  // 保護狀態機：若該員工當月薪資已存在且非 draft（已進審核/發薪流程），
+  // 不得用手動建立覆寫回 draft（會繞過 hr_review→finance→coo→pay 與 MFA）。
+  const { data: existing } = await service
+    .from('payroll_records')
+    .select('status')
+    .eq('user_id', user_id).eq('year', year).eq('month', month)
+    .maybeSingle()
+  if (existing && existing.status !== 'draft') {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 409 })
+  }
+
   const { data, error } = await service.from('payroll_records').upsert({
     user_id,
     year,

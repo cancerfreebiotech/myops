@@ -76,7 +76,7 @@ export async function GET() {
   const monthlyProcurement = months.map(m => ({
     month: m,
     amount: ((prs.data ?? []) as unknown as PrRow[])
-      .filter(r => taipeiMonth(r.created_at) === m && !['cancelled', 'voided', 'rejected'].includes(r.status))
+      .filter(r => taipeiMonth(r.created_at) === m && !['draft', 'in_approval', 'cancelled', 'voided', 'rejected'].includes(r.status))
       .reduce((sum, r) => sum + Number(r.total_amount ?? 0), 0),
   }))
 

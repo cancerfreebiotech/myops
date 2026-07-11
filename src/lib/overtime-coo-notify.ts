@@ -1,4 +1,4 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 
@@ -29,11 +29,15 @@ export interface OvertimeNotifyInfo {
  *    users/projects；sendProactiveMessage 內部另建 service client 解析 email）。
  */
 export async function notifyCooOverThreshold(
-  service: Service,
+  _service: Service,
   ot: OvertimeNotifyInfo,
 ): Promise<void> {
+  // 用真 service-role client：system_settings 非 feature.* key 僅 admin 可讀，
+  // 帶使用者身分的 service 會讀不到門檻（RLS 擋 → 一般員工的專案加班永遠不通知 COO）。
+  const admin = createAdminClient()
+
   // 1) 讀門檻
-  const { data: setting } = await service
+  const { data: setting } = await admin
     .from('system_settings')
     .select('value')
     .eq('key', 'project_ot_coo_threshold_hours')
@@ -43,7 +47,7 @@ export async function notifyCooOverThreshold(
   if (!(ot.hours > threshold)) return
 
   // 2) 找出所有在職 COO
-  const { data: coos } = await service
+  const { data: coos } = await admin
     .from('users')
     .select('id, language')
     .eq('is_active', true)
@@ -51,14 +55,14 @@ export async function notifyCooOverThreshold(
   if (!coos || coos.length === 0) return
 
   // 3) 訊息素材：申請人姓名、專案名稱
-  const { data: applicant } = await service
+  const { data: applicant } = await admin
     .from('users')
     .select('display_name')
     .eq('id', ot.applicantId)
     .maybeSingle()
   let projectName = '-'
   if (ot.projectId) {
-    const { data: proj } = await service
+    const { data: proj } = await admin
       .from('projects')
       .select('name')
       .eq('id', ot.projectId)

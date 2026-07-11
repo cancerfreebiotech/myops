@@ -1899,6 +1899,7 @@
       "errors": {
         "itemInvalid": "明細格式錯誤",
         "grNotFound": "找不到此進貨單號",
+        "grAlreadyInbound": "此進貨單已建立入庫單，不可重複入庫",
         "onlyDraftEditable": "只有草稿狀態可以編輯",
         "onlyDraftDeletable": "只有草稿狀態可以刪除",
         "notApprovedForPosting": "單據尚未簽核完成，無法過帳",

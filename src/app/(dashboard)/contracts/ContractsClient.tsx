@@ -132,7 +132,7 @@ export function ContractsClient({ companies }: Props) {
                 <TableRow
                   key={doc.id}
                   className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                  onClick={() => router.push(`/documents/${doc.id}`)}
+                  onClick={() => router.push(`/contracts/${doc.id}`)}
                 >
                   <TableCell>
                     <div className="flex items-center gap-2">
