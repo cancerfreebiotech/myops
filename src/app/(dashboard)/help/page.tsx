@@ -382,11 +382,11 @@ const CONTENT: Record<string, PageContent> = {
             icon: MessageSquarePlus,
             href: '/feedback/new',
             title: '意見回饋',
-            desc: '提交對公司的建議或意見（匿名）。',
+            desc: '提交對公司的建議或意見（具名，僅 Admin 可查看）。',
             features: [
               '選擇回饋類別（工作環境、薪資福利、管理制度、其他）',
               '填寫詳細說明',
-              '提交後為匿名，只有 Admin 可查看',
+              '提交後僅 Admin 可查看（含提交者姓名，非匿名）',
             ],
           },
           {
@@ -514,7 +514,7 @@ const CONTENT: Record<string, PageContent> = {
         rows: [
           { feature: '建立專案', employee: true, manager: true, hr: true, admin: true },
           { feature: '專案成員管理', employee: false, manager: '△', hr: '△', admin: true, note: '專案負責人可管理' },
-          { feature: '意見回饋（匿名）', employee: true, manager: true, hr: true, admin: true },
+          { feature: '意見回饋（具名）', employee: true, manager: true, hr: true, admin: true },
           { feature: '查看回饋', employee: false, manager: false, hr: false, admin: true },
           { feature: '管理後台', employee: false, manager: false, hr: false, admin: true },
         ],
@@ -868,11 +868,11 @@ const CONTENT: Record<string, PageContent> = {
             icon: MessageSquarePlus,
             href: '/feedback/new',
             title: 'Feedback',
-            desc: 'Submit anonymous suggestions or feedback to the company.',
+            desc: 'Submit suggestions or feedback to the company (named; visible to Admin only).',
             features: [
               'Choose a category (Work Environment, Compensation, Management, Other)',
               'Add detailed comments',
-              'Submissions are anonymous — only Admin can view responses',
+              'Only Admin can view submissions (includes submitter name — not anonymous)',
             ],
           },
           {
@@ -1000,7 +1000,7 @@ const CONTENT: Record<string, PageContent> = {
         rows: [
           { feature: 'Create projects', employee: true, manager: true, hr: true, admin: true },
           { feature: 'Manage project members', employee: false, manager: '△', hr: '△', admin: true, note: 'Project lead can manage' },
-          { feature: 'Submit feedback (anonymous)', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'Submit feedback (named)', employee: true, manager: true, hr: true, admin: true },
           { feature: 'View feedback', employee: false, manager: false, hr: false, admin: true },
           { feature: 'Admin panel', employee: false, manager: false, hr: false, admin: true },
         ],
@@ -1354,11 +1354,11 @@ const CONTENT: Record<string, PageContent> = {
             icon: MessageSquarePlus,
             href: '/feedback/new',
             title: 'フィードバック',
-            desc: '会社への提案や意見を匿名で送ることができます。',
+            desc: '会社への提案や意見を送れます（記名、Adminのみ閲覧可）。',
             features: [
               'カテゴリ選択（職場環境・給与福利厚生・管理制度・その他）',
               '詳細コメントの入力',
-              '送信後は匿名。Adminのみ閲覧可能',
+              'Adminのみ閲覧可能（送信者名を含む、匿名ではありません）',
             ],
           },
           {
@@ -1486,7 +1486,7 @@ const CONTENT: Record<string, PageContent> = {
         rows: [
           { feature: 'プロジェクト作成', employee: true, manager: true, hr: true, admin: true },
           { feature: 'メンバー管理', employee: false, manager: '△', hr: '△', admin: true, note: 'プロジェクトリーダーも可' },
-          { feature: 'フィードバック送信（匿名）', employee: true, manager: true, hr: true, admin: true },
+          { feature: 'フィードバック送信（記名）', employee: true, manager: true, hr: true, admin: true },
           { feature: 'フィードバック閲覧', employee: false, manager: false, hr: false, admin: true },
           { feature: '管理者パネル', employee: false, manager: false, hr: false, admin: true },
         ],

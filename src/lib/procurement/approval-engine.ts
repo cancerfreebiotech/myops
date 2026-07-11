@@ -365,6 +365,13 @@ export async function actOnStep(
   const user = await fetchUser(service, userId)
   if (!user || !canActOnStep(user, step)) throw new ApprovalEngineError('notYourTurn')
 
+  // 職責分立：送簽者本人不得核准/退回自己送出的單（即使身兼該關卡的部門主管/權限持有者）。
+  // ack（通知確認）不涉核准，允許。
+  const submitter = (doc.submitted_by as string | null) ?? doc.created_by
+  if (action !== 'ack' && submitter === userId && user.role !== 'admin') {
+    throw new ApprovalEngineError('notYourTurn')
+  }
+
   if (action === 'ack' && step.approver_kind !== 'anyone') throw new ApprovalEngineError('ackOnlyNotifyStep')
   const effective: 'approve' | 'reject' = action === 'reject' ? 'reject' : 'approve'
 

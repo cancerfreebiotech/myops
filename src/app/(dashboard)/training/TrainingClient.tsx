@@ -610,8 +610,11 @@ export function TrainingClient({ isManager, allUsers, userId }: Props) {
   // --- 我的訓練 ---
 
   const thisYear = taipeiToday().slice(0, 4)
+  // completed_at 為 UTC，需換算台北時區再取年度（否則台北 1/1 凌晨完成會被誤歸前一年）
+  const taipeiYearOf = (iso: string) =>
+    new Date(new Date(iso).getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 4)
   const myHours = records
-    .filter(r => r.status === 'completed' && r.completed_at?.startsWith(thisYear))
+    .filter(r => r.status === 'completed' && r.completed_at && taipeiYearOf(r.completed_at) === thisYear)
     .reduce((sum, r) => sum + Number(r.hours || 0), 0)
 
   const renderRecord = (r: TrainingRecord) => (

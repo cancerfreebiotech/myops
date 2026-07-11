@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action')
+  const search = searchParams.get('search')?.trim()
   const page = parseInt(searchParams.get('page') ?? '1')
   const PAGE_SIZE = 50
 
@@ -29,6 +30,8 @@ export async function GET(request: NextRequest) {
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
 
   if (action) query = query.eq('action', action)
+  // 搜尋框：比對 action 內容（detail 為 jsonb 不適合 ilike）
+  if (search) query = query.ilike('action', `%${search}%`)
 
   const { data, count, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
