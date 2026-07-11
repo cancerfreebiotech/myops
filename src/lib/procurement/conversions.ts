@@ -118,7 +118,7 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
     fieldMap: {
       notes: 'notes',
     },
-    dedupeTarget: true,
+    // 擱置：一張 GR 對多張入庫單可能是合理的分批入庫，待確認採購規則後再決定是否防重（2026-07-11 Luna）
     postProcess: ['buildInboundItems'],
   },
 

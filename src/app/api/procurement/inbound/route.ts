@@ -68,16 +68,7 @@ export async function POST(request: NextRequest) {
     const { data: gr } = await service.from('goods_receipts').select('id').eq('doc_no', grDocNo).maybeSingle()
     if (!gr) return NextResponse.json({ error: ti('errors.grNotFound') }, { status: 404 })
     grId = gr.id
-    // 防重：同一張 GR 已有非作廢入庫單時，不得再手動建立（否則庫存加倍）
-    const { data: dup } = await service
-      .from('inbound_orders')
-      .select('id')
-      .eq('gr_id', grId)
-      .is('voided_at', null)
-      .limit(1)
-    if (dup && dup.length > 0) {
-      return NextResponse.json({ error: ti('errors.grAlreadyInbound') }, { status: 409 })
-    }
+    // 擱置 GR→入庫防重：分批入庫可能是合理流程，待確認採購規則（2026-07-11 Luna）
   }
 
   const { data: order, error: orderError } = await service

@@ -14,10 +14,11 @@
 -- ⚠️ 套用前若既有資料已存在重複，建立唯一索引會失敗；需先人工清理/作廢重複列。
 -- ============================================================
 
--- 1) GR → INB 防重（同一 gr_id 僅一張非作廢入庫單）
-CREATE UNIQUE INDEX IF NOT EXISTS uq_inbound_orders_gr_active
-  ON inbound_orders (gr_id)
-  WHERE gr_id IS NOT NULL AND status <> 'voided';
+-- 1) GR → INB 防重【擱置】：線上已有 15 筆一 GR 多入庫單，可能是合理分批入庫；
+--    待 Luna 確認採購規則後再決定是否建立此索引（2026-07-11）。
+-- CREATE UNIQUE INDEX IF NOT EXISTS uq_inbound_orders_gr_active
+--   ON inbound_orders (gr_id)
+--   WHERE gr_id IS NOT NULL AND status <> 'voided';
 
 -- 2) GR → AP 防重（同一 gr_id 僅一張非作廢採購請款單）
 CREATE UNIQUE INDEX IF NOT EXISTS uq_ap_requests_gr_active
