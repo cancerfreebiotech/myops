@@ -1,11 +1,11 @@
 # myOPS 交接指南（ONBOARDING）
 
-> 給接手的 Claude Code session／新機器。最後更新：**2026-07-20**，版本 **v0.8.5**。
+> 給接手的 Claude Code session／新機器。最後更新：**2026-07-20**，版本 **v0.8.6**。
 > 舊版交接文 `docs/HANDOVER.md`（2026-07-04, v0.6.0）僅作歷史參考，現況以本檔為準。
 
 ## 一句話現況
 
-系統已全功能上線（roadmap Tier 1–3 全完成、UAT v2.5 共 169 項、v0.8.5 於 2026-07-11 部署），但 **2026-07-20 例行日誌掃描發現一批未修的線上 bug（見「立即要處理」），其中採購單建立對所有人都是壞的**。另有 2 件產品決策在等 Luna 拍板。
+系統已全功能上線（roadmap Tier 1–3 全完成、UAT v2.5 共 169 項）。2026-07-20 日誌掃描發現的一批「查詢錯誤被靜默吞掉」的線上 bug（含採購單建立全壞）**已於 v0.8.6 全數修復並部署**（見下節，接手時請做上線後驗證）。剩 2 件產品決策在等 Luna 拍板。
 
 ---
 
@@ -30,55 +30,19 @@
 
 ---
 
-## 🔥 立即要處理（2026-07-20 日誌掃描發現，均未修）
+## ✅ 2026-07-20 發現的線上 bug — 已於 v0.8.6 修復（fix commit `27b154d`）
 
-> 背景：這些查詢錯誤長期被 `?? []` 吞掉、頁面靜默顯示空清單，所以 UAT 沒抓到。7/20 上午 Linda Chao（admin）實際撞到多次。修好後建議順手處理「錯誤被吞」的模式（至少 console.error）。
+> 背景：一批從 4 月就存在的查詢錯誤長期被 `?? []` 吞掉、頁面靜默顯示空清單，UAT 因此沒抓到；7/20 由 Supabase 日誌掃描找出、當天修復部署。記錄在此供接手者理解脈絡與做上線後驗證。
 
-### P0 — 採購單（PR）建立對所有人都失敗
+- **P0 採購單建立全壞（已修）**：`next_doc_no()` 非 SECURITY DEFINER、`doc_counters` 只有 SELECT policy ⇒ 自動編號 INSERT 被 RLS 擋、App 內建採購文件自 6/12 起必失敗。migration `20260720000001` 已套用（Luna 授權），並以 authenticated 角色 rollback 交易實測取號 `PR-2607-001` 成功。
+- **P1 users.deleted_at 幽靈過濾（已修）**：`public.users` 沒有 `deleted_at` 欄位；9 個頁面的 users 查詢帶 `.is('deleted_at', null)` 導致 400、清單空白（出勤管理全員清單、請假代理人、專案成員、薪資對象等）。已全數移除（活躍判斷用 `is_active`）。
+- **P1 document_recipients.id（已修）**：該表是複合主鍵 `(document_id, user_id)`、沒有 `id`；首頁「待確認公告」區塊、my-pending API、公告詳情頁 select `id` 導致永遠空白。已改 `document_id` 並同步修消費端 React key 與型別。
+- **P2 請假頁空部門（已修）**：無部門使用者的代理人查詢送出 `department_id=eq.`（空字串）400。已加 guard。
+- **P3 補打卡自我核准 UX（未修，低優先）**：對自己的申請按核准會被 `approve_makeup_request` 以 `forbidden` 拒絕——**這是職責分離的預期行為**（核准人限 `users.manager_id` 或 admin）。待改善的是 UI：簽核中心對本人申請隱藏／停用核准鈕＋明確錯誤訊息。已列入 ROADMAP 技術債。
 
-- **症狀**：新增採購單 → 500/403，`new row violates row-level security policy for table "doc_counters"`。7/20 Linda 試了 2 次都失敗。`doc_counters` 表是**空的** ⇒ 自 6/12 上線以來，App 內從未成功建立過任何需要自動編號的採購文件（先前資料都是 Ragic 匯入、自帶 doc_no 繞過了 trigger）。
-- **根因**：`supabase/migrations/20260612000009_procurement_core.sql` 的 `next_doc_no()` **不是 SECURITY DEFINER**，而 `doc_counters` 開了 RLS 但只有 SELECT policy ⇒ BEFORE INSERT trigger `set_procurement_doc_no` 以呼叫者身分 INSERT `doc_counters` 必被 RLS 擋（admin 也一樣，因為根本沒有寫入 policy）。
-- **修法**（一支 migration，**跑線上前需 Luna 明確授權**）：
-  ```sql
-  ALTER FUNCTION next_doc_no(text, text) SECURITY DEFINER SET search_path = public;
-  ```
-  （比補 INSERT/UPDATE policy 乾淨；務必釘 `search_path`，見下方「教訓」。）修完實測建一張 PR 確認拿到 `PR-YYMM-001` 編號。
+**接手後的驗證建議**：隔天掃一次 postgres/edge logs 確認不再出現 `column users.deleted_at does not exist`／`column document_recipients.id does not exist`／`doc_counters` RLS 錯誤；並請實際使用者建一張採購單、看首頁公告區塊有資料。
 
-### P1 — 14 個頁面對 `users` 過濾不存在的 `deleted_at` → 400 → 清單空白
-
-`public.users` **沒有** `deleted_at` 欄位（活躍與否用 `is_active`）。以下檔案的 users 查詢鏈帶了 `.is('deleted_at', null)`，整條查詢 400、頁面靜默顯示空資料（例：出勤管理的全員清單、請假頁的代理人下拉、專案成員選單）：
-
-```
-src/app/(dashboard)/admin/attendance/page.tsx      src/app/(dashboard)/admin/companies/page.tsx
-src/app/(dashboard)/admin/departments/page.tsx     src/app/(dashboard)/admin/hr-settings/page.tsx
-src/app/(dashboard)/admin/leave-balances/page.tsx  src/app/(dashboard)/attendance/page.tsx
-src/app/(dashboard)/documents/[id]/page.tsx        src/app/(dashboard)/documents/page.tsx
-src/app/(dashboard)/leave/page.tsx                 src/app/(dashboard)/payroll/annual/page.tsx
-src/app/(dashboard)/payroll/page.tsx               src/app/(dashboard)/procurement/purchase-requests/[id]/page.tsx
-src/app/(dashboard)/projects/[id]/page.tsx         src/app/(dashboard)/projects/page.tsx
-```
-
-- **修法**：把 users 查詢鏈上的 `.is('deleted_at', null)` 移除（`is_active=true` 已足夠）。上表是「`from('users')` 附近 12 行內出現 deleted_at」的掃描結果——動手前逐檔確認該 filter 確實掛在 users 的查詢鏈上（有些檔案同時查 documents/assets 等**有** deleted_at 的表，那些要保留）。
-- 全庫有 `deleted_at` 的表（供對照）：assets, certifications, companies, company_events, daily_report_groups, departments, documents, job_openings, lab_supplies, products, projects, training_courses, vendor_products, vendors, warehouses, work_shifts。**users、document_recipients 沒有。**
-
-### P1 — 4 處對 `document_recipients` select 不存在的 `id` → 400 → 公告清單空白
-
-`document_recipients` 是複合主鍵 `(document_id, user_id)`，**從第一天就沒有 `id` 欄位**：
-
-- `src/app/(dashboard)/page.tsx:90` — **首頁「待確認公告」區塊因此永遠空白**（使用者可見影響最大）
-- `src/app/(dashboard)/announcements/[id]/page.tsx:49`
-- `src/app/api/announcements/my-pending/route.ts:12`
-- `src/app/api/export/announcement-reads/route.ts`（backtick select 內）
-
-**修法**：select 改 `document_id, user_id, ...`，下游用到 `row.id` 的地方（React key、confirm 呼叫等）改用 `document_id`（或複合 key）。
-
-### P2 — 請假頁代理人查詢：部門為空時送出 `department_id=eq.`（空字串）→ 400
-
-`src/app/(dashboard)/leave/page.tsx:52-59`：`.eq('department_id', currentUser?.department_id ?? '')`。使用者無部門時空字串仍下查詢。**修法**：無 `department_id` 就跳過查詢回空陣列；同檔的 `.is('deleted_at', null)` 也要一併移除（見 P1）。
-
-### P3 — 補打卡「核准自己的申請」回 forbidden（by design，但 UX 差）
-
-7/20 Linda 對**自己的**補打卡申請連按 5 次核准、每次都被 `approve_makeup_request` RPC 以 `forbidden` 拒絕——這是職責分離的預期行為（禁自我核准；核准人限 `users.manager_id` 或 admin，Linda 的單該由 Eva Hung 核）。**要修的是 UI**：簽核中心對「自己的申請」隱藏／停用核准鈕，錯誤訊息明確化（「不可核准自己的申請」）。
+**對照表**（改查詢時防再犯）：全庫有 `deleted_at` 的表：assets, certifications, companies, company_events, daily_report_groups, departments, documents, job_openings, lab_supplies, products, projects, training_courses, vendor_products, vendors, warehouses, work_shifts。**users、document_recipients 沒有。**
 
 ---
 
@@ -127,7 +91,7 @@ src/app/(dashboard)/projects/[id]/page.tsx         src/app/(dashboard)/projects/
 
 - **7/11 v0.8.5**：三輪全站 code review（delta → 85 agent 逐模組 → 9 維橫掃）收尾，19 項 low/medium 全清；UAT v2.5（169 項）與 release 信已寄。
 - **7/17**：清除 3/31 遺留的 3 支殭屍 Supabase Edge Functions（auto-clock／contract-expiry-reminder／announcement-reminder）+ 4 個 pg_cron job——全部每天失敗或空轉。**產品決策：不做自動補卡**，打卡走 Teams 提醒制。現在 pg_cron 應為 0 個 job、edge functions 應為空，若又出現要問。
-- **7/20**：日誌掃描發現上方「立即要處理」清單。**尚未修**。
+- **7/20 v0.8.6**：日誌掃描找出上方整批靜默失敗查詢，當天修復、部署、寄 release 通知（8 位 active users）。
 
 ## 文件地圖
 
@@ -144,6 +108,6 @@ src/app/(dashboard)/projects/[id]/page.tsx         src/app/(dashboard)/projects/
 ## 給接手 session 的第一步建議
 
 1. 跑「新機器環境設定 checklist」。
-2. 修「立即要處理」：P0 一支 migration（**先問 Luna 授權**）＋ P1/P2 純程式修改（可先修先 push，migration 另行）。修完以真實帳號實測：建採購單、看首頁公告區塊、出勤管理全員清單、請假代理人下拉。
-3. 修完 push → CI bump → `/notify-release`（這批是使用者可見 fix，該寄）→ 更新 `docs/CHANGELOG.md`、UAT 回歸項。
-4. 兩件待決事項若 Luna 回覆了，照上方「等 Luna 拍板」的指示落地。
+2. 做 v0.8.6 的上線後驗證（見「✅ 2026-07-20」節末的驗證建議）。
+3. 兩件待決事項若 Luna 回覆了，照上方「等 Luna 拍板」的指示落地。
+4. 低優先技術債：P3 簽核中心自我核准的 UX、`assets/[id]` flag 檢查（見 ROADMAP）。
