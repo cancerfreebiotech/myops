@@ -48,7 +48,6 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
     .from('users')
     .select('id, display_name, department:departments(name)')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   const canApprove = currentUser?.role === 'admin' ||

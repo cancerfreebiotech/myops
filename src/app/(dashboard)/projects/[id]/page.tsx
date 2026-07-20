@@ -55,7 +55,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     .from('users')
     .select('id, display_name')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   const isAdmin = currentUser?.role === 'admin'

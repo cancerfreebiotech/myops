@@ -49,14 +49,18 @@ export default async function LeavePage() {
   }))
 
   // Potential deputy approvers (same department)
-  const { data: colleagues } = await supabase
-    .from('users')
-    .select('id, display_name')
-    .eq('department_id', currentUser?.department_id ?? '')
-    .eq('is_active', true)
-    .neq('id', user.id)
-    .is('deleted_at', null)
-    .order('display_name')
+  // 使用者無 department_id 時直接視為空陣列，避免送出 department_id=eq.(空字串) 400
+  let colleagues: { id: string; display_name: string | null }[] | null = []
+  if (currentUser?.department_id) {
+    const { data } = await supabase
+      .from('users')
+      .select('id, display_name')
+      .eq('department_id', currentUser.department_id)
+      .eq('is_active', true)
+      .neq('id', user.id)
+      .order('display_name')
+    colleagues = data
+  }
 
   // 待審清單（leave_requests 無 approver_id）：
   // - HR/admin：全公司 pending（排除自己的單，職責分離）

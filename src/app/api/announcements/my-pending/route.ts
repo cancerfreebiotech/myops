@@ -9,7 +9,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('document_recipients')
     .select(`
-      id, document_id, requires_confirmation, created_at,
+      document_id, requires_confirmation, created_at,
       document:documents!document_recipients_document_id_fkey!inner(
         id, title, content_zh, announcement_category, created_at, status
       )

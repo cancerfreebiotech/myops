@@ -22,7 +22,6 @@ export default async function LeaveBalancesPage() {
     .from('users')
     .select('id, display_name, employment_type, department:departments(name)')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   const { data: leaveTypes } = await service

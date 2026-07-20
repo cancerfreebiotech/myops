@@ -46,7 +46,6 @@ export default async function AnnualPayrollPage({ searchParams }: PageProps) {
       .from('users')
       .select('id, display_name, department:departments(name), employment_type')
       .eq('is_active', true)
-      .is('deleted_at', null)
       .order('display_name')
     allUsers = usersData ?? []
 

@@ -15,7 +15,6 @@ interface AnnouncementSummary {
 }
 
 interface PendingAnnouncement {
-  id: string
   document_id: string
   document: AnnouncementSummary | AnnouncementSummary[] | null
 }
@@ -87,7 +86,7 @@ export default async function DashboardPage() {
   // My pending announcement confirmations (with document details)
   const { data: pendingAnnouncementsData } = await supabase
     .from('document_recipients')
-    .select('id, document_id, document:documents(id, title, announcement_category, content_zh, created_at)')
+    .select('document_id, document:documents(id, title, announcement_category, content_zh, created_at)')
     .eq('user_id', user.id)
     .eq('requires_confirmation', true)
     .is('confirmed_at', null)
@@ -303,7 +302,7 @@ export default async function DashboardPage() {
               const doc = Array.isArray(item.document) ? item.document[0] : item.document
               if (!doc) return null
               return (
-                <Link key={item.id} href={`/documents/${doc.id}`}>
+                <Link key={item.document_id} href={`/documents/${doc.id}`}>
                   <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 hover:border-amber-300 transition-colors">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1">{doc.title}</p>

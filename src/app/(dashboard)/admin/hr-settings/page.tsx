@@ -81,7 +81,6 @@ export default async function HRSettingsPage() {
     .from('users')
     .select('id, display_name, employment_type, department:departments(name)')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   const { data: leaveTypesForBalance } = await service

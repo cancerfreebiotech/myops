@@ -46,7 +46,7 @@ export default async function AnnouncementDetailPage({
   // Fetch recipient record for current user
   const { data: myRecipientRecord } = await service
     .from('document_recipients')
-    .select('id, user_id, confirmed_at, requires_confirmation')
+    .select('user_id, confirmed_at, requires_confirmation')
     .eq('document_id', id)
     .eq('user_id', user.id)
     .maybeSingle()

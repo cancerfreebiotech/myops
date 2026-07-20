@@ -55,7 +55,6 @@ export default async function PayrollPage() {
     .from('users')
     .select('id, display_name, department:departments(name)')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name') : { data: [] }
 
   const t = await getTranslations('payroll')

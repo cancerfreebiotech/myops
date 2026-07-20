@@ -69,7 +69,6 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
     .from('users')
     .select('id, display_name, employment_type, department:departments(name)')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   // Today's stats — use Taipei time to avoid UTC offset

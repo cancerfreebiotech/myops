@@ -36,7 +36,6 @@ export default async function ProjectsPage() {
     .from('users')
     .select('id, display_name')
     .eq('is_active', true)
-    .is('deleted_at', null)
     .order('display_name')
 
   const t = await getTranslations('projects')

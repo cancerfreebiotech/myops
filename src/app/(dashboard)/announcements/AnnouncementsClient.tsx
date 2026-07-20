@@ -21,7 +21,6 @@ interface AnnouncementDoc {
 }
 
 interface PendingConfirmation {
-  id: string
   document_id: string
   created_at: string
   document: {
@@ -150,7 +149,7 @@ export function AnnouncementsClient({ canPublish, reportData }: Props) {
             </div>
           ) : myPending.map((item) => (
             <div
-              key={item.id}
+              key={item.document_id}
               className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 cursor-pointer hover:border-blue-300 transition-colors"
               onClick={() => router.push(`/documents/${item.document_id}`)}
             >
