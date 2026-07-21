@@ -1232,7 +1232,10 @@
       "appliesAll": "全員",
       "fullTime": "正社員",
       "intern": "インターン",
-      "saveShort": "保存"
+      "saveShort": "保存",
+      "autoFillSeniority": "勤続年数から特別休暇を自動入力",
+      "autoFilling": "生成中…",
+      "autoFillDone": "特別休暇の付与 {generated} 件を生成しました（手動設定 {skipped} 件を保持、入社日なし {missing} 名）"
     },
     "leaveBalancesPage": {
       "description": "{year} 年度の従業員休暇枠"
@@ -1411,7 +1414,8 @@
       "invalidRequest": "リクエストが不正です",
       "missingFields": "必須項目が不足しています",
       "serverError": "サーバーエラーが発生しました",
-      "mfaRequired": "二要素認証が必要です"
+      "mfaRequired": "二要素認証が必要です",
+      "noWritePermission": "書き込み権限がありません"
     },
     "adminBonuses": {
       "invalidBonusType": "無効なボーナス種別です"

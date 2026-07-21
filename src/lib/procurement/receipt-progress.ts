@@ -35,6 +35,7 @@ interface PrItem {
  */
 export async function applyInboundReceipt(
   service: Service,
+  write: Service,
   inboundOrderId: string,
   direction: 'post' | 'unpost'
 ): Promise<void> {
@@ -121,28 +122,32 @@ export async function applyInboundReceipt(
 
     const now = new Date().toISOString()
     for (const u of updates) {
-      await service
+      const { data: rows } = await write
         .from('pr_items')
         .update({ received_qty: u.received, pending_qty: u.pending, updated_at: now })
         .eq('id', u.id)
+        .select('id')
+      if (!rows || rows.length === 0) console.warn(`[procurement] receipt-progress: pr_items ${u.id} update affected 0 rows`)
     }
 
-    await refreshFulfillmentStatus(service, prId)
+    await refreshFulfillmentStatus(service, write, prId)
   } catch (e) {
     console.error(`[procurement] receipt-progress sync (${direction}) failed for inbound ${inboundOrderId}:`, e)
   }
 }
 
 /** Recompute purchase_requests.fulfillment_status from its pr_items. */
-async function refreshFulfillmentStatus(service: Service, prId: string): Promise<void> {
+async function refreshFulfillmentStatus(service: Service, write: Service, prId: string): Promise<void> {
   const { data } = await service.from('pr_items').select('quantity, received_qty').eq('pr_id', prId)
   const rows = (data as { quantity: number | null; received_qty: number | null }[] | null) ?? []
   if (rows.length === 0) return
   const totalOrdered = rows.reduce((s, r) => s + (Number(r.quantity ?? 0) || 0), 0)
   const totalReceived = rows.reduce((s, r) => s + (Number(r.received_qty ?? 0) || 0), 0)
   const status = totalReceived <= 0 ? '尚未進貨' : totalReceived >= totalOrdered ? '進貨完成' : '部分進貨'
-  await service
+  const { data: updated } = await write
     .from('purchase_requests')
     .update({ fulfillment_status: status, updated_at: new Date().toISOString() })
     .eq('id', prId)
+    .select('id')
+  if (!updated || updated.length === 0) console.warn(`[procurement] receipt-progress: purchase_requests ${prId} fulfillment update affected 0 rows`)
 }

@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { escapeLike, getProcurementAccess, pickWritable } from './helpers'
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
   const tp = await getTranslations('procurement.products')
   const supabase = await createClient()
-  const service = await createServiceClient()
+  const write = procurementWriteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     payload.units_per_purchase = 1
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('products')
     .insert({ ...payload, created_by: user.id, updated_by: user.id })
     .select()
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: tp('errors.duplicateCode') }, { status: 400 })
     }
     console.error('[procurement products] create error:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
 
   return NextResponse.json({ data })

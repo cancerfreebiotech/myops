@@ -11,7 +11,7 @@
 // - clone=true additionally copies the main columns + line items into a fresh
 //   draft (approval/void/posting artifacts cleared) and returns its id.
 
-import { createAdminClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
 import { DOC_TYPE_META, type DocType } from './doc-types'
 import { applyInboundReceipt } from './receipt-progress'
 
@@ -84,6 +84,7 @@ async function findGrDownstream(service: Service, grId: string): Promise<string[
 
 async function cloneDocument(
   service: Service,
+  write: Service,
   docType: DocType,
   doc: Row,
   userId: string
@@ -94,36 +95,39 @@ async function cloneDocument(
     if (!CLONE_EXCLUDED.has(col)) payload[col] = value
   }
 
-  const { data: created, error } = await service.from(table).insert(payload).select('id, doc_no').single()
-  if (error || !created) throw new Error(`clone insert failed: ${error?.message ?? 'no row returned'}`)
-  const cloneId = created.id as string
-
+  // Build the cloned item rows up front; the FK is injected by the RPC, so we
+  // omit it here (a source item's own fk is skipped below).
+  let itemTable: string | null = null
+  let fk: string | null = null
+  let itemRows: Row[] = []
   const itemDef = ITEM_TABLES[docType]
   if (itemDef) {
-    const [itemTable, fk] = itemDef
+    [itemTable, fk] = itemDef
     const { data: items } = await service
       .from(itemTable)
       .select('*')
       .eq(fk, doc.id)
       .order('line_no', { ascending: true, nullsFirst: false })
-    const rows = ((items as Row[] | null) ?? []).map(item => {
-      const out: Row = { [fk]: cloneId }
+    itemRows = ((items as Row[] | null) ?? []).map(item => {
+      const out: Row = {}
       for (const [col, value] of Object.entries(item)) {
         if (col !== fk && !CLONE_ITEM_EXCLUDED.has(col)) out[col] = value
       }
       return out
     })
-    if (rows.length > 0) {
-      const { error: itemError } = await service.from(itemTable).insert(rows)
-      if (itemError) {
-        // keep clone atomic: drop the orphan draft (items cascade) before bubbling up
-        await service.from(table).delete().eq('id', cloneId)
-        throw new Error(`clone items insert failed: ${itemError.message}`)
-      }
-    }
   }
 
-  return { id: cloneId, doc_no: created.doc_no as string }
+  // atomic clone: parent + items in one transaction (no orphan draft on failure)
+  const { data: created, error } = await write.rpc('procurement_insert_with_items', {
+    p_parent_table: table,
+    p_parent: payload,
+    p_item_table: itemTable,
+    p_fk_column: fk,
+    p_items: itemRows,
+  })
+  if (error || !created) throw new Error(`clone insert failed: ${error?.message ?? 'no row returned'}`)
+
+  return { id: created.id as string, doc_no: created.doc_no as string }
 }
 
 /**
@@ -137,6 +141,7 @@ export async function voidDocument(
   options: { reason: string; clone?: boolean }
 ): Promise<VoidResult> {
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const table = DOC_TYPE_META[docType].table
 
   const { data: docData } = await service.from(table).select('*').eq('id', docId).maybeSingle()
@@ -159,13 +164,13 @@ export async function voidDocument(
   if ((docType === 'inbound_order' || docType === 'outbound_order') && doc.posted_at) {
     const fn = docType === 'inbound_order' ? 'unpost_inbound' : 'unpost_outbound'
     const arg = docType === 'inbound_order' ? 'p_inbound_id' : 'p_outbound_id'
-    const { error } = await service.rpc(fn, { [arg]: docId, p_user_id: userId })
+    const { error } = await write.rpc(fn, { [arg]: docId, p_user_id: userId })
     if (error) throw new VoidError('unpostFailed', error.message)
     // this path bypasses the unpost endpoint, so reverse the PR receipt cache here too
-    if (docType === 'inbound_order') await applyInboundReceipt(service, docId, 'unpost')
+    if (docType === 'inbound_order') await applyInboundReceipt(service, write, docId, 'unpost')
   }
 
-  const { error: voidError } = await service
+  const { data: voidedRows, error: voidError } = await write
     .from(table)
     .update({
       status: 'voided',
@@ -175,7 +180,9 @@ export async function voidDocument(
       updated_by: userId,
     })
     .eq('id', docId)
+    .select('id')
   if (voidError) throw new Error(`void update failed: ${voidError.message}`)
+  if (!voidedRows || voidedRows.length === 0) throw new Error(`void update affected 0 rows (${docType} ${docId})`)
 
   // audit trail (procurement docs are not `documents` rows — reference goes in detail)
   // audit_logs 為 service-role only，須用 admin client
@@ -196,7 +203,7 @@ export async function voidDocument(
   const result: VoidResult = { docNo: doc.doc_no as string }
 
   if (options.clone) {
-    const clone = await cloneDocument(service, docType, doc, userId)
+    const clone = await cloneDocument(service, write, docType, doc, userId)
     result.cloneId = clone.id
     result.cloneDocNo = clone.doc_no
   }

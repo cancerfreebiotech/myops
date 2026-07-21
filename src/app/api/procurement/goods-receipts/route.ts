@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { requireProcurementUser } from '@/app/api/procurement/evaluations/helpers'
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
   }
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
 
   // Optional source PR referenced by its doc_no (來自採購單號)
   if (typeof body.pr_doc_no === 'string' && body.pr_doc_no.trim()) {
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
     fields.pr_id = pr.id
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('goods_receipts')
     .insert({
       ...fields,
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('[procurement goods-receipts] create failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }

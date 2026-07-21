@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import {
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
   }
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const header = pickHeaderFields(body)
 
   // referenced RFQ must exist when provided
@@ -83,35 +85,26 @@ export async function POST(request: NextRequest) {
     ))
   }
 
-  const { data: doc, error: insertError } = await service
-    .from('purchase_requests')
-    .insert({ ...header, purchaser_id: header.purchaser_id ?? me.id, created_by: me.id, updated_by: me.id })
-    .select('id, doc_no, status')
-    .single()
+  // strip any client-side row id — pr_items rows are always inserted fresh
+  const itemRows = items.map(item => {
+    const { id, ...rest } = item
+    void id
+    return { ...rest, received_qty: 0, pending_qty: item.quantity }
+  })
+
+  // atomic header+items insert (doc_no assigned by trigger); parent+items are
+  // all-or-nothing — no orphan header / burned counter on a partial failure.
+  const { data: doc, error: insertError } = await write.rpc('procurement_insert_with_items', {
+    p_parent_table: 'purchase_requests',
+    p_parent: { ...header, purchaser_id: header.purchaser_id ?? me.id, created_by: me.id, updated_by: me.id },
+    p_item_table: 'pr_items',
+    p_fk_column: 'pr_id',
+    p_items: itemRows,
+  })
   if (insertError || !doc) {
     console.error('[procurement purchase-requests] create failed:', insertError)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(insertError) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
 
-  if (items.length > 0) {
-    // strip any client-side row id — pr_items rows are always inserted fresh
-    const rows = items.map(item => {
-      const { id, ...rest } = item
-      void id
-      return {
-        ...rest,
-        pr_id: doc.id,
-        received_qty: 0,
-        pending_qty: item.quantity,
-      }
-    })
-    const { error: itemsError } = await service.from('pr_items').insert(rows)
-    if (itemsError) {
-      console.error('[procurement purchase-requests] items insert failed:', itemsError)
-      await service.from('purchase_requests').delete().eq('id', doc.id)
-      return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-    }
-  }
-
-  return NextResponse.json({ data: doc })
+  return NextResponse.json({ data: { id: doc.id, doc_no: doc.doc_no, status: doc.status } })
 }

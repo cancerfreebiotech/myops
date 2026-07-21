@@ -2,8 +2,15 @@
 //
 // Flow definitions live in TypeScript (approval-flows.ts); approval state lives
 // in the shared table `procurement_approval_steps`. All DB access goes through
-// createServiceClient() — authorization is enforced here (and MFA at the API
-// route), not via RLS.
+// procurementWriteClient() — the true service-role client that bypasses RLS.
+// This is deliberate: the fronting route (approvals/[docType]/[id]) has no
+// procurement feature gate, so a legitimate approver acting via a
+// job_role/doc_field/manager_of step who holds no procurement feature (and is
+// not the creator) would be filtered out by the RLS-scoped SELECT policies and
+// wrongly see docNotFound. Authorization is enforced HERE (canSubmit /
+// canActOnStep / separation-of-duties) and via MFA at the route — not via RLS.
+// The engine returns only a small status object to callers (never row data),
+// so bypassing RLS on its internal reads is not a data-visibility surface.
 //
 // approver_value semantics per approver_kind (as stored on the step row):
 //   job_role   → the role value ('coo' | 'ceo' | 'finance')
@@ -11,7 +18,7 @@
 //   doc_field  → the document column name the approver was resolved from
 //   anyone     → the notifyFeature FeatureKey
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { procurementWriteClient } from '@/lib/supabase/server'
 import { sendProactiveCard, sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 import { getBotApprovalPolicy, shouldOneTap } from '@/lib/bot-approval-policy'
@@ -54,7 +61,7 @@ export interface ActResult {
   hookOk: boolean
 }
 
-type Service = Awaited<ReturnType<typeof createServiceClient>>
+type Service = ReturnType<typeof procurementWriteClient>
 
 interface UserRow {
   id: string
@@ -265,7 +272,7 @@ async function notifyApplicant(service: Service, doc: DocRow, outcome: 'approved
  * document into `in_approval` (current_step = 1) and notify the first approver(s).
  */
 export async function submitForApproval(docType: DocType, docId: string, userId: string): Promise<SubmitResult> {
-  const service = await createServiceClient()
+  const service = procurementWriteClient()
   const doc = await fetchDoc(service, docType, docId)
   if (doc.status !== 'draft') throw new ApprovalEngineError('onlyDraftSubmittable')
 
@@ -299,11 +306,13 @@ export async function submitForApproval(docType: DocType, docId: string, userId:
 
   const docUpdate: Record<string, unknown> = { status: 'in_approval', current_step: 1, updated_by: userId }
   if (docType === 'product_evaluation') docUpdate.submitted_by = userId // 送出簽核人
-  const { error: updateError } = await service
+  const { data: updatedDoc, error: updateError } = await service
     .from(DOC_TYPE_META[docType].table)
     .update(docUpdate)
     .eq('id', docId)
+    .select('id')
   if (updateError) throw new Error(`failed to update document status: ${updateError.message}`)
+  if (!updatedDoc || updatedDoc.length === 0) throw new Error(`document status update affected 0 rows (${docType} ${docId})`)
 
   await notifyStepApprovers(service, docType, doc, resolved[0])
   return { docNo: doc.doc_no, stepCount: resolved.length }
@@ -348,7 +357,7 @@ export async function actOnStep(
     throw new ApprovalEngineError('invalidAction')
   }
 
-  const service = await createServiceClient()
+  const service = procurementWriteClient()
   const doc = await fetchDoc(service, docType, docId)
   if (doc.status !== 'in_approval' || !doc.current_step) throw new ApprovalEngineError('notInApproval')
 
@@ -394,11 +403,13 @@ export async function actOnStep(
       .eq('doc_type', docType)
       .eq('doc_id', docId)
       .eq('status', 'pending')
-    const { error } = await service
+    const { data: rejectedDoc, error } = await service
       .from(DOC_TYPE_META[docType].table)
       .update({ status: 'rejected', updated_by: userId })
       .eq('id', docId)
+      .select('id')
     if (error) throw new Error(`failed to reject document: ${error.message}`)
+    if (!rejectedDoc || rejectedDoc.length === 0) throw new Error(`reject document affected 0 rows (${docType} ${docId})`)
     await notifyApplicant(service, doc, 'rejected', comment ?? undefined)
     return { docStatus: 'rejected', stepNo: step.step_no, finished: true, hookOk: true }
   }
@@ -429,21 +440,25 @@ export async function actOnStep(
 
   if (next) {
     await service.from(STEPS_TABLE).update({ status: 'current' }).eq('id', next.id)
-    const { error } = await service
+    const { data: advancedDoc, error } = await service
       .from(DOC_TYPE_META[docType].table)
       .update({ current_step: next.step_no, updated_by: userId })
       .eq('id', docId)
+      .select('id')
     if (error) throw new Error(`failed to advance document: ${error.message}`)
+    if (!advancedDoc || advancedDoc.length === 0) throw new Error(`advance document affected 0 rows (${docType} ${docId})`)
     await notifyStepApprovers(service, docType, doc, next)
     return { docStatus: 'in_approval', stepNo: step.step_no, finished: false, hookOk: true }
   }
 
   // Last step → fully approved
-  const { error } = await service
+  const { data: approvedDoc, error } = await service
     .from(DOC_TYPE_META[docType].table)
     .update({ status: 'approved', updated_by: userId })
     .eq('id', docId)
+    .select('id')
   if (error) throw new Error(`failed to approve document: ${error.message}`)
+  if (!approvedDoc || approvedDoc.length === 0) throw new Error(`approve document affected 0 rows (${docType} ${docId})`)
 
   let hookOk = true
   try {

@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { userHasFeature } from '@/lib/job-role-features'
@@ -126,6 +127,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const me = auth.user
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: doc } = await service
     .from(EVAL_TABLE[type])
     .select('id, status, created_by')
@@ -171,7 +173,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   if (Object.keys(update).length === 0) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from(EVAL_TABLE[type])
     .update({ ...update, updated_by: me.id, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -180,7 +182,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   if (error) {
     console.error('[procurement evaluations] update failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }

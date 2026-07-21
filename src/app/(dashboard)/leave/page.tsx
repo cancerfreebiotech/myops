@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LeaveClient, type LeaveRequest } from './LeaveClient'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
+import { pickBalancesForDate } from '@/lib/leave-balance'
 
 export default async function LeavePage() {
   const t = await getTranslations('leave')
@@ -34,15 +35,15 @@ export default async function LeavePage() {
     .in('applicable_to', empType === 'intern' ? ['all', 'intern'] : ['all', 'full_time'])
     .order('sort_order')
 
-  // Leave balances（leave_balances 無 allocated_days/remaining_days，以 total_days/used_days 換算）
-  const currentYear = new Date().getFullYear()
-  const { data: balances } = await service
+  // Leave balances（leave_balances 無 allocated_days/remaining_days，以 total_days/used_days 換算）；
+  // 特休採週年制（period_start/period_end），其餘假別採曆年 → 依「今天」(台北) 解析每個假別的當期餘額。
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Taipei' })
+  const { data: allBalances } = await service
     .from('leave_balances')
     .select(`*, leave_type:leave_types(name:name_zh)`)
     .eq('user_id', user.id)
-    .eq('year', currentYear)
 
-  const mappedBalances = (balances ?? []).map(b => ({
+  const mappedBalances = pickBalancesForDate(allBalances ?? [], today).map(b => ({
     ...b,
     allocated_days: Number(b.total_days ?? 0),
     remaining_days: Number(b.total_days ?? 0) - Number(b.used_days ?? 0),

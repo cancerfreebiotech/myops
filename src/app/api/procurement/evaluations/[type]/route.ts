@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import {
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   let insert: Record<string, unknown>
 
   if (type === 'vendor') {
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     insert = { rfq_id: rfqId, notes, created_by: me.id, updated_by: me.id }
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from(EVAL_TABLE[type])
     .insert(insert)
     .select('id, doc_no, status')
@@ -86,7 +88,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (error) {
     console.error('[procurement evaluations] create failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }

@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import {
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const insert: Record<string, unknown> = {
     ...pickPaymentFields(body, kind),
     created_by: me.id,
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!ok) return NextResponse.json({ error: tp('errors.vendorNotFound') }, { status: 404 })
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from(PAYMENT_TABLE[kind])
     .insert(insert)
     .select('id, doc_no, status')
@@ -126,7 +128,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (error) {
     console.error('[procurement payments] create failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }

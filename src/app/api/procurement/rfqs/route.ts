@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { type DocStatus, DOC_STATUSES } from '@/lib/procurement/doc-types'
@@ -75,8 +76,8 @@ export async function POST(request: NextRequest) {
   const { fields, invalid } = pickRfqFields(body)
   if (invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
-  const service = await createServiceClient()
-  const { data, error } = await service
+  const write = procurementWriteClient()
+  const { data, error } = await write
     .from('rfqs')
     .insert({ ...fields, created_by: me.id, updated_by: me.id })
     .select('id, doc_no, status')
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     console.error('[procurement rfqs] create failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }

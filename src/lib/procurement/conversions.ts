@@ -10,7 +10,7 @@
 // The source must be status='approved' (簽核完成). For the RFQ chain that is
 // the same single notification step finishing, per spec §三-1.
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
 import { DOC_TYPE_META, type DocType } from './doc-types'
 
 export type ConversionKey =
@@ -249,15 +249,17 @@ async function assignInstallmentNo(service: Service, apId: string, payload: Row)
  * (qty × products.units_per_purchase). lot_no / expiry / warehouse are left
  * for the user (lot existence decides 增加 vs 新增 at posting time).
  */
-async function buildInboundItems(service: Service, gr: Row, inboundOrderId: string): Promise<void> {
-  if (!gr.pr_id) return
+// Returns the inbound_items rows WITHOUT inbound_order_id (the RPC injects the FK
+// when it inserts them atomically with the parent inbound_order).
+async function buildInboundItemRows(service: Service, gr: Row): Promise<Row[]> {
+  if (!gr.pr_id) return []
   const { data: itemsData } = await service
     .from('pr_items')
     .select('*')
     .eq('pr_id', gr.pr_id)
     .order('line_no', { ascending: true, nullsFirst: false })
   const prItems = (itemsData as Row[] | null) ?? []
-  if (prItems.length === 0) return
+  if (prItems.length === 0) return []
 
   const productIds = [...new Set(prItems.map(i => i.product_id).filter((v): v is string => typeof v === 'string'))]
   const productById = new Map<string, Row>()
@@ -269,7 +271,7 @@ async function buildInboundItems(service: Service, gr: Row, inboundOrderId: stri
     for (const p of (products as Row[] | null) ?? []) productById.set(p.id as string, p)
   }
 
-  const rows = prItems
+  return prItems
     .map((item, index) => {
       const product = item.product_id ? productById.get(item.product_id as string) : undefined
       const ratio = Number(product?.units_per_purchase ?? 1) || 1
@@ -280,7 +282,6 @@ async function buildInboundItems(service: Service, gr: Row, inboundOrderId: stri
       const pendingRaw = item.pending_qty != null ? Number(item.pending_qty) : purchaseQty - receivedQty
       const pendingQty = Number.isFinite(pendingRaw) ? Math.max(pendingRaw, 0) : 0
       return {
-        inbound_order_id: inboundOrderId,
         line_no: (item.line_no as number | null) ?? index + 1,
         product_id: item.product_id ?? null,
         product_code: item.product_code ?? product?.product_code ?? null,
@@ -293,11 +294,6 @@ async function buildInboundItems(service: Service, gr: Row, inboundOrderId: stri
     // Skip fully-received lines (nothing left to inbound) — avoids a poisoned
     // inbound whose zero-qty line would later fail post_inbound.
     .filter(r => Number(r.quantity) > 0)
-
-  if (rows.length === 0) return
-
-  const { error } = await service.from('inbound_items').insert(rows)
-  if (error) throw new Error(`inbound_items insert failed: ${error.message}`)
 }
 
 /**
@@ -315,6 +311,7 @@ export async function convertDoc(
   if (!def) throw new ConversionError('invalidConversion', `no conversion ${fromType} → ${toType}`)
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: sourceData } = await service
     .from(DOC_TYPE_META[fromType].table)
     .select('*')
@@ -362,6 +359,14 @@ export async function convertDoc(
     if (step === 'assignInstallmentNo') await assignInstallmentNo(service, fromId, payload)
   }
 
+  // GR→INB is the only conversion that carries line items — build them up front
+  // so the target draft + its inbound_items are inserted as ONE atomic RPC call
+  // (the FK is injected by the RPC). No orphan target on a mid-conversion failure.
+  const withItems = (def.postProcess ?? []).includes('buildInboundItems')
+  const itemRows = withItems ? await buildInboundItemRows(service, source) : []
+  const itemTable = withItems ? 'inbound_items' : null
+  const itemFk = withItems ? 'inbound_order_id' : null
+
   // AP→INS assigns a per-AP installment_no. Two concurrent conversions can read
   // the same count and race to the same number, so we lean on the partial unique
   // index (ap_id, installment_no) added in the paired migration: on a unique
@@ -373,13 +378,16 @@ export async function convertDoc(
   let created: { id: string; doc_no: string } | null = null
   let lastInsertError: { message: string; code?: string } | null = null
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const { data, error } = await service
-      .from(DOC_TYPE_META[toType].table)
-      .insert(payload)
-      .select('id, doc_no')
-      .single()
+    const { data, error } = await write.rpc('procurement_insert_with_items', {
+      p_parent_table: DOC_TYPE_META[toType].table,
+      p_parent: payload,
+      p_item_table: itemTable,
+      p_fk_column: itemFk,
+      p_items: itemRows,
+    })
     if (!error && data) {
-      created = data as { id: string; doc_no: string }
+      const row = data as Row
+      created = { id: row.id as string, doc_no: row.doc_no as string }
       break
     }
     lastInsertError = error
@@ -396,24 +404,15 @@ export async function convertDoc(
   const newId = created.id
   const docNo = created.doc_no
 
-  // post-insert post-processing (line items)
-  if ((def.postProcess ?? []).includes('buildInboundItems')) {
-    try {
-      await buildInboundItems(service, source, newId)
-    } catch (e) {
-      // keep the conversion atomic: remove the orphan draft before bubbling up
-      await service.from(DOC_TYPE_META[toType].table).delete().eq('id', newId)
-      throw e
-    }
-  }
-
   // bump the source-side counter (e.g. rfqs.pr_count) — best effort
   if (def.counterField) {
     const current = Number(source[def.counterField] ?? 0) || 0
-    await service
+    const { data: bumped } = await write
       .from(DOC_TYPE_META[fromType].table)
       .update({ [def.counterField]: current + 1, updated_at: new Date().toISOString() })
       .eq('id', fromId)
+      .select('id')
+    if (!bumped || bumped.length === 0) console.warn(`[procurement] conversion: source counter bump affected 0 rows (${fromType} ${fromId})`)
   }
 
   return { newId, docNo, toType }

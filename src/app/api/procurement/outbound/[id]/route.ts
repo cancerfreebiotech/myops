@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import {
@@ -72,6 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const me = auth.user
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: doc } = await service
     .from('outbound_orders')
     .select('id, status, posted_at, created_by')
@@ -97,32 +99,35 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if ('shipment_no' in body) update.shipment_no = asTrimmedString(body.shipment_no)
   if ('notes' in body) update.notes = asTrimmedString(body.notes)
 
-  // full line-item replacement when `items` is provided
+  // full line-item replacement when `items` is provided — atomic via RPC so a
+  // failed re-insert can never leave the order with its items deleted (data loss)
   if ('items' in body) {
     const items = parseOutboundItems(body.items)
     if (items === null) return NextResponse.json({ error: ti('errors.itemInvalid') }, { status: 400 })
 
-    const built = items.length > 0 ? await buildOutboundItemRows(service, id, items) : { rows: [] }
+    // FK injected by the RPC → placeholder order id is fine
+    const built = items.length > 0 ? await buildOutboundItemRows(service, '', items) : { rows: [] }
     if ('missingStock' in built) return NextResponse.json({ error: ti('errors.stockNotFound') }, { status: 404 })
 
-    const { error: deleteError } = await service.from('outbound_items').delete().eq('outbound_order_id', id)
-    if (deleteError) {
-      console.error('[procurement outbound] items replace (delete) failed:', deleteError)
-      return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    const { data, error } = await write.rpc('procurement_update_with_items', {
+      p_parent_table: 'outbound_orders',
+      p_parent_id: id,
+      p_parent_patch: { ...update, updated_by: me.id, updated_at: new Date().toISOString() },
+      p_item_table: 'outbound_items',
+      p_fk_column: 'outbound_order_id',
+      p_items: built.rows,
+      p_sync_mode: 'replace',
+    })
+    if (error || !data) {
+      console.error('[procurement outbound] update failed:', error)
+      return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
     }
-    if (built.rows.length > 0) {
-      const { error: insertError } = await service.from('outbound_items').insert(built.rows)
-      if (insertError) {
-        console.error('[procurement outbound] items replace (insert) failed:', insertError)
-        return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-      }
-    }
-    update.updated_at = new Date().toISOString()
+    return NextResponse.json({ data: { id: data.id, doc_no: data.doc_no, status: data.status } })
   }
 
   if (Object.keys(update).length === 0) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('outbound_orders')
     .update({ ...update, updated_by: me.id, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -131,7 +136,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   if (error) {
     console.error('[procurement outbound] update failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }
@@ -146,6 +151,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const me = auth.user
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: doc } = await service
     .from('outbound_orders')
     .select('id, status, posted_at, created_by')
@@ -159,10 +165,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
 
-  const { error } = await service.from('outbound_orders').delete().eq('id', id)
+  const { error } = await write.from('outbound_orders').delete().eq('id', id)
   if (error) {
     console.error('[procurement outbound] delete failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data: { id } })
 }

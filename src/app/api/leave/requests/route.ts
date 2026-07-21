@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { pickBalanceForDate } from '@/lib/leave-balance'
 
 export async function POST(request: NextRequest) {
   const t = await getTranslations('apiErrors')
@@ -40,15 +41,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Check leave balance（leave_balances 無 remaining_days，以 total_days - used_days 計算）；
-  // 年度依請假 start_date 推導（與核准端 [id]/route.ts 一致），避免跨年假餘額歸屬錯置。
-  const currentYear = Number(String(start_date).slice(0, 4))
-  const { data: balance } = await service
+  // 依請假 start_date 解析餘額歸屬：特休採週年制（落在對應 period），其餘假別以曆年 fallback
+  // （與核准端 [id]/route.ts 一致），避免跨年/跨週年假餘額歸屬錯置。
+  const { data: balanceRows } = await service
     .from('leave_balances')
-    .select('id, total_days, used_days')
+    .select('id, total_days, used_days, period_start, period_end, year')
     .eq('user_id', user.id)
     .eq('leave_type_id', leave_type_id)
-    .eq('year', currentYear)
-    .single()
+  const balance = pickBalanceForDate(balanceRows ?? [], start_date)
 
   const { data: leaveType } = await service
     .from('leave_types')

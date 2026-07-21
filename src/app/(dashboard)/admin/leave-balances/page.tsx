@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -24,16 +24,21 @@ export default async function LeaveBalancesPage() {
     .eq('is_active', true)
     .order('display_name')
 
+  // leave_types 實際欄位為 name_zh / applicable_to（無 name / applies_to / deleted_at）——
+  // 用 PostgREST alias 對應成元件預期的欄位名，否則整個查詢會 400、假別欄位全部消失，
+  // 造成「餘額頁看不到可調整的假別欄位」（Linda 回報：無法調整個人假別餘額）。
   const { data: leaveTypes } = await service
     .from('leave_types')
-    .select('id, name, applies_to')
+    .select('id, name:name_zh, applies_to:applicable_to')
     .eq('is_active', true)
-    .is('deleted_at', null)
-    .order('name')
+    .order('sort_order')
 
-  const { data: balances } = await service
+  // leave_balances 欄位為 total_days（無 allocated_days）——alias 成元件預期的 allocated_days，
+  // 否則格子永遠顯示 0。用 admin client 讀取：這是 HR 管理頁（已於上方 gate），而
+  // leave_balances 的 SELECT 政策會讓非 admin 的 HR 只讀得到自己那筆，管理格會誤顯示他人為 0。
+  const { data: balances } = await createAdminClient()
     .from('leave_balances')
-    .select('*')
+    .select('user_id, leave_type_id, allocated_days:total_days')
     .eq('year', currentYear)
 
   const t = await getTranslations('nav')

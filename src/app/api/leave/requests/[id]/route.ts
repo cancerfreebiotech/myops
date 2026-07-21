@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
+import { pickBalanceForDate } from '@/lib/leave-balance'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const t = await getTranslations('apiErrors')
@@ -59,14 +60,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // 只允許 self/hr_manager/admin 讀寫，一般直屬主管核准時用 createServiceClient 會讀到 null、
     // 扣除被靜默擋掉（授權檢查已於上方完成）。
     const admin = createAdminClient()
-    const currentYear = Number(String(leaveReq.start_date).slice(0, 4))
-    const { data: balance } = await admin
+    // 依請假 start_date 解析餘額歸屬：特休週年制落在對應 period，其餘假別以曆年 fallback。
+    const { data: balanceRows } = await admin
       .from('leave_balances')
-      .select('id, used_days, total_days')
+      .select('id, used_days, total_days, period_start, period_end, year')
       .eq('user_id', leaveReq.user_id)
       .eq('leave_type_id', leaveReq.leave_type_id)
-      .eq('year', currentYear)
-      .single()
+    const balance = pickBalanceForDate(balanceRows ?? [], leaveReq.start_date)
 
     if (balance) {
       const remaining = Number(balance.total_days) - Number(balance.used_days ?? 0)

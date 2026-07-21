@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { getProcurementAccess, pickWritable } from '../helpers'
@@ -44,6 +45,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params
   const supabase = await createClient()
   const service = await createServiceClient()
+  const write = procurementWriteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
@@ -83,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     payload.units_per_purchase = rate
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('products')
     .update({ ...payload, updated_by: user.id, updated_at: new Date().toISOString() })
     .eq('id', id)
@@ -95,7 +97,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: tp('errors.duplicateCode') }, { status: 400 })
     }
     console.error('[procurement products] update error:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
 
   return NextResponse.json({ data })
@@ -106,6 +108,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   const { id } = await params
   const supabase = await createClient()
   const service = await createServiceClient()
+  const write = procurementWriteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
@@ -122,14 +125,14 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   if (!existing) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
 
   // Soft delete — recoverable, keeps FK references from documents/stock intact
-  const { error } = await service
+  const { error } = await write
     .from('products')
     .update({ deleted_at: new Date().toISOString(), updated_by: user.id, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) {
     console.error('[procurement products] delete error:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
 
   return NextResponse.json({ data: { ok: true } })

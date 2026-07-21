@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { userHasFeature } from '@/lib/job-role-features'
@@ -139,6 +140,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const me = auth.user
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: doc } = await service
     .from('purchase_requests')
     .select('id, status, created_by, tax_rate, shipping_fee')
@@ -169,11 +171,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     if (!rfq) return NextResponse.json({ error: tp('errors.rfqNotFound') }, { status: 404 })
   }
 
-  // ── items: full batch upsert / delete ──
+  // ── items: full batch upsert / delete (atomic via RPC) ──
   const items = 'items' in body ? normalizeItems(body.items) : undefined
   if (items === null) return NextResponse.json({ error: tp('errors.invalidItems') }, { status: 400 })
 
+  const now = new Date().toISOString()
+
   if (items !== undefined) {
+    // load existing rows to (a) validate payload ids belong to this doc and
+    // (b) preserve each surviving row's received_qty (a receipt cache we must not reset)
     const { data: existingData, error: existingError } = await service
       .from('pr_items')
       .select('id, received_qty')
@@ -191,46 +197,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       }
     }
 
-    const keptIds = new Set(items.filter(i => i.id).map(i => i.id as string))
-    const toDelete = Array.from(existing.keys()).filter(eid => !keptIds.has(eid))
-
-    if (toDelete.length > 0) {
-      const { error } = await service.from('pr_items').delete().eq('pr_id', id).in('id', toDelete)
-      if (error) {
-        console.error('[procurement purchase-requests] items delete failed:', error)
-        return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-      }
-    }
-
-    const now = new Date().toISOString()
-    for (const item of items) {
-      const { id: itemId, ...fields } = item
-      if (itemId) {
-        const receivedQty = existing.get(itemId) ?? 0
-        const { error } = await service
-          .from('pr_items')
-          .update({
-            ...fields,
-            pending_qty: fields.quantity !== null ? round2(fields.quantity - receivedQty) : null,
-            updated_at: now,
-          })
-          .eq('id', itemId)
-          .eq('pr_id', id)
-        if (error) {
-          console.error('[procurement purchase-requests] item update failed:', error)
-          return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-        }
-      } else {
-        const { error } = await service
-          .from('pr_items')
-          .insert({ ...fields, pr_id: id, received_qty: 0, pending_qty: fields.quantity })
-        if (error) {
-          console.error('[procurement purchase-requests] item insert failed:', error)
-          return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-        }
-      }
-    }
-
     // recompute the money columns from the new item set
     const taxRate = typeof header.tax_rate === 'number' ? header.tax_rate
       : header.tax_rate === null ? null
@@ -239,21 +205,54 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       : header.shipping_fee === null ? null
         : (doc.shipping_fee as number | null)
     Object.assign(header, computeTotals(items, taxRate, shippingFee))
+
+    // merge payload: kept rows carry their id (received_qty deliberately omitted so
+    // the RPC preserves it); new rows have no id. The RPC prunes rows absent from the
+    // payload, updates kept rows, inserts new ones, and patches the header — atomically.
+    const mergeItems = items.map(item => {
+      const { id: itemId, ...fields } = item
+      if (itemId) {
+        const receivedQty = existing.get(itemId) ?? 0
+        return {
+          id: itemId,
+          ...fields,
+          pending_qty: fields.quantity !== null ? round2(fields.quantity - receivedQty) : null,
+          updated_at: now,
+        }
+      }
+      return { ...fields, received_qty: 0, pending_qty: fields.quantity }
+    })
+
+    const { data, error } = await write.rpc('procurement_update_with_items', {
+      p_parent_table: 'purchase_requests',
+      p_parent_id: id,
+      p_parent_patch: { ...header, updated_by: me.id, updated_at: now },
+      p_item_table: 'pr_items',
+      p_fk_column: 'pr_id',
+      p_items: mergeItems,
+      p_sync_mode: 'merge',
+    })
+    if (error || !data) {
+      console.error('[procurement purchase-requests] update failed:', error)
+      return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+    }
+    return NextResponse.json({ data: { id: data.id, doc_no: data.doc_no, status: data.status, subtotal: data.subtotal, tax_amount: data.tax_amount, total_amount: data.total_amount } })
   }
 
-  if (Object.keys(header).length === 0 && items === undefined) {
+  // header-only update (no item changes) — a single write, already atomic
+  if (Object.keys(header).length === 0) {
     return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
   }
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('purchase_requests')
-    .update({ ...header, updated_by: me.id, updated_at: new Date().toISOString() })
+    .update({ ...header, updated_by: me.id, updated_at: now })
     .eq('id', id)
     .select('id, doc_no, status, subtotal, tax_amount, total_amount')
     .single()
   if (error) {
     console.error('[procurement purchase-requests] update failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data })
 }
@@ -269,6 +268,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   const me = auth.user
 
   const service = await createServiceClient()
+  const write = procurementWriteClient()
   const { data: doc } = await service
     .from('purchase_requests')
     .select('id, status, created_by')
@@ -285,11 +285,11 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
   if (!canDelete) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
 
   // pr_items cascade via FK; clear any stale approval steps from a prior submit
-  await service.from('procurement_approval_steps').delete().eq('doc_type', 'purchase_request').eq('doc_id', id)
-  const { error } = await service.from('purchase_requests').delete().eq('id', id)
+  await write.from('procurement_approval_steps').delete().eq('doc_type', 'purchase_request').eq('doc_id', id)
+  const { error } = await write.from('purchase_requests').delete().eq('id', id)
   if (error) {
     console.error('[procurement purchase-requests] delete failed:', error)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
   return NextResponse.json({ data: { ok: true } })
 }

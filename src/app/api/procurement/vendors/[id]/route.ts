@@ -1,4 +1,4 @@
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { VENDOR_SELECT, canReadVendors, canWriteVendors, pickVendorFields } from '../fields'
@@ -43,6 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params
   const supabase = await createClient()
   const service = await createServiceClient()
+  const write = procurementWriteClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
@@ -84,7 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   updates.updated_by = user.id
   updates.updated_at = new Date().toISOString()
 
-  const { data, error } = await service
+  const { data, error } = await write
     .from('vendors')
     .update(updates)
     .eq('id', id)

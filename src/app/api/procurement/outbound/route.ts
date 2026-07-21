@@ -1,4 +1,5 @@
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
+import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import {
@@ -59,36 +60,37 @@ export async function POST(request: NextRequest) {
   if (items === null) return NextResponse.json({ error: ti('errors.itemInvalid') }, { status: 400 })
 
   const service = await createServiceClient()
-  const { data: order, error: orderError } = await service
-    .from('outbound_orders')
-    .insert({
+  const write = procurementWriteClient()
+
+  // Build item rows first (validates stock refs). FK injected by the RPC, so the
+  // placeholder order id is overwritten.
+  let itemRows: Record<string, unknown>[] = []
+  if (items.length > 0) {
+    const built = await buildOutboundItemRows(service, '', items)
+    if ('missingStock' in built) {
+      return NextResponse.json({ error: ti('errors.stockNotFound') }, { status: 404 })
+    }
+    itemRows = built.rows
+  }
+
+  // atomic header+items insert (doc_no via trigger); no orphan on partial failure
+  const { data: order, error: orderError } = await write.rpc('procurement_insert_with_items', {
+    p_parent_table: 'outbound_orders',
+    p_parent: {
       order_date: asTrimmedString(body.order_date),
       shipment_no: asTrimmedString(body.shipment_no),
       notes: asTrimmedString(body.notes),
       created_by: me.id,
       updated_by: me.id,
-    })
-    .select('id, doc_no, status')
-    .single()
-
+    },
+    p_item_table: 'outbound_items',
+    p_fk_column: 'outbound_order_id',
+    p_items: itemRows,
+  })
   if (orderError || !order) {
     console.error('[procurement outbound] create failed:', orderError)
-    return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+    return NextResponse.json({ error: isWritePermissionError(orderError) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
   }
 
-  if (items.length > 0) {
-    const built = await buildOutboundItemRows(service, order.id, items)
-    if ('missingStock' in built) {
-      await service.from('outbound_orders').delete().eq('id', order.id)
-      return NextResponse.json({ error: ti('errors.stockNotFound') }, { status: 404 })
-    }
-    const { error: itemsError } = await service.from('outbound_items').insert(built.rows)
-    if (itemsError) {
-      console.error('[procurement outbound] items insert failed:', itemsError)
-      await service.from('outbound_orders').delete().eq('id', order.id)
-      return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
-    }
-  }
-
-  return NextResponse.json({ data: order })
+  return NextResponse.json({ data: { id: order.id, doc_no: order.doc_no, status: order.status } })
 }

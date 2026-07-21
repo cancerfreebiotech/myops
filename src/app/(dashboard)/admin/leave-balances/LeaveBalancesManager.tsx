@@ -42,6 +42,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
   const [filterUser, setFilterUser] = useState('')
   const [saving, setSaving] = useState<string | null>(null)
   const [edits, setEdits] = useState<Record<string, number>>({})
+  const [autoFilling, setAutoFilling] = useState(false)
 
   const filteredUsers = filterUser ? users.filter(u => u.id === filterUser) : users
 
@@ -71,6 +72,21 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
     router.refresh()
   }
 
+  // 依年資自動帶入特休（週年制）— 不覆寫 HR 手動設定的餘額
+  const handleAutoFill = async () => {
+    setAutoFilling(true)
+    const res = await fetch('/api/admin/leave-balances/auto-fill', { method: 'POST' })
+    const { data, error } = await res.json()
+    setAutoFilling(false)
+    if (error) { toast.error(error); return }
+    toast.success(tm('autoFillDone', {
+      generated: data.generated,
+      skipped: data.skippedManual,
+      missing: data.missingHireDate,
+    }))
+    router.refresh()
+  }
+
   const APPLIES_LABELS: Record<string, string> = { all: tm('appliesAll'), full_time: tm('fullTime'), intern: tm('intern') }
 
   return (
@@ -84,6 +100,11 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
           </SelectContent>
         </Select>
         <span className="text-sm text-slate-400">{tm('yearLabel', { y: year })}</span>
+        {!readOnly && (
+          <Button variant="outline" size="sm" className="ml-auto" onClick={handleAutoFill} disabled={autoFilling}>
+            {autoFilling ? tm('autoFilling') : tm('autoFillSeniority')}
+          </Button>
+        )}
       </div>
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">

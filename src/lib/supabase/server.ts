@@ -72,3 +72,24 @@ export function createAdminClient() {
     }
   )
 }
+
+/**
+ * RLS-bypassing client for procurement WRITES only（等同 createAdminClient，
+ * 但以語意化命名標示「這是刻意繞過 RLS 的寫入」）。
+ *
+ * 採購相關資料表（rfqs / purchase_requests / goods_receipts / inbound_* /
+ * outbound_* / *_requests / *_evaluations / procurement_approval_steps /
+ * vendors / vendor_products / products…）RLS 皆為「只有 SELECT 政策」，
+ * 原設計就是寫入走真 service role。授權一律在應用層把關：
+ * requireProcurementUser / requireInventoryUser / getProcurementAccess、
+ * 核准與作廢的 MFA aal2、以及 approval-engine 的 canSubmit / canActOnStep /
+ * 職責分立——不靠 RLS。
+ *
+ * ⚠️ 僅用於「寫入」（insert / update / delete）與只授權 service_role 的
+ * SECURITY DEFINER RPC（post_inbound / post_outbound / unpost_* / next_doc_no）。
+ * 會回傳資料列給瀏覽器的「讀取」必須維持 createServiceClient()（RLS-scoped）——
+ * 那些 SELECT 政策靠 created_by = auth.uid() 做逐人過濾，繞過會造成資料外洩。
+ */
+export function procurementWriteClient() {
+  return createAdminClient()
+}

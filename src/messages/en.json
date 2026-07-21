@@ -1232,7 +1232,10 @@
       "appliesAll": "All",
       "fullTime": "Full-time",
       "intern": "Intern",
-      "saveShort": "Save"
+      "saveShort": "Save",
+      "autoFillSeniority": "Auto-fill annual leave by seniority",
+      "autoFilling": "Generating…",
+      "autoFillDone": "Generated {generated} annual-leave balances (kept {skipped} manual, {missing} missing hire date)"
     },
     "leaveBalancesPage": {
       "description": "Employee leave quotas for {year}"
@@ -1411,7 +1414,8 @@
       "invalidRequest": "Invalid request",
       "missingFields": "Missing required fields",
       "serverError": "Server error",
-      "mfaRequired": "Two-factor verification required"
+      "mfaRequired": "Two-factor verification required",
+      "noWritePermission": "No write permission"
     },
     "adminBonuses": {
       "invalidBonusType": "Invalid bonus type"
