@@ -49,6 +49,14 @@ export default async function LeavePage() {
     remaining_days: Number(b.total_days ?? 0) - Number(b.used_days ?? 0),
   }))
 
+  // 特殊假別資格＝「曾獲核給」（任一年度/期間有 total_days > 0 的列），
+  // 與 API 端判定一致；不可用「今天」解析的當期餘額判斷（跨年申請會誤判）。
+  const qualifiedTypeIds = Array.from(new Set(
+    (allBalances ?? [])
+      .filter(b => Number(b.total_days ?? 0) > 0)
+      .map(b => b.leave_type_id as string)
+  ))
+
   // Potential deputy approvers (same department)
   // 使用者無 department_id 時直接視為空陣列，避免送出 department_id=eq.(空字串) 400
   let colleagues: { id: string; display_name: string | null }[] | null = []
@@ -99,6 +107,7 @@ export default async function LeavePage() {
         currentUser={currentUser}
         leaveTypes={leaveTypes ?? []}
         balances={mappedBalances}
+        qualifiedTypeIds={qualifiedTypeIds}
         colleagues={colleagues ?? []}
         pendingApprovals={pendingApprovals}
         isHR={isHR}

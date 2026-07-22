@@ -59,12 +59,14 @@ interface Props {
   currentUser: CurrentUser | null
   leaveTypes: LeaveType[]
   balances: LeaveBalance[]
+  /** 曾獲核給任一額度列（total_days > 0）的假別 id —— 特殊假別資格判定，與 API 端一致 */
+  qualifiedTypeIds: string[]
   colleagues: Colleague[]
   pendingApprovals: LeaveRequest[]
   isHR: boolean
 }
 
-export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals, isHR }: Props) {
+export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues, pendingApprovals, isHR }: Props) {
   const router = useRouter()
   const t = useTranslations('leave')
   const tc = useTranslations('common')
@@ -98,8 +100,10 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
     ? differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1
     : 0
   const balance = balances.find(b => b.leave_type_id === selectedType)
-  // T9 特殊假別：需 HR 先審核資格並核給額度（有 balance 列且核配 > 0）才可申請
-  const needsQualification = !!leaveType?.requires_qualification && (!balance || balance.allocated_days <= 0)
+  // T9 特殊假別：需 HR 先審核資格並核給額度才可申請。
+  // 資格＝「曾獲核給」（qualifiedTypeIds，不限年度），與 API 端一致；
+  // 不可用當期餘額判斷——年底申請隔年假時當期無列會誤判為未核給。
+  const needsQualification = !!leaveType?.requires_qualification && !qualifiedTypeIds.includes(selectedType)
 
   const handleApply = async () => {
     if (!selectedType || !startDate || !endDate || !reason.trim()) {

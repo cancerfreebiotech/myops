@@ -118,17 +118,20 @@ export async function pushOutlookEvent(userId: string, input: OutlookEventInput)
 }
 
 /** 刪除 userId Outlook 的事件（請假/出差被取消或退回時）。best-effort。 */
-export async function deleteOutlookEvent(userId: string, eventId: string): Promise<void> {
-  if (!eventId) return
+export async function deleteOutlookEvent(userId: string, eventId: string): Promise<boolean> {
+  if (!eventId) return true
   const token = await getAccessToken(userId)
-  if (!token) return
+  if (!token) return false
   try {
-    await fetch(`https://graph.microsoft.com/v1.0/me/events/${eventId}`, {
+    const res = await fetch(`https://graph.microsoft.com/v1.0/me/events/${eventId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
+    // 404 = 事件已不存在，視為刪除成功
+    return res.ok || res.status === 404
   } catch (e) {
     console.error('[ms-calendar] delete event error:', e)
+    return false
   }
 }
 

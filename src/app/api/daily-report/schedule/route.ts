@@ -83,8 +83,10 @@ export async function POST(request: NextRequest) {
     let matchIdx = existingItems.findIndex((c, i) => !claimed.has(i) && !!c.sid && c.sid === s.sid)
     const adoptedLegacy = matchIdx < 0
     if (matchIdx < 0) {
+      // manual === true 的項目是使用者在完成回報手動新增的，永不認領；
+      // 只認領無任何標記的舊資料（sid 機制上線前的列）
       matchIdx = existingItems.findIndex(
-        (c, i) => !claimed.has(i) && !c.sid && typeof c.label === 'string' && c.label.trim() !== '' && c.label === s.label
+        (c, i) => !claimed.has(i) && !c.sid && c.manual !== true && typeof c.label === 'string' && c.label.trim() !== '' && c.label === s.label
       )
     }
     if (matchIdx >= 0) {
@@ -98,9 +100,14 @@ export async function POST(request: NextRequest) {
     return { sid: s.sid, label: s.label, note: '', done: s.done === true }
   })
 
-  // 未被認領的手動項目（無 sid）保留；被行程刪除的衍生項目（有 sid 但已無對應）移除
-  const manual = existingItems.filter((c, i) => !claimed.has(i) && !c.sid)
-  const mergedCompletionItems = [...derived, ...manual]
+  // 未被認領的手動項目（無 sid）保留；
+  // 被行程刪除的衍生項目：有補充備註者降級為手動項目保留（避免使用者輸入遺失），其餘移除
+  const leftover = existingItems.filter((_, i) => !claimed.has(i))
+  const manual = leftover.filter(c => !c.sid)
+  const demoted = leftover
+    .filter(c => !!c.sid && typeof c.note === 'string' && c.note.trim() !== '')
+    .map(c => ({ label: c.label, note: c.note, done: c.done === true, manual: true }))
+  const mergedCompletionItems = [...derived, ...manual, ...demoted]
 
   const { data, error } = await supabase
     .from('daily_schedules')

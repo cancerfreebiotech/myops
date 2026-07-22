@@ -45,12 +45,13 @@ export default async function DashboardPage() {
   const now = new Date()
   const today = now.toISOString().split('T')[0]
 
-  // Today attendance
+  // Today attendance（已作廢紀錄視同未打卡，與 clock API 一致）
   const { data: todayAttendance } = await supabase
     .from('attendance_records')
     .select('clock_in, clock_out, is_auto_in, is_auto_out')
     .eq('user_id', user.id)
     .eq('clock_date', today)
+    .is('voided_at', null)
     .single()
 
   // 待我審範圍：leave_requests / overtime_requests 無 approver_id，

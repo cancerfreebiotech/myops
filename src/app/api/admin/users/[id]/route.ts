@@ -25,6 +25,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const body = await request.json()
 
+  // display_name 去空白且不得為空（否則全站名稱顯示空白）
+  if ('display_name' in body) {
+    if (typeof body.display_name !== 'string' || body.display_name.trim() === '') {
+      return NextResponse.json({ error: 'Invalid display_name' }, { status: 400 })
+    }
+    body.display_name = body.display_name.trim()
+  }
+
   // HR：只能改允許欄位，且不得操作 admin 帳號（含停用/改主管），也不得把任何人提升為 admin
   if (!isAdmin) {
     const restricted = Object.keys(body).filter(k => !HR_ALLOWED_FIELDS.has(k))

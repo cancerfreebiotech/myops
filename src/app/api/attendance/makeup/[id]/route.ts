@@ -31,6 +31,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   if (error) {
     const isMfa = error.message.includes('mfa_required')
+    if (error.message.includes('voided_requires_hr')) {
+      return NextResponse.json({ error: t('attendanceClock.makeupVoidedRequiresHr') }, { status: 403 })
+    }
     const status = isMfa ? 403
       : error.message.includes('forbidden') ? 403
       : error.message.includes('not_found') ? 404

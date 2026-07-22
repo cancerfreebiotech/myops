@@ -52,17 +52,31 @@ export async function POST(request: NextRequest) {
     // Check if already clocked in today
     const { data: existing } = await service
       .from('attendance_records')
-      .select('id, clock_in')
+      .select('id, clock_in, voided_at, void_reason')
       .eq('user_id', user.id)
       .eq('clock_date', clockDate)
       .single()
 
-    if (existing?.clock_in) {
+    const isVoided = !!existing?.voided_at
+    if (existing?.clock_in && !isVoided) {
       return NextResponse.json({ error: t('attendanceClock.alreadyClockedIn') }, { status: 400 })
     }
 
     if (existing) {
-      // Update existing record (may have been auto-created without clock_in)
+      // Update existing record (may have been auto-created without clock_in).
+      // 已作廢列：因 UNIQUE(user_id, clock_date) 佔位，重新打卡=復活該列並整列重置；
+      // 原作廢原因附註保留於 void_reason（voided_by 不動）作為稽核軌跡。
+      const revive = isVoided ? {
+        voided_at: null,
+        void_reason: existing.void_reason
+          ? `${existing.void_reason}（員工重新打卡，紀錄已重置）`
+          : null,
+        clock_out: null,
+        clock_out_lat: null,
+        clock_out_lng: null,
+        is_auto_out: false,
+        note: null,
+      } : {}
       const { error } = await service.from('attendance_records').update({
         clock_in: now.toISOString(),
         clock_in_lat: lat ?? null,
@@ -70,6 +84,7 @@ export async function POST(request: NextRequest) {
         is_auto_in: false,
         is_late: isLate,
         late_minutes: Math.max(0, lateMin),
+        ...revive,
       }).eq('id', existing.id)
       if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     } else {
@@ -92,12 +107,13 @@ export async function POST(request: NextRequest) {
   // action === 'out'
   const { data: record } = await service
     .from('attendance_records')
-    .select('id, clock_in, clock_out')
+    .select('id, clock_in, clock_out, voided_at')
     .eq('user_id', user.id)
     .eq('clock_date', clockDate)
     .single()
 
-  if (!record?.clock_in) {
+  // 已作廢列不得寫入下班卡（會寫進被統計/匯出排除的紀錄）；視同尚未打卡
+  if (!record?.clock_in || record.voided_at) {
     return NextResponse.json({ error: t('attendanceClock.notClockedIn') }, { status: 400 })
   }
   if (record.clock_out) {
@@ -127,6 +143,7 @@ export async function GET() {
     .select('id, clock_in, clock_out, is_auto_in, is_auto_out, clock_in_lat, clock_in_lng')
     .eq('user_id', user.id)
     .eq('clock_date', today)
+    .is('voided_at', null)
     .single()
 
   return NextResponse.json({ data })

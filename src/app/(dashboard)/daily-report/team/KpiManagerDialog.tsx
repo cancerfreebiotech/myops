@@ -222,7 +222,9 @@ export function KpiManagerDialog({ open, onOpenChange, members, initialMemberId,
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{def.name}</span>
-                    <Badge variant="outline" className="text-xs">{def.cat}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {def.cat === '量化' ? t('catQuant') : def.cat === '質化' ? t('catQual') : def.cat}
+                    </Badge>
                     {!def.active && (
                       <Badge variant="outline" className="text-xs bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                         {t('kpiInactive')}

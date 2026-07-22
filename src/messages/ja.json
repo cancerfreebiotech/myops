@@ -1503,7 +1503,8 @@
       "notClockedIn": "まだ出勤打刻がされていません",
       "alreadyClockedOut": "本日はすでに退勤打刻済みです",
       "geofenceOut": "打刻が許可された範囲外です",
-      "geofenceNoLocation": "打刻には位置情報が必要です。位置情報を有効にして再試行してください"
+      "geofenceNoLocation": "打刻には位置情報が必要です。位置情報を有効にして再試行してください",
+      "makeupVoidedRequiresHr": "この日の打刻記録は人事により無効化されています。打刻補正の承認は人事または管理者のみ可能です"
     },
     "documentTranslate": {
       "noChineseContent": "翻訳できる中国語コンテンツがありません",

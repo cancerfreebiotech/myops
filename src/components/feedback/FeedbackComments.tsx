@@ -30,35 +30,46 @@ export function FeedbackComments({ feedbackId, onReopen }: { feedbackId: string;
   useEffect(() => {
     let active = true
     const load = async () => {
-      const res = await fetch(`/api/feedback/${feedbackId}/comments`)
-      const { data, error } = await res.json()
-      if (!active) return
-      setLoading(false)
-      if (error) { toast.error(error); return }
-      setComments(data ?? [])
+      try {
+        const res = await fetch(`/api/feedback/${feedbackId}/comments`)
+        const { data, error } = await res.json()
+        if (!active) return
+        if (error) { toast.error(error); return }
+        setComments(data ?? [])
+      } catch {
+        if (active) toast.error(tc('error'))
+      } finally {
+        if (active) setLoading(false)
+      }
     }
     load()
     return () => { active = false }
-  }, [feedbackId])
+  }, [feedbackId, tc])
 
   const handleSend = async () => {
     if (!body.trim()) return
     setSending(true)
-    const res = await fetch(`/api/feedback/${feedbackId}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: body.trim() }),
-    })
-    const { data, error, reopened } = await res.json()
-    setSending(false)
-    if (error) { toast.error(error); return }
-    setComments(prev => [...prev, data as Comment])
-    setBody('')
-    if (reopened) {
-      toast.success(t('reopened'))
-      onReopen?.()
-    } else {
-      toast.success(t('commentSent'))
+    try {
+      const res = await fetch(`/api/feedback/${feedbackId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: body.trim() }),
+      })
+      const { data, error, reopened } = await res.json()
+      // 失敗時保留輸入內容供重試
+      if (error) { toast.error(error); return }
+      setComments(prev => [...prev, data as Comment])
+      setBody('')
+      if (reopened) {
+        toast.success(t('reopened'))
+        onReopen?.()
+      } else {
+        toast.success(t('commentSent'))
+      }
+    } catch {
+      toast.error(tc('error'))
+    } finally {
+      setSending(false)
     }
   }
 

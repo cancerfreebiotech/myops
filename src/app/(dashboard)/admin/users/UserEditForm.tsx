@@ -14,7 +14,7 @@ import { useTranslations } from 'next-intl'
 import type { User } from '@/types'
 
 const schema = z.object({
-  display_name: z.string(),
+  display_name: z.string().trim().min(1),
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
   job_role: z.enum(['member', 'hr_manager', 'finance', 'coo', 'ceo']),

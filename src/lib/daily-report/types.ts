@@ -41,6 +41,8 @@ export interface DrCompletionItem {
   done: boolean
   /** 有值 = 由今日行程同步而來（對應 DrScheduleItem.sid）；無值 = 手動新增的行程外事項 */
   sid?: string
+  /** true = 使用者於完成回報手動新增；行程儲存時不得被 label 認領（區別於 sid 機制前的舊資料） */
+  manual?: boolean
 }
 
 export interface DrCompletion {

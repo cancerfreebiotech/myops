@@ -117,10 +117,17 @@ export function DailyReportClient({ userId }: Props) {
         body: JSON.stringify({ date, items: scheduleItems }),
       })
       if (!res.ok) throw new Error()
-      // 伺服器會把行程項目同步到完成回報（並可能認領舊項目），以回傳結果為準更新兩邊
+      // 伺服器會把行程項目同步到完成回報（並可能認領舊項目）。
+      // 衍生（sid）與舊資料以伺服器為準；本地 manual 項目（含尚未儲存的編輯）保留，避免被覆蓋丟失
       const json = await res.json()
       if (json.data?.items) setScheduleItems(normalizeScheduleItems(json.data.items))
-      if (json.completion !== undefined) setCompletionItems(json.completion?.items ?? [])
+      if (json.completion !== undefined) {
+        const serverItems: DrCompletionItem[] = json.completion?.items ?? []
+        setCompletionItems(prev => [
+          ...serverItems.filter(i => i.sid || !i.manual),
+          ...prev.filter(i => !i.sid && i.manual === true),
+        ])
+      }
       toast.success(t('saved'))
     } catch {
       toast.error(t('saveFailed'))
@@ -132,7 +139,7 @@ export function DailyReportClient({ userId }: Props) {
   // ── Completion ───────────────────────────────────────────────
   const initCompletionFromWork = () => {
     // 保留由今日行程同步來的項目（有 sid），只重建手動項目
-    const fromWork = workTemplates.map(w => ({ label: w.label, note: '', done: false }))
+    const fromWork = workTemplates.map(w => ({ label: w.label, note: '', done: false, manual: true }))
     setCompletionItems(prev => [...prev.filter(i => i.sid), ...fromWork])
   }
 
@@ -140,7 +147,7 @@ export function DailyReportClient({ userId }: Props) {
     setCompletionItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item))
 
   const addCompletionItem = () =>
-    setCompletionItems(prev => [...prev, { label: '', note: '', done: false }])
+    setCompletionItems(prev => [...prev, { label: '', note: '', done: false, manual: true }])
 
   const removeCompletionItem = (idx: number) =>
     setCompletionItems(prev => prev.filter((_, i) => i !== idx))
@@ -417,7 +424,9 @@ export function DailyReportClient({ userId }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{def.name}</p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <Badge variant="outline" className="text-xs">{def.cat}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {def.cat === '量化' ? t('catQuant') : def.cat === '質化' ? t('catQual') : def.cat}
+                      </Badge>
                       <span className="text-xs text-slate-400">{t('target')}: {def.target} {def.unit}</span>
                     </div>
                   </div>

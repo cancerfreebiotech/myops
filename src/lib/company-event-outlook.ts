@@ -75,7 +75,13 @@ export async function removeCompanyEventFromOutlook(eventId: string): Promise<vo
 
   for (const p of pushes ?? []) {
     try {
-      await deleteOutlookEvent(p.user_id, p.ms_event_id)
+      // 遠端刪除確認成功（含 404=已不存在）才清 push 列；
+      // 失敗時保留列，讓之後的 resync/刪除重試有機會清掉孤兒事件
+      const removed = await deleteOutlookEvent(p.user_id, p.ms_event_id)
+      if (!removed) {
+        console.warn('[company-event-outlook] remote delete failed, keeping push row:', eventId, p.user_id)
+        continue
+      }
       const { error: delErr } = await admin
         .from('company_event_outlook_pushes')
         .delete()

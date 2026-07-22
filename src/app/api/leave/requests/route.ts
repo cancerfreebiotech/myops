@@ -57,9 +57,13 @@ export async function POST(request: NextRequest) {
     .single()
 
   // T9 特殊假別（婚/喪/產/陪產/產檢/安胎/育嬰留停…）：requires_qualification=true 者
-  // 需 HR 先審核資格並於餘額管理頁核給天數（＝該員工該假別當期存在 balance 列且 total_days > 0），
-  // 否則擋下。沿用上方 pickBalanceForDate 的 period-aware 歸屬，不另查。
-  if (leaveType?.requires_qualification && (!balance || Number(balance.total_days) <= 0)) {
+  // 需 HR 先審核資格並於餘額管理頁核給天數。資格判定＝「曾獲核給」（任一餘額列
+  // total_days > 0，不做 period 解析）——HR 的餘額管理頁只能寫當年度列，若以
+  // start_date 的年度解析，年底核給、申請隔年初的假（如育嬰留停需提前申請）會被誤擋。
+  const qualificationRows = (balanceRows ?? [])
+    .filter(r => Number(r.total_days) > 0)
+    .sort((a, b) => Number(b.year ?? 0) - Number(a.year ?? 0))
+  if (leaveType?.requires_qualification && qualificationRows.length === 0) {
     return NextResponse.json(
       { error: t('leaveRequests.qualificationRequired', { name: leaveType?.name ?? '' }) },
       { status: 400 }
@@ -69,8 +73,11 @@ export async function POST(request: NextRequest) {
   // 有 balance 記錄即代表該假別已配額（total_days 為可用額度），就檢查餘額；
   // 不以 leaveType.default_quota_days 判斷（特休等 by_seniority 假別此欄為 NULL，
   // 但仍會由 HR 建立 balance，必須控管餘額）。無 balance = 無限制假別，不檢查。
-  if (balance) {
-    const remaining = Number(balance.total_days) - Number(balance.used_days ?? 0)
+  // 特殊假別跨年申請（start_date 當期無列）時，以最近一筆核給列控管額度。
+  const effectiveBalance = balance
+    ?? (leaveType?.requires_qualification ? qualificationRows[0] : undefined)
+  if (effectiveBalance) {
+    const remaining = Number(effectiveBalance.total_days) - Number(effectiveBalance.used_days ?? 0)
     if (remaining < total_days) {
       return NextResponse.json({ error: t('leaveRequests.insufficientBalance', { name: leaveType?.name ?? '', remaining }) }, { status: 400 })
     }

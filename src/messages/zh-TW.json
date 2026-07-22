@@ -1503,7 +1503,8 @@
       "notClockedIn": "尚未打上班卡",
       "alreadyClockedOut": "今日已打下班卡",
       "geofenceOut": "你不在允許的打卡範圍內",
-      "geofenceNoLocation": "打卡需要定位，請開啟定位權限後再試"
+      "geofenceNoLocation": "打卡需要定位，請開啟定位權限後再試",
+      "makeupVoidedRequiresHr": "該日打卡紀錄已由人資作廢，補打卡需由人資或管理員核准"
     },
     "documentTranslate": {
       "noChineseContent": "無中文內容可翻譯",

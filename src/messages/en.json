@@ -1503,7 +1503,8 @@
       "notClockedIn": "You have not clocked in yet",
       "alreadyClockedOut": "You have already clocked out today",
       "geofenceOut": "You are outside the allowed clock-in area",
-      "geofenceNoLocation": "Location is required to clock in. Please enable location access and try again"
+      "geofenceNoLocation": "Location is required to clock in. Please enable location access and try again",
+      "makeupVoidedRequiresHr": "The attendance record for this date was voided by HR; only HR or an admin can approve this makeup request"
     },
     "documentTranslate": {
       "noChineseContent": "No Chinese content available to translate",
