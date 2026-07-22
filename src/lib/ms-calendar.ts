@@ -67,6 +67,10 @@ export interface OutlookEventInput {
   subject: string
   startDate: string // YYYY-MM-DD（起始日，含當日）
   endDate: string   // YYYY-MM-DD（結束日，含當日）
+  /** Graph 的 showAs；未指定時維持 'oof'（既有請假/出差呼叫端行為不變）。 */
+  showAs?: 'free' | 'tentative' | 'busy' | 'oof'
+  /** 事件內文（純文字）；未指定時不帶 body。 */
+  bodyText?: string
 }
 
 /**
@@ -81,8 +85,8 @@ function nextDay(date: string): string {
 }
 
 /**
- * 在 userId 的 Outlook 建立 all-day OOF 事件，回傳 event id（失敗回 null）。
- * userId 為當事人（請假/出差申請人），非核准者。
+ * 在 userId 的 Outlook 建立 all-day 事件（預設 showAs=oof），回傳 event id（失敗回 null）。
+ * 請假/出差：userId 為當事人（申請人），非核准者。公司活動：逐一推給每位已連結者（showAs=free）。
  */
 export async function pushOutlookEvent(userId: string, input: OutlookEventInput): Promise<string | null> {
   const token = await getAccessToken(userId)
@@ -93,7 +97,8 @@ export async function pushOutlookEvent(userId: string, input: OutlookEventInput)
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         subject: input.subject,
-        showAs: 'oof',
+        showAs: input.showAs ?? 'oof',
+        ...(input.bodyText ? { body: { contentType: 'text', content: input.bodyText } } : {}),
         isAllDay: true,
         // all-day 事件 start/end 皆須為午夜；end 為結束日隔天 00:00（排他邊界）
         start: { dateTime: `${input.startDate}T00:00:00`, timeZone: 'Asia/Taipei' },

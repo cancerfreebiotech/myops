@@ -39,9 +39,10 @@ interface Props {
   allUsers: UserOption[]
   currentUser: { id: string; role: string; display_name: string | null } | null
   isAdmin: boolean
+  canCreate: boolean
 }
 
-export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Props) {
+export function ProjectsClient({ projects, allUsers, currentUser, isAdmin, canCreate }: Props) {
   const router = useRouter()
   const t = useTranslations('projects')
   const tc = useTranslations('common')
@@ -88,11 +89,13 @@ export function ProjectsClient({ projects, allUsers, currentUser, isAdmin }: Pro
 
   return (
     <>
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => setCreateOpen(true)} className="min-h-[44px]">
-          <Plus size={16} className="mr-1.5" /> {t('create')}
-        </Button>
-      </div>
+      {canCreate && (
+        <div className="flex justify-end mb-4">
+          <Button onClick={() => setCreateOpen(true)} className="min-h-[44px]">
+            <Plus size={16} className="mr-1.5" /> {t('create')}
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {projects.length === 0 ? (

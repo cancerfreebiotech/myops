@@ -51,7 +51,7 @@ export function FeedbackForm() {
     setLoading(false)
     if (error) { toast.error(error); return }
     toast.success(t('submitted'))
-    router.push('/')
+    router.push('/feedback')
   }
 
   return (

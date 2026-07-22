@@ -151,7 +151,7 @@
   "dailyReport": {
     "title": "日報",
     "description": "本日のスケジュール・完了報告・KPIを入力",
-    "tabSchedule": "スケジュール",
+    "tabSchedule": "本日のスケジュール",
     "tabCompletion": "完了報告",
     "tabKpi": "KPI",
     "today": "今日",
@@ -219,7 +219,38 @@
     "roleMember": "メンバー",
     "roleViewer": "閲覧者",
     "confirmDeleteGroup": "このグループを削除しますか？メンバー設定も削除されます。",
-    "deleted": "削除しました"
+    "deleted": "削除しました",
+    "markItemDone": "完了にする",
+    "markItemUndone": "完了を取り消す",
+    "fromScheduleBadge": "予定",
+    "removeItem": "削除",
+    "scheduleSyncHint": "「完了」にチェックを入れて保存すると、完了報告へ自動的に反映されます。再入力は不要です。",
+    "completionDerivedHint": "「予定」ラベルの項目は本日のスケジュールから同期されたものです。ここでは完了チェックと備考の追記ができます。名称の変更や削除は「本日のスケジュール」タブで行ってください。",
+    "deleteFailed": "削除に失敗しました",
+    "kpiManage": "KPI指標の管理",
+    "kpiManageHint": "メンバーのKPI指標を追加・編集・停止します",
+    "manageKpiForMember": "このメンバーのKPIを管理",
+    "selectMember": "メンバーを選択",
+    "newKpi": "指標を追加",
+    "editKpi": "指標を編集",
+    "kpiName": "指標名",
+    "kpiNamePlaceholder": "例：医師訪問",
+    "kpiCat": "カテゴリ",
+    "catQuant": "定量",
+    "catQual": "定性",
+    "kpiTarget": "目標値",
+    "kpiUnit": "単位",
+    "kpiUnitPlaceholder": "例：回、件",
+    "kpiPeriod": "期間",
+    "periodMonthly": "月次",
+    "periodYearly": "年次",
+    "kpiInactive": "停止中",
+    "deactivate": "停止",
+    "activate": "有効化",
+    "delete": "削除",
+    "confirmDeleteKpi": "この指標を完全に削除しますか？過去の入力データは保持されますが、表示されなくなります。一時的に使わない場合は「停止」をご利用ください。",
+    "deactivateHint": "停止するとメンバーの日報に表示されなくなります。この操作は元に戻せます（データは削除されません）",
+    "noKpiForMember": "このメンバーにはまだKPI指標が設定されていません"
   },
   "dashboard": {
     "welcome": "おかえりなさい",
@@ -644,7 +675,10 @@
       "monthDayLabel": "{m}月{d}日",
       "weekdayParen": "（{w}）",
       "dateRange": "{start} ～ {end}"
-    }
+    },
+    "requiresQualificationBadge": "人事審査が必要",
+    "qualificationNotGranted": "人事による資格審査が必要です（日数未付与）",
+    "qualificationNotice": "この休暇は事前に人事による資格審査が必要です。証明書類をご用意のうえ人事にお問い合わせください。日数が付与され次第、申請できます。"
   },
   "overtime": {
     "title": "残業",
@@ -858,7 +892,19 @@
     "typeOther": "その他",
     "submitFeedback": "フィードバックを送信",
     "requiredFields": "タイトルと説明を入力してください",
-    "submitted": "フィードバックを送信しました。ありがとうございます！"
+    "submitted": "フィードバックを送信しました。ありがとうございます！",
+    "listTitle": "マイフィードバック",
+    "listDescription": "送信したフィードバックと対応状況を確認できます",
+    "newFeedback": "新規フィードバック",
+    "empty": "まだフィードバックを送信していません",
+    "emptyHint": "ご質問やご提案はありませんか？お知らせください",
+    "comments": "コメント",
+    "noComments": "コメントはまだありません",
+    "commentPlaceholder": "コメントを入力（補足説明や進捗の確認など）…",
+    "sendComment": "コメントを送信",
+    "commentSent": "コメントを送信しました",
+    "reopened": "コメントを送信し、このフィードバックを再開しました",
+    "viewOriginal": "クリックして原寸画像を表示"
   },
   "admin": {
     "users": {
@@ -901,7 +947,8 @@
       "regionOther": "その他",
       "statusActive": "在職中",
       "statusInactive": "退職（無効）",
-      "none": "なし"
+      "none": "なし",
+      "displayName": "表示名（英語氏名）"
     },
     "profile": {
       "title": "人事情報",
@@ -926,7 +973,16 @@
       "idNumber": "身分証番号",
       "sensitiveWarning": "機密情報です。取り扱いにご注意ください。",
       "show": "表示",
-      "hide": "非表示"
+      "hide": "非表示",
+      "chineseName": "中国語氏名",
+      "idType": "証明書種別",
+      "idTypeNationalId": "身分証",
+      "idTypeResidentPermit": "在留証",
+      "mailingAddress": "連絡先住所",
+      "registeredAddress": "住民登録住所",
+      "salaryType": "給与形態",
+      "salaryTypeMonthly": "月給",
+      "salaryTypeHourly": "時給"
     },
     "insuranceBrackets": {
       "title": "保険等級表",
@@ -1115,7 +1171,23 @@
       "manual": "手動",
       "pageLabel": "<b>{page}</b> ページ目",
       "prevPage": "前へ",
-      "nextPage": "次へ"
+      "nextPage": "次へ",
+      "actionsColumn": "操作",
+      "voidAction": "無効化",
+      "unvoidAction": "無効化を解除",
+      "voidedBadge": "無効",
+      "voidedReasonPrefix": "無効化の理由：",
+      "voidDialogTitle": "打刻記録を無効化",
+      "voidDialogDesc": "無効化した記録は集計・エクスポートの対象外になりますが、監査証跡は保持されます（完全には削除されません）。",
+      "voidReasonLabel": "無効化の理由",
+      "voidReasonPlaceholder": "この打刻記録を無効化する理由を入力してください…",
+      "voidReasonRequired": "無効化の理由を入力してください",
+      "voidConfirm": "無効化する",
+      "voidSuccess": "打刻記録を無効化しました",
+      "unvoidDialogTitle": "無効化の解除",
+      "unvoidDialogDesc": "無効化を解除すると、この記録は再び集計・エクスポートの対象になります。",
+      "unvoidConfirm": "無効化を解除する",
+      "unvoidSuccess": "無効化を解除しました"
     },
     "auditLog": {
       "searchPlaceholder": "文書タイトルまたは操作者を検索...",
@@ -1191,7 +1263,8 @@
         "bug": "バグ",
         "improvement": "改善提案",
         "other": "その他"
-      }
+      },
+      "viewOriginal": "クリックして原寸画像を表示"
     },
     "insuranceMgmt": {
       "emptySpreadsheet": "スプレッドシートが空です。ファイルの内容を確認してください。",
@@ -1442,7 +1515,8 @@
       "onlyPendingCancellable": "承認待ちの申請のみキャンセルできます"
     },
     "leaveRequests": {
-      "insufficientBalance": "{name}の残日数が不足しています（残り {remaining} 日）"
+      "insufficientBalance": "{name}の残日数が不足しています（残り {remaining} 日）",
+      "qualificationRequired": "「{name}」は事前に人事による資格審査が必要です。証明書類を添えて人事にご連絡ください。"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "条件に該当する従業員がいません"
@@ -1452,7 +1526,8 @@
       "draftGenerated": "{year}/{month} の給与ドラフトが自動生成されました"
     },
     "projects": {
-      "missingName": "プロジェクト名が必要です"
+      "missingName": "プロジェクト名が必要です",
+      "createFailed": "プロジェクトの作成に失敗しました。しばらくしてから再度お試しください。"
     },
     "procurement": {
       "invalidDocType": "無効な伝票タイプです",
@@ -2679,7 +2754,14 @@
     "wd3": "水",
     "wd4": "木",
     "wd5": "金",
-    "wd6": "土"
+    "wd6": "土",
+    "rsvpTitle": "出欠回答",
+    "rsvpAttending": "参加",
+    "rsvpDeclined": "不参加",
+    "rsvpMaybe": "未定",
+    "rsvpSaved": "出欠を更新しました",
+    "rsvpAttendingCount": "参加 {count}名",
+    "rsvpNobody": "まだ回答がありません"
   },
   "insights": {
     "title": "経営ダッシュボード",

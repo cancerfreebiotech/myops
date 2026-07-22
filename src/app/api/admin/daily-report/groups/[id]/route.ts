@@ -28,18 +28,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Replace members if provided
+  // Replace members if provided — atomic delete+insert in one transaction (RLS via is_admin()).
   if (Array.isArray(members)) {
-    await service.from('daily_report_group_members').delete().eq('group_id', id)
-    if (members.length) {
-      await service.from('daily_report_group_members').insert(
-        members.map((m: { user_id: string; role: string }) => ({
-          group_id: id,
-          user_id: m.user_id,
-          role: m.role ?? 'member',
-        }))
-      )
-    }
+    const { error } = await service.rpc('dr_replace_group_members', {
+      p_group_id: id,
+      p_members: members,
+    })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({ data: { id } })

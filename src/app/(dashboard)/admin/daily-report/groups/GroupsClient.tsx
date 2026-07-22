@@ -101,7 +101,11 @@ export function GroupsClient({ initialGroups, allUsers }: Props) {
 
   const deleteGroup = async (id: string) => {
     if (!confirm(t('confirmDeleteGroup'))) return
-    await fetch(`/api/admin/daily-report/groups/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/admin/daily-report/groups/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      toast.error(t('deleteFailed'))
+      return
+    }
     setGroups(prev => prev.filter(g => g.id !== id))
     toast.success(t('deleted'))
   }

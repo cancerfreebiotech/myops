@@ -66,10 +66,11 @@ export async function PATCH(
 
   const body = await request.json()
   const allowedFields = [
-    'hire_date', 'termination_date', 'id_number', 'birth_date',
-    'phone', 'address', 'emergency_contact', 'emergency_phone',
+    'hire_date', 'termination_date', 'id_type', 'id_number', 'birth_date',
+    'chinese_name', 'phone', 'address', 'registered_address',
+    'emergency_contact', 'emergency_phone',
     'bank_code', 'bank_account', 'labor_pension_self',
-    'monthly_salary', 'hourly_rate',
+    'salary_type', 'monthly_salary', 'hourly_rate',
   ]
 
   const updates: Record<string, string | number | null> = { updated_by: user.id }

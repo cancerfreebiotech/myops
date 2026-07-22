@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
     .select('*, user:users!attendance_records_user_id_fkey(display_name, email, department:departments(name))')
     .gte('clock_date', startDate)
     .lte('clock_date', endDate)
+    .is('voided_at', null) // 匯出排除已作廢紀錄
     .order('clock_date')
     .order('user_id')
 

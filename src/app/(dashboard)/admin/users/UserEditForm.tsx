@@ -4,6 +4,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
@@ -13,6 +14,7 @@ import { useTranslations } from 'next-intl'
 import type { User } from '@/types'
 
 const schema = z.object({
+  display_name: z.string(),
   department_id: z.string().nullable(),
   role: z.enum(['member', 'admin']),
   job_role: z.enum(['member', 'hr_manager', 'finance', 'coo', 'ceo']),
@@ -68,6 +70,7 @@ export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      display_name: user.display_name ?? '',
       department_id: user.department_id ?? null,
       role: user.role,
       job_role: user.job_role ?? 'member',
@@ -121,9 +124,21 @@ export function UserEditForm({ user, departments, allUsers, isAdmin, onClose }: 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
-          {user.display_name} <span className="text-slate-400 font-normal">({user.email})</span>
-        </div>
+        {isAdmin ? (
+          <FormField control={form.control} name="display_name" render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('displayName')}</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <p className="text-xs text-slate-400">{user.email}</p>
+            </FormItem>
+          )} />
+        ) : (
+          <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {user.display_name} <span className="text-slate-400 font-normal">({user.email})</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           {/* 部門 */}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { addMonths, format, getDay, getDaysInMonth, startOfMonth } from 'date-fns'
-import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Pencil, Plus, Trash2, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,12 +11,21 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { taipeiToday } from '@/lib/taipei-date'
 
+type RsvpStatus = 'attending' | 'declined' | 'maybe'
+
+interface EventRsvp {
+  counts: { attending: number; declined: number; maybe: number }
+  my_status: RsvpStatus | null
+  attendees: { status: RsvpStatus; display_name: string | null }[]
+}
+
 interface CompanyEvent {
   id: string
   title: string
   description: string | null
   start_date: string
   end_date: string | null
+  rsvp?: EventRsvp | null
 }
 
 interface LeaveItem {
@@ -74,6 +83,25 @@ const DOT_STYLES: Record<ItemType, string> = {
   event: 'bg-green-500',
 }
 
+// RSVP 選項（語意狀態色：參加=approved 綠、不參加=rejected 紅、未定=pending 黃）
+const RSVP_OPTIONS: { value: RsvpStatus; labelKey: 'rsvpAttending' | 'rsvpDeclined' | 'rsvpMaybe'; selectedClass: string }[] = [
+  {
+    value: 'attending',
+    labelKey: 'rsvpAttending',
+    selectedClass: 'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-300',
+  },
+  {
+    value: 'declined',
+    labelKey: 'rsvpDeclined',
+    selectedClass: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300',
+  },
+  {
+    value: 'maybe',
+    labelKey: 'rsvpMaybe',
+    selectedClass: 'border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-300',
+  },
+]
+
 export function CalendarClient({ isManager }: { isManager: boolean }) {
   const t = useTranslations('calendarPage')
   const today = taipeiToday()
@@ -90,6 +118,10 @@ export function CalendarClient({ isManager }: { isManager: boolean }) {
   const [newStartDate, setNewStartDate] = useState('')
   const [newEndDate, setNewEndDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // RSVP：儲存中的活動 id、展開名單的活動 id
+  const [rsvpSaving, setRsvpSaving] = useState<string | null>(null)
+  const [expandedRsvpId, setExpandedRsvpId] = useState<string | null>(null)
 
   // 編輯活動（inline）
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -250,6 +282,24 @@ export function CalendarClient({ isManager }: { isManager: boolean }) {
       toast.error(t('saveFailed'))
     } finally {
       setSaving(false)
+    }
+  }
+
+  const submitRsvp = async (eventId: string, status: RsvpStatus) => {
+    setRsvpSaving(eventId)
+    try {
+      const res = await fetch(`/api/calendar/events/${eventId}/rsvp`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error()
+      toast.success(t('rsvpSaved'))
+      await loadOverview()
+    } catch {
+      toast.error(t('saveFailed'))
+    } finally {
+      setRsvpSaving(null)
     }
   }
 
@@ -472,6 +522,71 @@ export function CalendarClient({ isManager }: { isManager: boolean }) {
                       </div>
                     )}
                   </div>
+
+                  {/* RSVP：參加/不參加/未定 + 出席統計與名單 */}
+                  {ev && (
+                    <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap" role="group" aria-label={t('rsvpTitle')}>
+                          {RSVP_OPTIONS.map(opt => {
+                            const selected = ev.rsvp?.my_status === opt.value
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                disabled={rsvpSaving === ev.id}
+                                aria-pressed={selected}
+                                onClick={() => submitRsvp(ev.id, opt.value)}
+                                className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  selected
+                                    ? opt.selectedClass
+                                    : 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-700/50'
+                                }`}
+                              >
+                                {t(opt.labelKey)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <button
+                          type="button"
+                          aria-expanded={expandedRsvpId === ev.id}
+                          onClick={() => setExpandedRsvpId(expandedRsvpId === ev.id ? null : ev.id)}
+                          className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-150 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded"
+                        >
+                          <Users size={13} />
+                          <span className="tabular-nums">
+                            {t('rsvpAttendingCount', { count: ev.rsvp?.counts.attending ?? 0 })}
+                          </span>
+                          {expandedRsvpId === ev.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        </button>
+                      </div>
+                      {expandedRsvpId === ev.id && (
+                        (ev.rsvp?.attendees.length ?? 0) === 0 ? (
+                          <p className="text-xs text-slate-400">{t('rsvpNobody')}</p>
+                        ) : (
+                          <dl className="space-y-1">
+                            {RSVP_OPTIONS.map(opt => {
+                              const names = (ev.rsvp?.attendees ?? [])
+                                .filter(a => a.status === opt.value)
+                                .map(a => a.display_name || '—')
+                              if (names.length === 0) return null
+                              return (
+                                <div key={opt.value} className="flex gap-2 text-xs">
+                                  <dt className="shrink-0 text-slate-500 dark:text-slate-400 tabular-nums">
+                                    {t(opt.labelKey)} ({names.length})
+                                  </dt>
+                                  <dd className="text-slate-700 dark:text-slate-300 break-words">
+                                    {names.join(', ')}
+                                  </dd>
+                                </div>
+                              )
+                            })}
+                          </dl>
+                        )
+                      )}
+                    </div>
+                  )}
 
                   {/* inline 編輯表單 */}
                   {isManager && ev && editingId === ev.id && (

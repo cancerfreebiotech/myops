@@ -65,6 +65,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     .maybeSingle()
   if (error) return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
   if (!data) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+
+  // 單向同步：內容已變（標題/日期/說明），對全體已連結者先刪後重推（best-effort）
+  try {
+    const { resyncCompanyEventToOutlook } = await import('@/lib/company-event-outlook')
+    await resyncCompanyEventToOutlook(data)
+  } catch (e) {
+    console.warn('[calendar] company event Outlook resync failed:', e)
+  }
+
   return NextResponse.json({ data })
 }
 
@@ -88,5 +97,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     .select('id')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data?.length) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+
+  // 單向同步：從全體已連結者的 Outlook 刪除此活動並清紀錄（best-effort）
+  try {
+    const { removeCompanyEventFromOutlook } = await import('@/lib/company-event-outlook')
+    await removeCompanyEventFromOutlook(id)
+  } catch (e) {
+    console.warn('[calendar] company event Outlook cleanup failed:', e)
+  }
+
   return NextResponse.json({ data: null })
 }

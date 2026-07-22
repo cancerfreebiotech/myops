@@ -51,13 +51,18 @@ export async function POST(request: NextRequest) {
   if (groupErr || !group) return NextResponse.json({ error: groupErr?.message ?? 'Failed' }, { status: 500 })
 
   if (Array.isArray(members) && members.length) {
-    await service.from('daily_report_group_members').insert(
+    const { error: memberErr } = await service.from('daily_report_group_members').insert(
       members.map((m: { user_id: string; role: string }) => ({
         group_id: group.id,
         user_id: m.user_id,
         role: m.role ?? 'member',
       }))
     )
+    // Compensating rollback: drop the just-created group so no half-built group lingers.
+    if (memberErr) {
+      await service.from('daily_report_groups').delete().eq('id', group.id)
+      return NextResponse.json({ error: memberErr.message }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ data: group })

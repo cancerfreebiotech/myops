@@ -19,6 +19,16 @@ interface Props {
 
 type Tab = 'schedule' | 'completion' | 'kpi'
 
+// 行程項目穩定識別碼：用於今日行程 ↔ 完成回報之間的同步對應
+const newSid = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+// 舊資料可能缺 sid / done，載入時補齊，確保儲存後可與完成回報對應
+const normalizeScheduleItems = (items: DrScheduleItem[]): DrScheduleItem[] =>
+  items.map(item => ({ ...item, sid: item.sid || newSid(), done: item.done === true }))
+
 export function DailyReportClient({ userId }: Props) {
   const t = useTranslations('dailyReport')
   const [tab, setTab] = useState<Tab>('schedule')
@@ -55,7 +65,7 @@ export function DailyReportClient({ userId }: Props) {
           fetch(`/api/daily-report/work-items`).then(okJson),
         ])
         if (cancelled) return
-        setScheduleItems(sch.data?.items ?? [])
+        setScheduleItems(normalizeScheduleItems(sch.data?.items ?? []))
         setCompletionItems(comp.data?.items ?? [])
         setKpiEntries(kpi.data ?? [])
         setKpiDrafts({})
@@ -87,10 +97,13 @@ export function DailyReportClient({ userId }: Props) {
 
   // ── Schedule ─────────────────────────────────────────────────
   const addScheduleItem = (label = '', note = '') =>
-    setScheduleItems(prev => [...prev, { label, note }])
+    setScheduleItems(prev => [...prev, { label, note, sid: newSid(), done: false }])
 
   const updateScheduleItem = (idx: number, field: 'label' | 'note', val: string) =>
     setScheduleItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item))
+
+  const toggleScheduleDone = (idx: number) =>
+    setScheduleItems(prev => prev.map((item, i) => i === idx ? { ...item, done: !item.done } : item))
 
   const removeScheduleItem = (idx: number) =>
     setScheduleItems(prev => prev.filter((_, i) => i !== idx))
@@ -104,6 +117,10 @@ export function DailyReportClient({ userId }: Props) {
         body: JSON.stringify({ date, items: scheduleItems }),
       })
       if (!res.ok) throw new Error()
+      // 伺服器會把行程項目同步到完成回報（並可能認領舊項目），以回傳結果為準更新兩邊
+      const json = await res.json()
+      if (json.data?.items) setScheduleItems(normalizeScheduleItems(json.data.items))
+      if (json.completion !== undefined) setCompletionItems(json.completion?.items ?? [])
       toast.success(t('saved'))
     } catch {
       toast.error(t('saveFailed'))
@@ -114,8 +131,9 @@ export function DailyReportClient({ userId }: Props) {
 
   // ── Completion ───────────────────────────────────────────────
   const initCompletionFromWork = () => {
+    // 保留由今日行程同步來的項目（有 sid），只重建手動項目
     const fromWork = workTemplates.map(w => ({ label: w.label, note: '', done: false }))
-    setCompletionItems(fromWork)
+    setCompletionItems(prev => [...prev.filter(i => i.sid), ...fromWork])
   }
 
   const updateCompletionItem = (idx: number, field: keyof DrCompletionItem, val: string | boolean) =>
@@ -136,6 +154,11 @@ export function DailyReportClient({ userId }: Props) {
         body: JSON.stringify({ date, items: completionItems }),
       })
       if (!res.ok) throw new Error()
+      // 伺服器會依 sid 把 done 回寫到今日行程，本地鏡射同一結果讓兩分頁勾選一致
+      setScheduleItems(prev => prev.map(s => {
+        const c = completionItems.find(ci => ci.sid && ci.sid === s.sid)
+        return c && c.done !== s.done ? { ...s, done: c.done === true } : s
+      }))
       toast.success(t('saved'))
     } catch {
       toast.error(t('saveFailed'))
@@ -248,7 +271,7 @@ export function DailyReportClient({ userId }: Props) {
               <div className="flex gap-2">
                 {schTemplates.length > 0 && (
                   <Button variant="outline" size="sm" onClick={() => {
-                    const fromTemplate = schTemplates.map(s => ({ label: s.label, note: '' }))
+                    const fromTemplate = schTemplates.map(s => ({ label: s.label, note: '', sid: newSid(), done: false }))
                     setScheduleItems(fromTemplate)
                   }}>
                     {t('fromTemplate')}
@@ -265,12 +288,22 @@ export function DailyReportClient({ userId }: Props) {
               <p className="text-sm text-slate-400 py-4 text-center">{t('emptySchedule')}</p>
             )}
             {scheduleItems.map((item, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
+              <div key={item.sid ?? idx} className="flex gap-2 items-center">
+                <button
+                  onClick={() => toggleScheduleDone(idx)}
+                  aria-label={t(item.done ? 'markItemUndone' : 'markItemDone')}
+                  className="shrink-0 cursor-pointer text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                >
+                  {item.done
+                    ? <CheckCircle2 size={20} className="text-green-600 dark:text-green-400" />
+                    : <Circle size={20} />
+                  }
+                </button>
                 <Input
                   value={item.label}
                   onChange={e => updateScheduleItem(idx, 'label', e.target.value)}
                   placeholder={t('scheduleLabelPlaceholder')}
-                  className="flex-1"
+                  className={`flex-1 ${item.done ? 'line-through text-slate-400' : ''}`}
                 />
                 <Input
                   value={item.note}
@@ -278,11 +311,12 @@ export function DailyReportClient({ userId }: Props) {
                   placeholder={t('scheduleNotePlaceholder')}
                   className="flex-1"
                 />
-                <Button variant="ghost" size="icon" onClick={() => removeScheduleItem(idx)} className="text-slate-400 hover:text-red-500 shrink-0">
+                <Button variant="ghost" size="icon" aria-label={t('removeItem')} onClick={() => removeScheduleItem(idx)} className="text-slate-400 hover:text-red-500 shrink-0">
                   <Trash2 size={15} />
                 </Button>
               </div>
             ))}
+            <p className="text-xs text-slate-400 dark:text-slate-500 pt-1">{t('scheduleSyncHint')}</p>
             <div className="pt-2">
               <Button onClick={saveSchedule} disabled={saving}>
                 {saving ? t('saving') : t('save')}
@@ -315,33 +349,49 @@ export function DailyReportClient({ userId }: Props) {
               <p className="text-sm text-slate-400 py-4 text-center">{t('emptyCompletion')}</p>
             )}
             {completionItems.map((item, idx) => (
-              <div key={idx} className="flex gap-2 items-center">
+              <div key={item.sid ?? `manual-${idx}`} className="flex gap-2 items-center">
                 <button
                   onClick={() => updateCompletionItem(idx, 'done', !item.done)}
-                  className="shrink-0 text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  aria-label={t(item.done ? 'markItemUndone' : 'markItemDone')}
+                  className="shrink-0 cursor-pointer text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                 >
                   {item.done
                     ? <CheckCircle2 size={20} className="text-green-600 dark:text-green-400" />
                     : <Circle size={20} />
                   }
                 </button>
-                <Input
-                  value={item.label}
-                  onChange={e => updateCompletionItem(idx, 'label', e.target.value)}
-                  placeholder={t('completionLabelPlaceholder')}
-                  className={`flex-1 ${item.done ? 'line-through text-slate-400' : ''}`}
-                />
+                {/* 行程衍生項目：名稱由今日行程分頁管理，這裡唯讀，僅可勾選完成與補充備註 */}
+                {item.sid ? (
+                  <div className={`flex-1 flex items-center gap-2 min-w-0 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm ${item.done ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                    <span className="truncate">{item.label || t('completionLabelPlaceholder')}</span>
+                    <Badge variant="outline" className="text-xs shrink-0 ml-auto">{t('fromScheduleBadge')}</Badge>
+                  </div>
+                ) : (
+                  <Input
+                    value={item.label}
+                    onChange={e => updateCompletionItem(idx, 'label', e.target.value)}
+                    placeholder={t('completionLabelPlaceholder')}
+                    className={`flex-1 ${item.done ? 'line-through text-slate-400' : ''}`}
+                  />
+                )}
                 <Input
                   value={item.note}
                   onChange={e => updateCompletionItem(idx, 'note', e.target.value)}
                   placeholder={t('completionNotePlaceholder')}
                   className="flex-1"
                 />
-                <Button variant="ghost" size="icon" onClick={() => removeCompletionItem(idx)} className="text-slate-400 hover:text-red-500 shrink-0">
-                  <Trash2 size={15} />
-                </Button>
+                {item.sid ? (
+                  <div className="w-8 shrink-0" aria-hidden />
+                ) : (
+                  <Button variant="ghost" size="icon" aria-label={t('removeItem')} onClick={() => removeCompletionItem(idx)} className="text-slate-400 hover:text-red-500 shrink-0">
+                    <Trash2 size={15} />
+                  </Button>
+                )}
               </div>
             ))}
+            {completionItems.some(i => i.sid) && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 pt-1">{t('completionDerivedHint')}</p>
+            )}
             <div className="pt-2">
               <Button onClick={saveCompletion} disabled={saving}>
                 {saving ? t('saving') : t('save')}

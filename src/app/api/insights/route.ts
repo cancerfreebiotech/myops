@@ -41,6 +41,7 @@ export async function GET() {
     supabase
       .from('attendance_records')
       .select('clock_date, user_id')
+      .is('voided_at', null) // 統計排除已作廢紀錄
       .gte('clock_date', rangeStart),
     supabase
       .from('leave_requests')

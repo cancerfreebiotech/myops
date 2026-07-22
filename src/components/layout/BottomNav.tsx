@@ -60,7 +60,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('procurement')   && { href: '/procurement',    label: t('procurement'),   icon: ShoppingCart },
     show('assets')        && { href: '/assets',         label: t('assets'),        icon: Package },
     show('lab_supplies')  && { href: '/lab',            label: t('labSupplies'),   icon: FlaskConical },
-    show('feedback')      && { href: '/feedback/new',   label: t('feedback'),      icon: MessageSquarePlus },
+    show('feedback')      && { href: '/feedback',       label: t('feedback'),      icon: MessageSquarePlus },
     { href: '/settings', label: t('settings'), icon: Settings },
     { href: '/help',     label: t('help'),     icon: HelpCircle },
   ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]

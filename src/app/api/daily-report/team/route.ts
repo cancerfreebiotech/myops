@@ -11,7 +11,8 @@ async function dailyReportEnabled(supabase: Awaited<ReturnType<typeof createClie
 
 // GET /api/daily-report/team?date=YYYY-MM-DD&groupId=xxx
 // Returns all members' schedules + completions + kpi entries for a group on a date
-// Viewer/admin only
+// admin / 該群組 viewer：完整資料；該群組 member：唯讀且不含任何 KPI 資料
+// （成員互看行程以便互相支援，KPI 僅限 admin 與 viewer）
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const service = await createServiceClient()
@@ -34,9 +35,11 @@ export async function GET(request: NextRequest) {
     .maybeSingle()
   if (!group) return NextResponse.json({ error: 'Group not found' }, { status: 404 })
 
-  // Verify requester is viewer of this group or admin
+  // Verify requester is admin, or viewer/member of this group.
+  // member 可看行程與完成回報（互相支援用），但看不到 KPI。
   const { data: userRow } = await service.from('users').select('role').eq('id', user.id).single()
   const isAdmin = userRow?.role === 'admin'
+  let canSeeKpi = isAdmin
 
   if (!isAdmin) {
     const { data: membership } = await service
@@ -46,9 +49,10 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .maybeSingle()
 
-    if (!membership || membership.role !== 'viewer') {
+    if (!membership) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    canSeeKpi = membership.role === 'viewer'
   }
 
   // Get all members in this group
@@ -62,13 +66,19 @@ export async function GET(request: NextRequest) {
   // supabase-js 將 many-to-one 關聯推斷為陣列，runtime 實為單一物件
   const memberRows = (members ?? []) as unknown as MemberRow[]
   const memberIds = memberRows.map(m => m.user_id)
-  if (!memberIds.length) return NextResponse.json({ data: { members: [], schedules: [], completions: [], kpiEntries: [], kpiDefs: [] } })
+  if (!memberIds.length) return NextResponse.json({ data: { members: [], schedules: [], completions: [], kpiEntries: [], kpiDefs: [], canSeeKpi } })
 
+  // member 請求完全不查 KPI（回應中也不含 KPI 資料）；
+  // 行程與完成回報靠 RLS（viewer / 同群組 groupmate policy）逐列把關。
   const [schedules, completions, kpiEntries, kpiDefs] = await Promise.all([
     service.from('daily_schedules').select('*').in('user_id', memberIds).eq('date', date),
     service.from('daily_completions').select('*').in('user_id', memberIds).eq('date', date),
-    service.from('dr_kpi_entries').select('*').in('user_id', memberIds).eq('date', date),
-    service.from('dr_kpi_definitions').select('*').in('user_id', memberIds).order('sort_order'),
+    canSeeKpi
+      ? service.from('dr_kpi_entries').select('*').in('user_id', memberIds).eq('date', date)
+      : Promise.resolve({ data: [] }),
+    canSeeKpi
+      ? service.from('dr_kpi_definitions').select('*').in('user_id', memberIds).eq('active', true).order('sort_order')
+      : Promise.resolve({ data: [] }),
   ])
 
   return NextResponse.json({
@@ -78,6 +88,7 @@ export async function GET(request: NextRequest) {
       completions: completions.data ?? [],
       kpiEntries: kpiEntries.data ?? [],
       kpiDefs: kpiDefs.data ?? [],
+      canSeeKpi,
     }
   })
 }

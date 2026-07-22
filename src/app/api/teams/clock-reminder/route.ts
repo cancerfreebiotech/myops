@@ -37,6 +37,7 @@ async function runReminder(reminderType: string) {
     .from('attendance_records')
     .select('user_id, clock_in, clock_out')
     .eq('clock_date', today)
+    .is('voided_at', null) // 已作廢紀錄不算已打卡，仍會發提醒
 
   const attendanceMap = new Map(records?.map(r => [r.user_id, r]) ?? [])
 

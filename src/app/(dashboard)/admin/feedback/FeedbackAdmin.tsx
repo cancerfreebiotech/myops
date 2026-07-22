@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StatusBadge } from '@/components/StatusBadge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { FeedbackComments } from '@/components/feedback/FeedbackComments'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { Image as ImageIcon } from 'lucide-react'
@@ -119,33 +120,39 @@ export function FeedbackAdmin({ feedbacks }: { feedbacks: FeedbackItem[] }) {
 
       <Dialog open={!!selectedId} onOpenChange={() => setSelectedId(null)}>
         {selected && (
-          <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selected.title}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-xs text-slate-400">
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
                 <span>{TYPE_LABELS[selected.type]}</span>
                 <span>·</span>
                 <span>{selected.user?.display_name}</span>
                 <span>·</span>
-                <span>{format(new Date(selected.created_at), 'yyyy/MM/dd HH:mm')}</span>
+                <span className="tabular-nums">{format(new Date(selected.created_at), 'yyyy/MM/dd HH:mm')}</span>
               </div>
               <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{selected.description}</p>
-              {(selected.screenshot_urls ?? []).map((path) => (
-                <div key={path}>
-                  <p className="text-xs text-slate-400 mb-1">{t('screenshot')}</p>
-                  <div className="relative w-full aspect-video rounded-md border border-slate-200 overflow-hidden">
-                    <Image
-                      src={`/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(path)}`}
-                      alt={t('screenshot')}
-                      fill
-                      unoptimized
-                      className="object-contain"
-                    />
+              {(selected.screenshot_urls ?? []).map((path) => {
+                const url = `/api/storage/download?bucket=feedback-screenshots&path=${encodeURIComponent(path)}`
+                return (
+                  <div key={path}>
+                    <p className="text-xs text-slate-400 mb-1">{t('screenshot')}</p>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={t('viewOriginal')}
+                      className="block relative w-full aspect-video rounded-md border border-slate-200 dark:border-slate-700 overflow-hidden hover:opacity-90 transition-opacity"
+                    >
+                      <Image src={url} alt={t('screenshot')} fill unoptimized className="object-contain" />
+                    </a>
                   </div>
-                </div>
-              ))}
+                )
+              })}
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <FeedbackComments feedbackId={selected.id} />
+              </div>
             </div>
           </DialogContent>
         )}

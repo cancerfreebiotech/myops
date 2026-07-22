@@ -52,6 +52,9 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
       is_auto_in,
       is_auto_out,
       note,
+      voided_at,
+      voided_by,
+      void_reason,
       user:users!attendance_records_user_id_fkey(
         id,
         display_name,
@@ -77,13 +80,16 @@ export default async function AdminAttendancePage({ searchParams }: PageProps) {
     .from('attendance_records')
     .select('id, user_id, clock_in, is_auto_in')
     .eq('clock_date', today)
+    .is('voided_at', null)
 
   const todayClockedIn = todayRecords?.filter(r => r.clock_in).length ?? 0
-  const autoMakeupCount = attendanceRecords?.filter(r => r.is_auto_in || r.is_auto_out).length ?? 0
+  // 統計排除已作廢紀錄（列表仍顯示，帶標記）
+  const autoMakeupCount = attendanceRecords?.filter(r => !r.voided_at && (r.is_auto_in || r.is_auto_out)).length ?? 0
 
   // Average attendance days for the month
   const userDaysMap: Record<string, number> = {}
   attendanceRecords?.forEach(r => {
+    if (r.voided_at) return
     const uid = r.user_id
     if (!userDaysMap[uid]) userDaysMap[uid] = 0
     if (r.clock_in) userDaysMap[uid]++

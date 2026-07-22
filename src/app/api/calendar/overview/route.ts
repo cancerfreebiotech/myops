@@ -33,6 +33,34 @@ export async function GET(request: NextRequest) {
 
   type LeaveRow = { id: string; start_date: string; end_date: string; display_name: string | null; leave_type_name: string | null }
   type TripRow = { id: string; start_date: string; end_date: string; display_name: string | null; destination: string }
+  type RsvpRow = { event_id: string; user_id: string; status: 'attending' | 'declined' | 'maybe'; user: { display_name: string | null } | null }
+
+  // 活動出席回覆（RSVP）：全員可讀，附上顯示名稱供名單展開
+  const eventRows = events.data ?? []
+  let rsvpRows: RsvpRow[] = []
+  if (eventRows.length > 0) {
+    const { data: rsvpData } = await supabase
+      .from('company_event_rsvps')
+      .select('event_id, user_id, status, user:users(display_name)')
+      .in('event_id', eventRows.map(e => e.id))
+    rsvpRows = ((rsvpData ?? []) as unknown[]) as RsvpRow[]
+  }
+
+  const eventsWithRsvp = eventRows.map(ev => {
+    const rows = rsvpRows.filter(r => r.event_id === ev.id)
+    return {
+      ...ev,
+      rsvp: {
+        counts: {
+          attending: rows.filter(r => r.status === 'attending').length,
+          declined: rows.filter(r => r.status === 'declined').length,
+          maybe: rows.filter(r => r.status === 'maybe').length,
+        },
+        my_status: rows.find(r => r.user_id === user.id)?.status ?? null,
+        attendees: rows.map(r => ({ status: r.status, display_name: r.user?.display_name ?? null })),
+      },
+    }
+  })
 
   const leaves = ((leavesRes.data ?? []) as LeaveRow[]).map(r => ({
     id: r.id, start_date: r.start_date, end_date: r.end_date,
@@ -43,5 +71,5 @@ export async function GET(request: NextRequest) {
     destination: r.destination, user: { display_name: r.display_name },
   }))
 
-  return NextResponse.json({ data: { events: events.data ?? [], leaves, trips } })
+  return NextResponse.json({ data: { events: eventsWithRsvp, leaves, trips } })
 }

@@ -9,7 +9,9 @@ async function dailyReportEnabled(supabase: Awaited<ReturnType<typeof createClie
   return canAccessFeature(data?.role ?? '', flags, 'daily_report')
 }
 
-// GET /api/daily-report/kpi-definitions?userId=xxx
+// GET /api/daily-report/kpi-definitions?userId=xxx&includeInactive=1
+// 預設只回傳 active 指標（員工填報端）；管理 UI 帶 includeInactive=1 取得含停用者。
+// 讀取權限由 RLS 把關（本人 / admin / 該員工群組的 viewer）。
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,12 +20,14 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId') ?? user.id
+  const includeInactive = searchParams.get('includeInactive') === '1'
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('dr_kpi_definitions')
     .select('*')
     .eq('user_id', userId)
-    .order('sort_order')
+  if (!includeInactive) query = query.eq('active', true)
+  const { data, error } = await query.order('sort_order')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ data: data ?? [] })

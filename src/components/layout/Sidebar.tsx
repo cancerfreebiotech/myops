@@ -256,7 +256,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
 
         <SectionHeader label={t('other')} collapsed={collapsed} />
         <NavLink href="/settings" label={t('settings')} icon={Settings} collapsed={collapsed} active={isActive('/settings')} />
-        {show('feedback') && <NavLink href="/feedback/new" label={t('feedback')} icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback/new')} />}
+        {show('feedback') && <NavLink href="/feedback" label={t('feedback')} icon={MessageSquarePlus} collapsed={collapsed} active={isActive('/feedback')} />}
         <NavLink href="/help" label={t('help')} icon={HelpCircle} collapsed={collapsed} active={isActive('/help')} />
 
         {adminItems.length > 0 && (

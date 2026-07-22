@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/StatusBadge'
 import { toast } from 'sonner'
-import { Plus, CheckCircle, XCircle, Ban } from 'lucide-react'
+import { Plus, CheckCircle, XCircle, Ban, Info } from 'lucide-react'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
 
 interface CurrentUser {
@@ -29,6 +29,7 @@ interface LeaveType {
   pay_rate: string
   max_days_per_year: number | null
   advance_days_required: number
+  requires_qualification: boolean
 }
 
 interface LeaveBalance {
@@ -97,6 +98,8 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
     ? differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1
     : 0
   const balance = balances.find(b => b.leave_type_id === selectedType)
+  // T9 特殊假別：需 HR 先審核資格並核給額度（有 balance 列且核配 > 0）才可申請
+  const needsQualification = !!leaveType?.requires_qualification && (!balance || balance.allocated_days <= 0)
 
   const handleApply = async () => {
     if (!selectedType || !startDate || !endDate || !reason.trim()) {
@@ -199,7 +202,14 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
                 <div key={lt.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{lt.name}</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="font-medium text-slate-800 dark:text-slate-200">{lt.name}</p>
+                        {lt.requires_qualification && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-medium bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
+                            {t('requiresQualificationBadge')}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-400 mt-0.5">{PAY_LABELS[lt.pay_rate]}</p>
                     </div>
                     {lt.max_days_per_year && (
@@ -217,7 +227,9 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
                       </div>
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 mt-3">{t('notAllocated')}</p>
+                    <p className="text-xs text-slate-400 mt-3">
+                      {lt.requires_qualification ? t('qualificationNotGranted') : t('notAllocated')}
+                    </p>
                   )}
                 </div>
               )
@@ -322,6 +334,12 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
               {balance && (
                 <p className="text-xs text-blue-600 mt-1">{t('availableBalance', { days: balance.remaining_days })}</p>
               )}
+              {needsQualification && (
+                <div className="flex items-start gap-2 mt-2 p-3 rounded-lg border bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800" role="status">
+                  <Info size={16} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
+                  <p className="text-xs text-blue-800 dark:text-blue-300">{t('qualificationNotice')}</p>
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -366,7 +384,7 @@ export function LeaveClient({ leaveTypes, balances, colleagues, pendingApprovals
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setApplyOpen(false)}>{tc('cancel')}</Button>
-            <Button onClick={handleApply} disabled={loading}>{loading ? tc('submitting') : t('submitApplication')}</Button>
+            <Button onClick={handleApply} disabled={loading || needsQualification}>{loading ? tc('submitting') : t('submitApplication')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

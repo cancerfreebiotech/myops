@@ -13,7 +13,7 @@ export default async function ProjectsPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role, display_name')
+    .select('id, role, display_name, granted_features')
     .eq('id', user.id)
     .single()
 
@@ -21,6 +21,8 @@ export default async function ProjectsPage() {
   if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'projects')) redirect('/no-permission')
 
   const isAdmin = currentUser?.role === 'admin'
+  // 與 RLS「projects: manage_projects or admin can write」一致（has_feature 只看 granted_features 欄位）
+  const canCreate = isAdmin || !!(currentUser?.granted_features as string[] | null)?.includes('manage_projects')
 
   const { data: projects } = await service
     .from('projects')
@@ -48,6 +50,7 @@ export default async function ProjectsPage() {
         allUsers={allUsers ?? []}
         currentUser={currentUser}
         isAdmin={isAdmin}
+        canCreate={canCreate}
       />
     </div>
   )

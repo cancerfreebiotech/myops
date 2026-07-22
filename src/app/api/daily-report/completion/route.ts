@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidDateString } from '@/lib/taipei-date'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
+import type { DrCompletionItem, DrScheduleItem } from '@/lib/daily-report/types'
 
 // 模組關閉時（feature.daily_report off）非 admin 一律擋下，與頁面 canAccessFeature 一致
 async function dailyReportEnabled(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
@@ -35,6 +36,8 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/daily-report/completion  { date, items }
+// 儲存完成回報，並把「衍生自今日行程」項目（有 sid）的完成狀態回寫到 daily_schedules，
+// 讓兩個分頁的勾選狀態保持一致（今日行程分頁勾選同步過來，這裡取消也能還原）。
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -59,5 +62,33 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 回寫：依 sid 將 done 同步回今日行程（只動 done，label/note 以行程分頁為準）
+  const completionItems = items as DrCompletionItem[]
+  const { data: schedule } = await supabase
+    .from('daily_schedules')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('date', date)
+    .maybeSingle()
+
+  if (schedule && Array.isArray(schedule.items)) {
+    let changed = false
+    const syncedItems = (schedule.items as DrScheduleItem[]).map(s => {
+      if (!s.sid) return s
+      const c = completionItems.find(ci => ci?.sid === s.sid)
+      if (!c || (c.done === true) === (s.done === true)) return s
+      changed = true
+      return { ...s, done: c.done === true }
+    })
+    if (changed) {
+      const { error: schError } = await supabase
+        .from('daily_schedules')
+        .update({ items: syncedItems })
+        .eq('id', schedule.id)
+      if (schError) return NextResponse.json({ error: schError.message }, { status: 500 })
+    }
+  }
+
   return NextResponse.json({ data })
 }

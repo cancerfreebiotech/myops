@@ -30,6 +30,7 @@ export default async function AttendanceAnomaliesPage() {
       user:users!attendance_records_user_id_fkey(id, display_name, employment_type, department:departments(name))
     `)
     .gte('clock_date', thirtyDaysAgo)
+    .is('voided_at', null) // 異常統計排除已作廢紀錄
     .or('is_auto_in.eq.true,is_auto_out.eq.true')
     .order('clock_date', { ascending: false })
 
@@ -61,6 +62,7 @@ export default async function AttendanceAnomaliesPage() {
       user:users!attendance_records_user_id_fkey(id, display_name, employment_type)
     `)
     .gte('clock_date', monthStartStr)
+    .is('voided_at', null) // 異常統計排除已作廢紀錄
     .or('clock_in.is.null,clock_out.is.null')
     .eq('user.employment_type', 'intern')
 

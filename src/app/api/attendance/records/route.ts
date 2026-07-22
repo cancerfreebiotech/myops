@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     .select(`*, user:users!attendance_records_user_id_fkey(id, display_name, employment_type, department_id)`)
     .gte('clock_date', startDate)
     .lte('clock_date', endDate)
+    .is('voided_at', null) // 員工端/團隊列表與工時計算排除已作廢紀錄
     .order('clock_date', { ascending: false })
 
   if (!isAdmin) {

@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { format, addDays, parseISO } from 'date-fns'
 import { taipeiToday } from '@/lib/taipei-date'
-import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Circle } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Circle, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { KpiManagerDialog } from './KpiManagerDialog'
 
 interface Props {
-  groups: { id: string; name: string }[]
+  groups: { id: string; name: string; canManageKpi: boolean }[]
 }
 
 interface MemberData {
@@ -26,6 +27,8 @@ interface TeamData {
   completions: { user_id: string; items: { label: string; note: string; done: boolean }[] }[]
   kpiEntries: { user_id: string; kpi_def_id: string; value: number }[]
   kpiDefs: { user_id: string; kpi_id: string; name: string; unit: string; target: number; cat: string }[]
+  /** API 依請求者身分決定：admin / 該群組 viewer 為 true，一般 member 為 false（不回傳 KPI） */
+  canSeeKpi?: boolean
 }
 
 export function TeamViewClient({ groups }: Props) {
@@ -34,6 +37,15 @@ export function TeamViewClient({ groups }: Props) {
   const [date, setDate] = useState(() => taipeiToday())
   const [data, setData] = useState<TeamData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [kpiDialogOpen, setKpiDialogOpen] = useState(false)
+  const [kpiDialogMemberId, setKpiDialogMemberId] = useState<string | null>(null)
+
+  const canManageKpi = groups.find(g => g.id === groupId)?.canManageKpi ?? false
+
+  const openKpiManager = (memberId: string | null) => {
+    setKpiDialogMemberId(memberId)
+    setKpiDialogOpen(true)
+  }
 
   const load = useCallback(async () => {
     if (!groupId) return
@@ -86,6 +98,18 @@ export function TeamViewClient({ groups }: Props) {
         <Button variant="outline" size="sm" onClick={() => setDate(taipeiToday())}>
           {t('today')}
         </Button>
+        {canManageKpi && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => openKpiManager(null)}
+            disabled={!data || data.members.length === 0}
+          >
+            <Target size={14} className="mr-1" />
+            {t('kpiManage')}
+          </Button>
+        )}
       </div>
 
       {loading && <p className="text-sm text-slate-400">{t('loading')}</p>}
@@ -106,13 +130,26 @@ export function TeamViewClient({ groups }: Props) {
         return (
           <Card key={member.user_id}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center justify-between">
-                <span>{member.display_name ?? member.email}</span>
-                {completionTotal > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    {completionCount}/{completionTotal} {t('completed')}
-                  </Badge>
-                )}
+              <CardTitle className="text-sm flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate">{member.display_name ?? member.email}</span>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  {completionTotal > 0 && (
+                    <Badge variant="outline" className="text-xs">
+                      {completionCount}/{completionTotal} {t('completed')}
+                    </Badge>
+                  )}
+                  {canManageKpi && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => openKpiManager(member.user_id)}
+                      aria-label={t('manageKpiForMember')}
+                      className="text-slate-400 hover:text-blue-600"
+                    >
+                      <Target size={14} />
+                    </Button>
+                  )}
+                </span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -152,8 +189,8 @@ export function TeamViewClient({ groups }: Props) {
                 </div>
               )}
 
-              {/* KPI */}
-              {memberKpiDefs.length > 0 && (
+              {/* KPI — 僅 admin / viewer 可見（member 請求時 API 不回傳 KPI 資料） */}
+              {data.canSeeKpi && memberKpiDefs.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t('tabKpi')}</p>
                   <div className="flex flex-wrap gap-3">
@@ -179,6 +216,16 @@ export function TeamViewClient({ groups }: Props) {
           </Card>
         )
       })}
+
+      {canManageKpi && (
+        <KpiManagerDialog
+          open={kpiDialogOpen}
+          onOpenChange={setKpiDialogOpen}
+          members={data?.members ?? []}
+          initialMemberId={kpiDialogMemberId}
+          onChanged={load}
+        />
+      )}
     </div>
   )
 }

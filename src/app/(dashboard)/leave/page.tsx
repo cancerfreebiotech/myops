@@ -30,7 +30,7 @@ export default async function LeavePage() {
   const empType = currentUser?.employment_type ?? 'full_time'
   const { data: leaveTypes } = await service
     .from('leave_types')
-    .select('id, name:name_zh, applies_to:applicable_to, pay_rate:salary_ratio, max_days_per_year:default_quota_days, advance_days_required:advance_days, is_active')
+    .select('id, name:name_zh, applies_to:applicable_to, pay_rate:salary_ratio, max_days_per_year:default_quota_days, advance_days_required:advance_days, requires_qualification, is_active')
     .eq('is_active', true)
     .in('applicable_to', empType === 'intern' ? ['all', 'intern'] : ['all', 'full_time'])
     .order('sort_order')

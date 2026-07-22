@@ -151,7 +151,7 @@
   "dailyReport": {
     "title": "Daily Report",
     "description": "Fill in today's schedule, completion report, and KPIs",
-    "tabSchedule": "Schedule",
+    "tabSchedule": "Today's Schedule",
     "tabCompletion": "Completion",
     "tabKpi": "KPI",
     "today": "Today",
@@ -219,7 +219,38 @@
     "roleMember": "Member",
     "roleViewer": "Viewer",
     "confirmDeleteGroup": "Delete this group? Member assignments will also be removed.",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "markItemDone": "Mark as done",
+    "markItemUndone": "Mark as not done",
+    "fromScheduleBadge": "Schedule",
+    "removeItem": "Remove",
+    "scheduleSyncHint": "Check items off as done and save — they sync to the completion report automatically, no need to enter them again.",
+    "completionDerivedHint": "Items tagged \"Schedule\" come from today's schedule. Mark them done or add notes here; to rename or remove them, use the Today's Schedule tab.",
+    "deleteFailed": "Failed to delete",
+    "kpiManage": "Manage KPIs",
+    "kpiManageHint": "Add, edit, or deactivate KPI metrics for a member",
+    "manageKpiForMember": "Manage this member's KPIs",
+    "selectMember": "Select member",
+    "newKpi": "New KPI",
+    "editKpi": "Edit KPI",
+    "kpiName": "KPI name",
+    "kpiNamePlaceholder": "e.g. Physician visits",
+    "kpiCat": "Category",
+    "catQuant": "Quantitative",
+    "catQual": "Qualitative",
+    "kpiTarget": "Target",
+    "kpiUnit": "Unit",
+    "kpiUnitPlaceholder": "e.g. visits, cases",
+    "kpiPeriod": "Period",
+    "periodMonthly": "Monthly",
+    "periodYearly": "Yearly",
+    "kpiInactive": "Inactive",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "delete": "Delete",
+    "confirmDeleteKpi": "Permanently delete this KPI? Historical entries will be kept but no longer shown. If you only need it off temporarily, use Deactivate instead.",
+    "deactivateHint": "Deactivated KPIs are hidden from the member's daily report. This can be undone — no data is permanently deleted.",
+    "noKpiForMember": "No KPIs have been set for this member yet"
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -644,7 +675,10 @@
       "monthDayLabel": "{m}/{d}",
       "weekdayParen": "({w})",
       "dateRange": "{start} – {end}"
-    }
+    },
+    "requiresQualificationBadge": "HR review required",
+    "qualificationNotGranted": "Requires HR qualification review; no entitlement granted yet",
+    "qualificationNotice": "This leave type requires prior HR qualification review. Please contact HR with the relevant supporting documents; you can apply once your entitlement has been granted."
   },
   "overtime": {
     "title": "Overtime",
@@ -858,7 +892,19 @@
     "typeOther": "Other",
     "submitFeedback": "Submit Feedback",
     "requiredFields": "Please fill in title and description",
-    "submitted": "Feedback submitted, thank you!"
+    "submitted": "Feedback submitted, thank you!",
+    "listTitle": "My Feedback",
+    "listDescription": "Track the feedback you've submitted and its progress",
+    "newFeedback": "New Feedback",
+    "empty": "You haven't submitted any feedback yet",
+    "emptyHint": "Have a question or suggestion? Let us know",
+    "comments": "Comments",
+    "noComments": "No comments yet",
+    "commentPlaceholder": "Add a comment, provide more detail, or ask about progress…",
+    "sendComment": "Send Comment",
+    "commentSent": "Comment sent",
+    "reopened": "Comment sent, and this feedback has been reopened",
+    "viewOriginal": "Click to view full image"
   },
   "admin": {
     "users": {
@@ -901,7 +947,8 @@
       "regionOther": "Other",
       "statusActive": "Active",
       "statusInactive": "Deactivated",
-      "none": "None"
+      "none": "None",
+      "displayName": "Display Name (English Name)"
     },
     "profile": {
       "title": "Personnel Profile",
@@ -926,7 +973,16 @@
       "idNumber": "ID Number",
       "sensitiveWarning": "Sensitive information. Handle with care.",
       "show": "Show",
-      "hide": "Hide"
+      "hide": "Hide",
+      "chineseName": "Chinese Name",
+      "idType": "ID Type",
+      "idTypeNationalId": "National ID",
+      "idTypeResidentPermit": "Resident Permit",
+      "mailingAddress": "Mailing Address",
+      "registeredAddress": "Registered Address",
+      "salaryType": "Salary Type",
+      "salaryTypeMonthly": "Monthly",
+      "salaryTypeHourly": "Hourly"
     },
     "insuranceBrackets": {
       "title": "Insurance Brackets",
@@ -1115,7 +1171,23 @@
       "manual": "Manual",
       "pageLabel": "Page <b>{page}</b>",
       "prevPage": "Previous",
-      "nextPage": "Next"
+      "nextPage": "Next",
+      "actionsColumn": "Actions",
+      "voidAction": "Void",
+      "unvoidAction": "Un-void",
+      "voidedBadge": "Voided",
+      "voidedReasonPrefix": "Reason: ",
+      "voidDialogTitle": "Void attendance record",
+      "voidDialogDesc": "A voided record is excluded from statistics and exports, but the audit trail is retained (it is not permanently deleted).",
+      "voidReasonLabel": "Reason for voiding",
+      "voidReasonPlaceholder": "Explain why this attendance record is being voided…",
+      "voidReasonRequired": "Please provide a reason for voiding",
+      "voidConfirm": "Confirm void",
+      "voidSuccess": "Attendance record voided",
+      "unvoidDialogTitle": "Un-void record",
+      "unvoidDialogDesc": "Un-voiding restores this record so it is counted in statistics and exports again.",
+      "unvoidConfirm": "Confirm un-void",
+      "unvoidSuccess": "Record un-voided"
     },
     "auditLog": {
       "searchPlaceholder": "Search document title or operator...",
@@ -1191,7 +1263,8 @@
         "bug": "Bug",
         "improvement": "Improvement",
         "other": "Other"
-      }
+      },
+      "viewOriginal": "Click to view full image"
     },
     "insuranceMgmt": {
       "emptySpreadsheet": "The spreadsheet is empty. Please check the file contents.",
@@ -1442,7 +1515,8 @@
       "onlyPendingCancellable": "Only pending requests can be cancelled"
     },
     "leaveRequests": {
-      "insufficientBalance": "Insufficient {name} balance ({remaining} days remaining)"
+      "insufficientBalance": "Insufficient {name} balance ({remaining} days remaining)",
+      "qualificationRequired": "\"{name}\" requires prior HR qualification review. Please contact HR and provide supporting documents."
     },
     "payrollCalculate": {
       "noEligibleEmployees": "No eligible employees"
@@ -1452,7 +1526,8 @@
       "draftGenerated": "Payroll draft for {year}/{month} has been generated automatically"
     },
     "projects": {
-      "missingName": "Project name is required"
+      "missingName": "Project name is required",
+      "createFailed": "Failed to create project. Please try again later."
     },
     "procurement": {
       "invalidDocType": "Invalid document type",
@@ -2679,7 +2754,14 @@
     "wd3": "Wed",
     "wd4": "Thu",
     "wd5": "Fri",
-    "wd6": "Sat"
+    "wd6": "Sat",
+    "rsvpTitle": "RSVP",
+    "rsvpAttending": "Going",
+    "rsvpDeclined": "Not going",
+    "rsvpMaybe": "Maybe",
+    "rsvpSaved": "RSVP updated",
+    "rsvpAttendingCount": "{count} attending",
+    "rsvpNobody": "No responses yet"
   },
   "insights": {
     "title": "Operations Insights",

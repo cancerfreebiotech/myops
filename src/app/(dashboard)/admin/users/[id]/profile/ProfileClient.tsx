@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -23,13 +24,17 @@ interface ProfileRow {
   birth_date: string | null
   phone: string | null
   address: string | null
+  registered_address: string | null
+  chinese_name: string | null
   emergency_contact: string | null
   emergency_phone: string | null
+  salary_type: string | null
   monthly_salary: number | null
   hourly_rate: number | null
   labor_pension_self: number | null
   bank_code: string | null
   bank_account: string | null
+  id_type: string | null
   id_number: string | null
 }
 
@@ -55,19 +60,34 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
     birth_date: p.birth_date ?? '',
     phone: p.phone ?? '',
     address: p.address ?? '',
+    registered_address: p.registered_address ?? '',
+    chinese_name: p.chinese_name ?? '',
     emergency_contact: p.emergency_contact ?? '',
     emergency_phone: p.emergency_phone ?? '',
+    // Default the salary type from employment_type when the profile has none yet.
+    salary_type: p.salary_type ?? (targetUser.employment_type === 'full_time' ? 'monthly' : 'hourly'),
     monthly_salary: p.monthly_salary ?? '',
     hourly_rate: p.hourly_rate ?? '',
     labor_pension_self: p.labor_pension_self ?? '0',
     bank_code: p.bank_code ?? '',
     bank_account: p.bank_account ?? '',
+    id_type: p.id_type ?? 'national_id',
     id_number: p.id_number ?? '',
   })
 
   const dept = Array.isArray(targetUser.department)
     ? targetUser.department[0]?.name
     : targetUser.department?.name
+
+  const ID_TYPE_LABELS: Record<string, string> = {
+    national_id: t('idTypeNationalId'),
+    resident_permit: t('idTypeResidentPermit'),
+  }
+
+  const SALARY_TYPE_LABELS: Record<string, string> = {
+    monthly: t('salaryTypeMonthly'),
+    hourly: t('salaryTypeHourly'),
+  }
 
   const update = (key: string, val: string) => setForm(prev => ({ ...prev, [key]: val }))
 
@@ -113,6 +133,10 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
       <section>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('basicInfo')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <label htmlFor="chinese_name" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('chineseName')}</label>
+            <Input id="chinese_name" value={form.chinese_name} onChange={e => update('chinese_name', e.target.value)} className="mt-1" />
+          </div>
           <div>
             <label htmlFor="hire_date" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('hireDate')}</label>
             <Input id="hire_date" type="date" value={form.hire_date} onChange={e => update('hire_date', e.target.value)} className="mt-1" />
@@ -130,8 +154,12 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
             <Input id="phone" type="tel" value={form.phone} onChange={e => update('phone', e.target.value)} className="mt-1" />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="address" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('address')}</label>
+            <label htmlFor="address" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('mailingAddress')}</label>
             <Input id="address" value={form.address} onChange={e => update('address', e.target.value)} className="mt-1" />
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="registered_address" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('registeredAddress')}</label>
+            <Input id="registered_address" value={form.registered_address} onChange={e => update('registered_address', e.target.value)} className="mt-1" />
           </div>
         </div>
       </section>
@@ -155,7 +183,20 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
       <section>
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 font-[Lexend]">{t('salarySettings')}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {targetUser.employment_type === 'full_time' ? (
+          <div>
+            <label htmlFor="salary_type" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('salaryType')}</label>
+            <Select value={form.salary_type} onValueChange={v => update('salary_type', v ?? 'monthly')}>
+              <SelectTrigger id="salary_type" className="mt-1 w-full">
+                <span className="text-sm">{SALARY_TYPE_LABELS[form.salary_type] ?? form.salary_type}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(SALARY_TYPE_LABELS).map(([val, label]) => (
+                  <SelectItem key={val} value={val}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {form.salary_type === 'monthly' ? (
             <div>
               <label htmlFor="monthly_salary" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('monthlySalary')} (NT$)</label>
               <Input id="monthly_salary" type="number" min={0} value={form.monthly_salary} onChange={e => update('monthly_salary', e.target.value)} className="mt-1" />
@@ -224,24 +265,39 @@ export function ProfileClient({ targetUser, initialProfile }: Props) {
         <div className="rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900 p-3 mb-3">
           <p className="text-xs text-orange-700 dark:text-orange-400">{t('sensitiveWarning')}</p>
         </div>
-        <div className="max-w-sm">
-          <label htmlFor="id_number" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('idNumber')}</label>
-          <div className="flex items-center gap-2 mt-1">
-            <Input
-              id="id_number"
-              type={showId ? 'text' : 'password'}
-              value={form.id_number}
-              onChange={e => update('id_number', e.target.value)}
-              placeholder={showId ? '' : mask(form.id_number)}
-            />
-            <button
-              type="button"
-              onClick={() => setShowId(!showId)}
-              aria-label={showId ? t('hide') : t('show')}
-              className="p-2 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
-            >
-              {showId ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="id_type" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('idType')}</label>
+            <Select value={form.id_type} onValueChange={v => update('id_type', v ?? 'national_id')}>
+              <SelectTrigger id="id_type" className="mt-1 w-full">
+                <span className="text-sm">{ID_TYPE_LABELS[form.id_type] ?? form.id_type}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(ID_TYPE_LABELS).map(([val, label]) => (
+                  <SelectItem key={val} value={val}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label htmlFor="id_number" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('idNumber')}</label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                id="id_number"
+                type={showId ? 'text' : 'password'}
+                value={form.id_number}
+                onChange={e => update('id_number', e.target.value)}
+                placeholder={showId ? '' : mask(form.id_number)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowId(!showId)}
+                aria-label={showId ? t('hide') : t('show')}
+                className="p-2 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                {showId ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
         </div>
       </section>

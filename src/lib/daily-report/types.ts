@@ -22,6 +22,10 @@ export interface DrGroupMember {
 export interface DrScheduleItem {
   label: string
   note: string
+  /** 穩定識別碼（client 產生），用於與完成回報項目同步；舊資料可能沒有 */
+  sid?: string
+  /** 是否已完成（在今日行程分頁勾選，會同步到 daily_completions） */
+  done?: boolean
 }
 
 export interface DrSchedule {
@@ -35,6 +39,8 @@ export interface DrCompletionItem {
   label: string
   note: string
   done: boolean
+  /** 有值 = 由今日行程同步而來（對應 DrScheduleItem.sid）；無值 = 手動新增的行程外事項 */
+  sid?: string
 }
 
 export interface DrCompletion {

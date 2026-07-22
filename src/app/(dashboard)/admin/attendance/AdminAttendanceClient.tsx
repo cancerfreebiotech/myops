@@ -3,7 +3,20 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Users, CalendarDays, Bot, ChevronLeft, ChevronRight, Clock } from 'lucide-react'
+import { Users, CalendarDays, Bot, ChevronLeft, ChevronRight, Clock, Ban, RotateCcw } from 'lucide-react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
 
 const PAGE_SIZE = 20
 
@@ -16,6 +29,9 @@ export interface AttendanceRecord {
   is_auto_in: boolean | null
   is_auto_out: boolean | null
   note: string | null
+  voided_at: string | null
+  voided_by: string | null
+  void_reason: string | null
   user: {
     id: string
     display_name: string
@@ -66,6 +82,7 @@ export function AdminAttendanceClient({
   const router = useRouter()
   const t = useTranslations('attendance')
   const ta = useTranslations('admin.attendanceMgmt')
+  const tc = useTranslations('common')
 
   const employmentTypeLabel = (type: string) =>
     (EMPLOYMENT_TYPES as readonly string[]).includes(type) ? ta(`empType.${type}`) : type
@@ -73,6 +90,58 @@ export function AdminAttendanceClient({
   const [userId, setUserId] = useState(initialUserId)
   const [employmentType, setEmploymentType] = useState(initialEmploymentType || 'all')
   const [page, setPage] = useState(1)
+
+  // 作廢 / 取消作廢 對話框狀態
+  const [voidTarget, setVoidTarget] = useState<AttendanceRecord | null>(null)
+  const [voidReason, setVoidReason] = useState('')
+  const [unvoidTarget, setUnvoidTarget] = useState<AttendanceRecord | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const openVoid = (r: AttendanceRecord) => {
+    setVoidTarget(r)
+    setVoidReason('')
+  }
+
+  const submitVoid = async () => {
+    if (!voidTarget) return
+    const reason = voidReason.trim()
+    if (!reason) {
+      toast.error(ta('voidReasonRequired'))
+      return
+    }
+    setSubmitting(true)
+    const res = await fetch(`/api/admin/attendance/${voidTarget.id}/void`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    })
+    const { error } = await res.json().catch(() => ({ error: 'error' }))
+    setSubmitting(false)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    toast.success(ta('voidSuccess'))
+    setVoidTarget(null)
+    router.refresh()
+  }
+
+  const submitUnvoid = async () => {
+    if (!unvoidTarget) return
+    setSubmitting(true)
+    const res = await fetch(`/api/admin/attendance/${unvoidTarget.id}/void`, {
+      method: 'DELETE',
+    })
+    const { error } = await res.json().catch(() => ({ error: 'error' }))
+    setSubmitting(false)
+    if (error) {
+      toast.error(error)
+      return
+    }
+    toast.success(ta('unvoidSuccess'))
+    setUnvoidTarget(null)
+    router.refresh()
+  }
 
   const handleFilter = (newMonth?: string, newUserId?: string, newEmpType?: string) => {
     const m = newMonth ?? month
@@ -220,12 +289,13 @@ export function AdminAttendanceClient({
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('clockOutLabel')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{t('autoClocked')}</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{ta('notes')}</th>
+                <th className="text-right px-4 py-3 font-medium text-slate-100 whitespace-nowrap">{ta('actionsColumn')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {paged.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className="flex flex-col items-center justify-center py-14 text-center">
                       <Clock size={40} className="text-slate-200 dark:text-slate-600 mb-3" aria-hidden="true" />
                       <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t('noRecords')}</p>
@@ -242,14 +312,20 @@ export function AdminAttendanceClient({
                   const missingIn = !r.clock_in
                   const missingOut = !r.clock_out
                   const isAuto = r.is_auto_in || r.is_auto_out
+                  const isVoided = !!r.voided_at
+                  const strike = isVoided ? 'line-through opacity-60' : ''
 
                   return (
                     <tr
                       key={r.id}
-                      className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      className={`transition-colors ${
+                        isVoided
+                          ? 'bg-slate-50 dark:bg-slate-800/40'
+                          : 'bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                      }`}
                     >
                       {/* 員工 */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className={`px-4 py-3 whitespace-nowrap ${strike}`}>
                         <p className="font-medium text-slate-800 dark:text-slate-200">
                           {r.user?.display_name ?? '—'}
                         </p>
@@ -264,12 +340,12 @@ export function AdminAttendanceClient({
                       </td>
 
                       {/* 日期 */}
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400 tabular-nums">
+                      <td className={`px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400 tabular-nums ${strike}`}>
                         {r.clock_date}
                       </td>
 
                       {/* 上班時間 */}
-                      <td className="px-4 py-3 whitespace-nowrap tabular-nums">
+                      <td className={`px-4 py-3 whitespace-nowrap tabular-nums ${strike}`}>
                         {missingIn ? (
                           <span className="text-red-600 dark:text-red-400 font-medium" role="status">
                             {ta('missing')}
@@ -285,7 +361,7 @@ export function AdminAttendanceClient({
                       </td>
 
                       {/* 下班時間 */}
-                      <td className="px-4 py-3 whitespace-nowrap tabular-nums">
+                      <td className={`px-4 py-3 whitespace-nowrap tabular-nums ${strike}`}>
                         {missingOut ? (
                           <span className="text-red-600 dark:text-red-400 font-medium" role="status">
                             {ta('missing')}
@@ -301,7 +377,7 @@ export function AdminAttendanceClient({
                       </td>
 
                       {/* 是否自動 */}
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className={`px-4 py-3 whitespace-nowrap ${strike}`}>
                         {isAuto ? (
                           <span
                             className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-yellow-50 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700"
@@ -316,8 +392,41 @@ export function AdminAttendanceClient({
                       </td>
 
                       {/* 備註 */}
-                      <td className="px-4 py-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">
+                      <td className={`px-4 py-3 text-slate-500 dark:text-slate-400 max-w-[200px] truncate ${strike}`}>
                         {r.note || <span className="text-slate-300 dark:text-slate-600">—</span>}
+                      </td>
+
+                      {/* 動作 */}
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        {isVoided ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span
+                              className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900"
+                              role="status"
+                              title={r.void_reason ? `${ta('voidedReasonPrefix')}${r.void_reason}` : undefined}
+                            >
+                              <Ban size={10} aria-hidden="true" />
+                              {ta('voidedBadge')}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setUnvoidTarget(r)}
+                            >
+                              <RotateCcw className="size-3.5" aria-hidden="true" />
+                              {ta('unvoidAction')}
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => openVoid(r)}
+                          >
+                            <Ban className="size-3.5" aria-hidden="true" />
+                            {ta('voidAction')}
+                          </Button>
+                        )}
                       </td>
                     </tr>
                   )
@@ -367,6 +476,70 @@ export function AdminAttendanceClient({
           </div>
         )}
       </div>
+
+      {/* 作廢對話框（填原因） */}
+      <Dialog open={!!voidTarget} onOpenChange={open => { if (!open) setVoidTarget(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{ta('voidDialogTitle')}</DialogTitle>
+            <DialogDescription>{ta('voidDialogDesc')}</DialogDescription>
+          </DialogHeader>
+          {voidTarget && (
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                {voidTarget.user?.display_name ?? '—'}
+              </span>
+              <span className="mx-1.5 tabular-nums">· {voidTarget.clock_date}</span>
+            </div>
+          )}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="void-reason">
+              {ta('voidReasonLabel')} <span className="text-red-500">*</span>
+            </Label>
+            <Textarea
+              id="void-reason"
+              value={voidReason}
+              onChange={e => setVoidReason(e.target.value)}
+              placeholder={ta('voidReasonPlaceholder')}
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" disabled={submitting} />}>
+              {tc('cancel')}
+            </DialogClose>
+            <Button variant="destructive" onClick={submitVoid} disabled={submitting}>
+              {submitting ? tc('submitting') : ta('voidConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 取消作廢確認 */}
+      <Dialog open={!!unvoidTarget} onOpenChange={open => { if (!open) setUnvoidTarget(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{ta('unvoidDialogTitle')}</DialogTitle>
+            <DialogDescription>{ta('unvoidDialogDesc')}</DialogDescription>
+          </DialogHeader>
+          {unvoidTarget && (
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                {unvoidTarget.user?.display_name ?? '—'}
+              </span>
+              <span className="mx-1.5 tabular-nums">· {unvoidTarget.clock_date}</span>
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" disabled={submitting} />}>
+              {tc('cancel')}
+            </DialogClose>
+            <Button onClick={submitUnvoid} disabled={submitting}>
+              {submitting ? tc('submitting') : ta('unvoidConfirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

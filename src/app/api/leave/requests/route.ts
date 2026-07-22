@@ -52,9 +52,19 @@ export async function POST(request: NextRequest) {
 
   const { data: leaveType } = await service
     .from('leave_types')
-    .select('default_quota_days, name:name_zh')
+    .select('default_quota_days, requires_qualification, name:name_zh')
     .eq('id', leave_type_id)
     .single()
+
+  // T9 特殊假別（婚/喪/產/陪產/產檢/安胎/育嬰留停…）：requires_qualification=true 者
+  // 需 HR 先審核資格並於餘額管理頁核給天數（＝該員工該假別當期存在 balance 列且 total_days > 0），
+  // 否則擋下。沿用上方 pickBalanceForDate 的 period-aware 歸屬，不另查。
+  if (leaveType?.requires_qualification && (!balance || Number(balance.total_days) <= 0)) {
+    return NextResponse.json(
+      { error: t('leaveRequests.qualificationRequired', { name: leaveType?.name ?? '' }) },
+      { status: 400 }
+    )
+  }
 
   // 有 balance 記錄即代表該假別已配額（total_days 為可用額度），就檢查餘額；
   // 不以 leaveType.default_quota_days 判斷（特休等 by_seniority 假別此欄為 NULL，

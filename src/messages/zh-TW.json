@@ -151,7 +151,7 @@
   "dailyReport": {
     "title": "每日報告",
     "description": "填寫今日行程、完成回報與 KPI",
-    "tabSchedule": "早上行程",
+    "tabSchedule": "今日行程",
     "tabCompletion": "完成回報",
     "tabKpi": "KPI",
     "today": "今天",
@@ -219,7 +219,38 @@
     "roleMember": "成員",
     "roleViewer": "觀看者",
     "confirmDeleteGroup": "確定刪除此群組？成員設定將一起刪除",
-    "deleted": "已刪除"
+    "deleted": "已刪除",
+    "markItemDone": "標記完成",
+    "markItemUndone": "取消完成",
+    "fromScheduleBadge": "行程",
+    "removeItem": "移除",
+    "scheduleSyncHint": "勾選「完成」後儲存，會自動同步到完成回報，不必重複填寫。",
+    "completionDerivedHint": "標示「行程」的項目來自今日行程，可在此勾選完成或補充備註；如需修改名稱或刪除，請到今日行程分頁。",
+    "deleteFailed": "刪除失敗",
+    "kpiManage": "KPI 指標管理",
+    "kpiManageHint": "為成員新增、編輯或停用 KPI 指標",
+    "manageKpiForMember": "管理此成員的 KPI 指標",
+    "selectMember": "選擇成員",
+    "newKpi": "新增指標",
+    "editKpi": "編輯指標",
+    "kpiName": "指標名稱",
+    "kpiNamePlaceholder": "例如：醫師拜訪",
+    "kpiCat": "類別",
+    "catQuant": "量化",
+    "catQual": "質化",
+    "kpiTarget": "目標值",
+    "kpiUnit": "單位",
+    "kpiUnitPlaceholder": "例如：次、件",
+    "kpiPeriod": "週期",
+    "periodMonthly": "每月",
+    "periodYearly": "每年",
+    "kpiInactive": "已停用",
+    "deactivate": "停用",
+    "activate": "啟用",
+    "delete": "刪除",
+    "confirmDeleteKpi": "確定永久刪除此指標？歷史填報數據會保留但不再顯示。若只是暫時不用，建議改用「停用」。",
+    "deactivateHint": "停用後成員端不再顯示該指標；此操作可恢復，資料不會永久刪除",
+    "noKpiForMember": "此成員尚未設定 KPI 指標"
   },
   "dashboard": {
     "welcome": "歡迎回來",
@@ -644,7 +675,10 @@
       "monthDayLabel": "{m} 月 {d} 日",
       "weekdayParen": "（{w}）",
       "dateRange": "{start} ～ {end}"
-    }
+    },
+    "requiresQualificationBadge": "需人資審核",
+    "qualificationNotGranted": "需人資審核資格，尚未核給額度",
+    "qualificationNotice": "此假別需先經人資審核資格。請洽人資並提供相關證明文件，經核給額度後即可申請。"
   },
   "overtime": {
     "title": "加班",
@@ -858,7 +892,19 @@
     "typeOther": "其他",
     "submitFeedback": "送出回饋",
     "requiredFields": "請填寫標題與說明",
-    "submitted": "回饋已送出，謝謝！"
+    "submitted": "回饋已送出，謝謝！",
+    "listTitle": "我的意見回饋",
+    "listDescription": "查看你提交的回饋與處理進度",
+    "newFeedback": "新增回饋",
+    "empty": "你還沒有提交任何回饋",
+    "emptyHint": "有問題或建議嗎？告訴我們吧",
+    "comments": "留言",
+    "noComments": "尚無留言",
+    "commentPlaceholder": "輸入留言，補充說明或追問進度…",
+    "sendComment": "送出留言",
+    "commentSent": "留言已送出",
+    "reopened": "留言已送出，並已重新開啟此回饋",
+    "viewOriginal": "點擊查看原圖"
   },
   "admin": {
     "users": {
@@ -901,7 +947,8 @@
       "regionOther": "其他",
       "statusActive": "在職",
       "statusInactive": "離職（停用）",
-      "none": "無"
+      "none": "無",
+      "displayName": "顯示名稱（英文姓名）"
     },
     "profile": {
       "title": "人事資料",
@@ -926,7 +973,16 @@
       "idNumber": "身分證字號",
       "sensitiveWarning": "敏感資訊，請小心處理。",
       "show": "顯示",
-      "hide": "隱藏"
+      "hide": "隱藏",
+      "chineseName": "中文姓名",
+      "idType": "證件類型",
+      "idTypeNationalId": "身分證",
+      "idTypeResidentPermit": "居留證",
+      "mailingAddress": "通訊地址",
+      "registeredAddress": "戶籍地址",
+      "salaryType": "薪資類型",
+      "salaryTypeMonthly": "月薪",
+      "salaryTypeHourly": "時薪"
     },
     "insuranceBrackets": {
       "title": "勞健保級距表",
@@ -1115,7 +1171,23 @@
       "manual": "手動",
       "pageLabel": "第 <b>{page}</b> 頁",
       "prevPage": "上一頁",
-      "nextPage": "下一頁"
+      "nextPage": "下一頁",
+      "actionsColumn": "動作",
+      "voidAction": "作廢",
+      "unvoidAction": "取消作廢",
+      "voidedBadge": "已作廢",
+      "voidedReasonPrefix": "作廢原因：",
+      "voidDialogTitle": "作廢打卡紀錄",
+      "voidDialogDesc": "作廢後此紀錄不列入統計與匯出，但會保留稽核軌跡（不會永久刪除）。",
+      "voidReasonLabel": "作廢原因",
+      "voidReasonPlaceholder": "請說明作廢此打卡紀錄的原因…",
+      "voidReasonRequired": "請填寫作廢原因",
+      "voidConfirm": "確認作廢",
+      "voidSuccess": "已作廢打卡紀錄",
+      "unvoidDialogTitle": "取消作廢",
+      "unvoidDialogDesc": "取消作廢後，此紀錄將恢復列入統計與匯出。",
+      "unvoidConfirm": "確認取消作廢",
+      "unvoidSuccess": "已取消作廢"
     },
     "auditLog": {
       "searchPlaceholder": "搜尋文件標題或操作人...",
@@ -1191,7 +1263,8 @@
         "bug": "Bug",
         "improvement": "改善建議",
         "other": "其他"
-      }
+      },
+      "viewOriginal": "點擊查看原圖"
     },
     "insuranceMgmt": {
       "emptySpreadsheet": "試算表為空，請確認檔案內容",
@@ -1442,7 +1515,8 @@
       "onlyPendingCancellable": "只能取消待審核的申請"
     },
     "leaveRequests": {
-      "insufficientBalance": "{name}餘額不足（剩餘 {remaining} 天）"
+      "insufficientBalance": "{name}餘額不足（剩餘 {remaining} 天）",
+      "qualificationRequired": "「{name}」需先經人資審核資格，請洽人資提供證明文件"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "無符合條件的員工"
@@ -1452,7 +1526,8 @@
       "draftGenerated": "{year}/{month} 薪資草稿已自動產出"
     },
     "projects": {
-      "missingName": "缺少專案名稱"
+      "missingName": "缺少專案名稱",
+      "createFailed": "建立專案失敗，請稍後再試"
     },
     "procurement": {
       "invalidDocType": "無效的單據類型",
@@ -2679,7 +2754,14 @@
     "wd3": "三",
     "wd4": "四",
     "wd5": "五",
-    "wd6": "六"
+    "wd6": "六",
+    "rsvpTitle": "出席回覆",
+    "rsvpAttending": "參加",
+    "rsvpDeclined": "不參加",
+    "rsvpMaybe": "未定",
+    "rsvpSaved": "已更新出席回覆",
+    "rsvpAttendingCount": "{count} 人參加",
+    "rsvpNobody": "尚無人回覆"
   },
   "insights": {
     "title": "營運儀表板",

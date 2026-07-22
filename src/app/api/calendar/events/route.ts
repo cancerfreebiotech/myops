@@ -42,5 +42,14 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // 單向同步：推全天活動到全體已連結 Outlook 者（best-effort，永不影響活動建立）
+  try {
+    const { pushCompanyEventToOutlook } = await import('@/lib/company-event-outlook')
+    await pushCompanyEventToOutlook(data)
+  } catch (e) {
+    console.warn('[calendar] company event Outlook push failed:', e)
+  }
+
   return NextResponse.json({ data })
 }
