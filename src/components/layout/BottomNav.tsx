@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import {
   LayoutDashboard, Clock, CalendarDays, FileText, MoreHorizontal,
   Timer, Megaphone, FileSignature, DollarSign, Sun, Moon, Globe, LogOut, HelpCircle, MessageSquarePlus,
-  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt, CheckSquare, Package, GraduationCap, Plane, CalendarRange, FlaskConical, Target } from 'lucide-react'
+  FolderKanban, Settings, ShoppingCart, ClipboardList, Receipt, CheckSquare, Package, GraduationCap, Plane, CalendarRange, FlaskConical, Target, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -61,6 +61,7 @@ export function BottomNav({ userId, isAdmin = false, features }: BottomNavProps)
     show('assets')        && { href: '/assets',         label: t('assets'),        icon: Package },
     show('lab_supplies')  && { href: '/lab',            label: t('labSupplies'),   icon: FlaskConical },
     show('feedback')      && { href: '/feedback',       label: t('feedback'),      icon: MessageSquarePlus },
+    isAdmin               && { href: '/admin/attendance', label: t('adminAttendance'), icon: CalendarClock },
     { href: '/settings', label: t('settings'), icon: Settings },
     { href: '/help',     label: t('help'),     icon: HelpCircle },
   ].filter(Boolean) as { href: string; label: string; icon: React.ElementType }[]

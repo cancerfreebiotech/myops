@@ -61,6 +61,40 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
   const docRow = doc as Record<string, unknown>
 
+  // 回報「歷史詢價單內容不完整」：品項/廠商/報價/採購單號其實都在下游表且已回連本詢價單，
+  // 只是明細頁未 join。以下以唯讀方式帶出（RLS 由 createServiceClient 依使用者身分把關）。
+  // (a) 相關採購單：purchase_requests.rfq_id → 採購單號 + 廠商 + 合計 + 進貨狀態
+  const { data: linkedPrsData } = await service
+    .from('purchase_requests')
+    .select('id, doc_no, status, vendor_name, total_amount, fulfillment_status, purchase_date')
+    .eq('rfq_id', id)
+    .order('purchase_date', { ascending: true })
+  const linkedPrs = linkedPrsData ?? []
+  // (b) 品項與數量：pr_items（依採購單分組顯示）
+  let prItems: Record<string, unknown>[] = []
+  const prIds = linkedPrs.map(p => p.id)
+  if (prIds.length > 0) {
+    const { data: itemsData } = await service
+      .from('pr_items')
+      .select('pr_id, line_no, product_code, product_name, spec, unit, unit_price, quantity, amount')
+      .in('pr_id', prIds)
+      .order('pr_id', { ascending: true })
+      .order('line_no', { ascending: true })
+    prItems = (itemsData ?? []) as Record<string, unknown>[]
+  }
+  // (c) 廠商與報價結果：vendor_products.source_rfq_no = 本詢價單號
+  let quotes: Record<string, unknown>[] = []
+  const docNo = docRow.doc_no
+  if (typeof docNo === 'string' && docNo) {
+    const { data: quotesData } = await service
+      .from('vendor_products')
+      .select('vendor_name, product_code, product_name, spec, unit, unit_price, quote_date')
+      .eq('source_rfq_no', docNo)
+      .is('deleted_at', null)
+      .order('quote_date', { ascending: false })
+    quotes = (quotesData ?? []) as Record<string, unknown>[]
+  }
+
   const { data: stepsData, error: stepsError } = await service
     .from('procurement_approval_steps')
     .select('id, step_no, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
@@ -124,6 +158,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       can_act: canAct,
       current_step_kind: currentStep?.approver_kind ?? null,
       locked_fields: lockedFields,
+      linked_purchase_requests: linkedPrs,
+      pr_items: prItems,
+      quotes,
     },
   })
 }

@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/StatusBadge'
+import { QualificationSection } from './QualificationSection'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle, Ban, Info } from 'lucide-react'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
@@ -70,7 +71,7 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
   const router = useRouter()
   const t = useTranslations('leave')
   const tc = useTranslations('common')
-  const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance'>('balance')
+  const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance' | 'qualification'>('balance')
   const [records, setRecords] = useState<LeaveRequest[]>([])
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
@@ -174,8 +175,9 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
           { key: 'balance' as const, label: t('tabBalance') },
           { key: 'apply' as const, label: t('tabApply') },
           { key: 'records' as const, label: t('tabMyRecords') },
+          ...(leaveTypes.some(lt => lt.requires_qualification) || isHR ? [{ key: 'qualification' as const, label: t('specialLeaveTab') }] : []),
           ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve' as const, label: t('tabPendingApproval'), badge: approvals.length }] : []),
-        ].map((t: { key: 'apply' | 'records' | 'approve' | 'balance'; label: string; badge?: number }) => (
+        ].map((t: { key: 'apply' | 'records' | 'approve' | 'balance' | 'qualification'; label: string; badge?: number }) => (
           <button
             key={t.key}
             onClick={() => {
@@ -310,6 +312,11 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
         </div>
       )}
 
+      {/* Special-leave qualification tab（回報4：特殊假需先申請審核資格） */}
+      {tab === 'qualification' && (
+        <QualificationSection leaveTypes={leaveTypes} isHR={isHR} />
+      )}
+
       {/* Cancel confirm dialog */}
       <Dialog open={!!cancelConfirm} onOpenChange={() => setCancelConfirm(null)}>
         <DialogContent className="max-w-lg">
@@ -341,7 +348,16 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
               {needsQualification && (
                 <div className="flex items-start gap-2 mt-2 p-3 rounded-lg border bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800" role="status">
                   <Info size={16} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" aria-hidden="true" />
-                  <p className="text-xs text-blue-800 dark:text-blue-300">{t('qualificationNotice')}</p>
+                  <div className="flex-1">
+                    <p className="text-xs text-blue-800 dark:text-blue-300">{t('qualificationNotice')}</p>
+                    <button
+                      type="button"
+                      onClick={() => { setApplyOpen(false); setTab('qualification') }}
+                      className="mt-1 text-xs font-medium text-blue-700 dark:text-blue-300 underline cursor-pointer"
+                    >
+                      {t('specialLeaveApply')}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

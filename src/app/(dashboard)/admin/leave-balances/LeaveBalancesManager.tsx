@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 interface BalanceUser {
   id: string
@@ -19,12 +20,17 @@ interface LeaveType {
   id: string
   name: string
   applies_to: string
+  // 主頁提供；hr-settings 唯讀預覽未帶（此時 fixed 假別不顯示 default fallback）
+  default_quota_days?: number | null
 }
 
 interface LeaveBalance {
   user_id: string
   leave_type_id: string
   allocated_days: number | null
+  // 主頁提供（供顯示已用天數 / 存回正確年度）；其他呼叫端可省略
+  used_days?: number | null
+  year?: number
 }
 
 interface Props {
@@ -46,21 +52,32 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
 
   const filteredUsers = filterUser ? users.filter(u => u.id === filterUser) : users
 
-  const getBalance = (userId: string, typeId: string) => {
+  const getRow = (userId: string, typeId: string) =>
+    balances.find(b => b.user_id === userId && b.leave_type_id === typeId) ?? null
+
+  // 顯示用：edits 優先；否則有 balance 列 → 用其配額(total)＋已用；皆無 → fallback 該假別的
+  // default_quota_days（isDefault：淡色/虛線，表「尚未實體化」，HR 編輯存檔後才建列並開始管控）。
+  const getCell = (userId: string, typeId: string): { value: number; used: number; isDefault: boolean } => {
     const key = `${userId}_${typeId}`
-    if (key in edits) return edits[key]
-    return balances.find(b => b.user_id === userId && b.leave_type_id === typeId)?.allocated_days ?? 0
+    const row = getRow(userId, typeId)
+    if (key in edits) return { value: edits[key], used: row?.used_days ?? 0, isDefault: false }
+    if (row) return { value: row.allocated_days ?? 0, used: row.used_days ?? 0, isDefault: false }
+    const dq = leaveTypes.find(lt => lt.id === typeId)?.default_quota_days
+    return { value: dq ?? 0, used: 0, isDefault: dq != null }
   }
 
   const handleSave = async (userId: string, typeId: string) => {
     const key = `${userId}_${typeId}`
     const allocated = edits[key]
     if (allocated === undefined) return
+    // 存回「被 pick 到那一列」的 year（例如 8–12 月到職者特休列 year=去年），
+    // 否則會新建一筆當年空 period 的影子列被期間規則遮蔽；無列時 fallback 當年。
+    const saveYear = getRow(userId, typeId)?.year ?? year
     setSaving(key)
     const res = await fetch('/api/admin/leave-balances', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId, leave_type_id: typeId, year, allocated_days: allocated }),
+      body: JSON.stringify({ user_id: userId, leave_type_id: typeId, year: saveYear, allocated_days: allocated }),
     })
     const { error } = await res.json()
     setSaving(null)
@@ -130,7 +147,7 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
                 </td>
                 {leaveTypes.map(lt => {
                   const key = `${u.id}_${lt.id}`
-                  const val = getBalance(u.id, lt.id)
+                  const cell = getCell(u.id, lt.id)
                   const changed = key in edits
                   const isApplicable = lt.applies_to === 'all' ||
                     (lt.applies_to === 'full_time' && u.employment_type === 'full_time') ||
@@ -139,22 +156,28 @@ export function LeaveBalancesManager({ users, leaveTypes, balances, year, readOn
                     <td key={lt.id} className="px-3 py-2 text-center">
                       {isApplicable ? (
                         readOnly ? (
-                          <span className="text-sm text-slate-700 dark:text-slate-300">{val}</span>
+                          <div className="text-sm text-slate-700 dark:text-slate-300">
+                            <span className={cn(cell.isDefault && 'text-slate-400')}>{cell.value}</span>
+                            {cell.used > 0 && <div className="text-[10px] text-slate-400">{tm('usedDays', { n: cell.used })}</div>}
+                          </div>
                         ) : (
-                        <div className="flex items-center gap-1 justify-center">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="365"
-                            value={val}
-                            onChange={e => setEdits(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
-                            className="w-16 text-center h-8 text-sm"
-                          />
-                          {changed && (
-                            <Button size="sm" className="h-8 px-2 text-xs" onClick={() => handleSave(u.id, lt.id)} disabled={saving === key}>
-                              {saving === key ? '...' : tm('saveShort')}
-                            </Button>
-                          )}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <div className="flex items-center gap-1 justify-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="365"
+                              value={cell.value}
+                              onChange={e => setEdits(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                              className={cn('w-16 text-center h-8 text-sm', cell.isDefault && 'text-slate-400 border-dashed')}
+                            />
+                            {changed && (
+                              <Button size="sm" className="h-8 px-2 text-xs" onClick={() => handleSave(u.id, lt.id)} disabled={saving === key}>
+                                {saving === key ? '...' : tm('saveShort')}
+                              </Button>
+                            )}
+                          </div>
+                          {cell.used > 0 && <span className="text-[10px] text-slate-400">{tm('usedDays', { n: cell.used })}</span>}
                         </div>
                         )
                       ) : (

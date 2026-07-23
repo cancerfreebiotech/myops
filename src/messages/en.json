@@ -146,7 +146,8 @@
     "labSupplies": "Lab Supplies",
     "performance": "Performance",
     "adminShifts": "Work Shifts",
-    "geofences": "Clock-in Areas"
+    "geofences": "Clock-in Areas",
+    "adminAttendance": "Attendance Records"
   },
   "dailyReport": {
     "title": "Daily Report",
@@ -678,7 +679,26 @@
     },
     "requiresQualificationBadge": "HR review required",
     "qualificationNotGranted": "Requires HR qualification review; no entitlement granted yet",
-    "qualificationNotice": "This leave type requires prior HR qualification review. Please contact HR with the relevant supporting documents; you can apply once your entitlement has been granted."
+    "qualificationNotice": "This leave type requires prior HR qualification review. Please contact HR with the relevant supporting documents; you can apply once your entitlement has been granted.",
+    "specialLeaveTab": "Special Leave",
+    "specialLeaveApply": "Apply for Special Leave",
+    "selectSpecialType": "Select special leave type",
+    "qualificationReasonLabel": "Reason",
+    "qualificationAttachmentsLabel": "Supporting documents (multiple files allowed)",
+    "addAttachment": "Add attachment",
+    "uploadingAttachment": "Uploading…",
+    "uploadFailed": "Attachment upload failed",
+    "qualificationSubmitted": "Special leave application submitted for HR review",
+    "noQualificationRequests": "No special leave applications yet",
+    "myQualificationsTitle": "My Special Leave Applications",
+    "qualificationReviewTitle": "Qualification Review",
+    "noPendingQualifications": "No pending qualification applications",
+    "applicantLabel": "Applicant",
+    "grantDaysLabel": "Granted days",
+    "hrNoteLabel": "HR note",
+    "approveAndGrant": "Approve & Grant",
+    "grantedDaysInfo": "Granted {days} days",
+    "attachmentLabel": "Attachments"
   },
   "overtime": {
     "title": "Overtime",
@@ -1306,6 +1326,7 @@
       "fullTime": "Full-time",
       "intern": "Intern",
       "saveShort": "Save",
+      "usedDays": "Used {n}",
       "autoFillSeniority": "Auto-fill annual leave by seniority",
       "autoFilling": "Generating…",
       "autoFillDone": "Generated {generated} annual-leave balances (kept {skipped} manual, {missing} missing hire date)"
@@ -1553,6 +1574,11 @@
       "rejected": "Document rejected.",
       "approvedFinal": "Approved. This document is now fully approved.",
       "approvedAdvanced": "Approved. Sent to the next approver."
+    },
+    "leaveQualifications": {
+      "notSpecialType": "This leave type does not require qualification",
+      "invalidGrantDays": "Granted days must be greater than 0",
+      "alreadyProcessed": "This application has already been processed"
     }
   },
   "teamsMessages": {
@@ -2326,6 +2352,16 @@
         "approved": "Approved",
         "rejected": "Rejected",
         "voided": "Voided"
+      },
+      "linked": {
+        "itemsTitle": "Line Items",
+        "quotesTitle": "Vendor Quotes",
+        "prsTitle": "Related Purchase Requests",
+        "vendor": "Vendor",
+        "quoteDate": "Quote Date",
+        "total": "Total",
+        "fulfillment": "Fulfillment",
+        "empty": "No related records for this RFQ"
       },
       "created": "RFQ draft created",
       "submitted": "Submitted for approval",

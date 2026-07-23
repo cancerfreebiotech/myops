@@ -87,15 +87,28 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ error: t('common.forbidden'), code: 'ALREADY_PROCESSED' }, { status: 409 })
     }
 
-    // Deduct leave balance（leave_balances 無 remaining_days，只累加 used_days）；
-    // 以 admin client 扣除並檢查 affected rows，確保未被 RLS 靜默擋下（命中 0 列即報錯）。
+    // Deduct leave balance — 原子扣減（deduct_leave_balance RPC）取代舊的 read-then-write，
+    // 修同一餘額列並發核准的超扣 race（CAS 原本只守在 request.status，未守餘額列）。
+    // 扣減失敗（不存在／並發後會超額）→ 回捲剛核准的請假單為 pending，再回報錯誤。
     if (balance) {
-      const { data: deducted, error: dedErr } = await admin.from('leave_balances').update({
-        used_days: Number(balance.used_days ?? 0) + Number(leaveReq.total_days),
-      }).eq('id', balance.id).select('id')
-      if (dedErr || !deducted || deducted.length === 0) {
-        console.error('[leave] balance deduction failed:', dedErr, 'balanceId:', balance.id)
-        return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+      const { data: dedData, error: dedErr } = await admin.rpc('deduct_leave_balance', {
+        p_balance_id: balance.id,
+        p_days: Number(leaveReq.total_days),
+      })
+      const dedResult = Array.isArray(dedData) ? dedData[0] : dedData
+      if (dedErr || !dedResult?.ok) {
+        // 回捲核准（僅在仍為我方剛設的 approved 時），維持餘額與單據一致
+        await service.from('leave_requests').update({
+          status: 'pending', approved_by: null, approved_at: null,
+        }).eq('id', id).eq('status', 'approved')
+        if (dedErr) {
+          console.error('[leave] atomic balance deduction failed:', dedErr, 'balanceId:', balance.id)
+          return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+        }
+        const lt = Array.isArray(leaveReq.leave_type) ? leaveReq.leave_type[0] : leaveReq.leave_type
+        return NextResponse.json({
+          error: t('leaveRequests.insufficientBalance', { name: lt?.name ?? '', remaining: dedResult?.remaining ?? 0 }),
+        }, { status: 400 })
       }
     }
 

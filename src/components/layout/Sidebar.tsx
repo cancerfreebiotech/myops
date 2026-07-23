@@ -10,7 +10,7 @@ import {
   Settings, MessageSquarePlus, ChevronLeft, ChevronRight, X,
   Users, Building2, BookOpen, ShoppingCart, ShieldCheck,
   SlidersHorizontal, MessageCircle, Sun, Moon, Globe, LogOut, HelpCircle,
-  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks, UserPlus, FlaskConical, Target, MapPin } from 'lucide-react'
+  ClipboardList, CheckSquare, UsersRound, Receipt, Package, GraduationCap, Plane, CalendarRange, BarChart3, ListChecks, UserPlus, FlaskConical, Target, MapPin, CalendarClock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useState, useSyncExternalStore } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -149,6 +149,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
     { href: '/admin/recruiting',       label: t('recruiting'),       icon: UserPlus },
     { href: '/admin/shifts',           label: t('adminShifts'),      icon: Clock },
     { href: '/admin/geofences',        label: t('geofences'),        icon: MapPin },
+    { href: '/admin/attendance',       label: t('adminAttendance'),  icon: CalendarClock },
     { href: '/admin/hr-settings',      label: t('hrSettings'),       icon: SlidersHorizontal },
     { href: '/admin/finance-settings', label: t('financeSettings'),  icon: DollarSign },
     { href: '/admin/coo-settings',     label: t('cooSettings'),      icon: SlidersHorizontal },
@@ -276,6 +277,7 @@ export function Sidebar({ user, features, variant = 'desktop', onClose }: Sideba
                 <NavLink href="/admin/users" label={t('adminUsers')} icon={Users} collapsed={collapsed} active={isActive('/admin/users')} />
                 <NavLink href="/admin/shifts" label={t('adminShifts')} icon={Clock} collapsed={collapsed} active={isActive('/admin/shifts')} />
                 <NavLink href="/admin/geofences" label={t('geofences')} icon={MapPin} collapsed={collapsed} active={isActive('/admin/geofences')} />
+                <NavLink href="/admin/attendance" label={t('adminAttendance')} icon={CalendarClock} collapsed={collapsed} active={isActive('/admin/attendance')} />
                 <NavLink href="/admin/hr-settings" label={t('hrSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/hr-settings')} />
                 <NavLink href="/admin/coo-settings" label={t('cooSettings')} icon={SlidersHorizontal} collapsed={collapsed} active={isActive('/admin/coo-settings')} />
               </>

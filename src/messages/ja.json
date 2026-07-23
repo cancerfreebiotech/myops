@@ -146,7 +146,8 @@
     "labSupplies": "試薬・消耗品",
     "performance": "人事考課",
     "adminShifts": "シフト管理",
-    "geofences": "打刻エリア"
+    "geofences": "打刻エリア",
+    "adminAttendance": "打刻記録管理"
   },
   "dailyReport": {
     "title": "日報",
@@ -678,7 +679,26 @@
     },
     "requiresQualificationBadge": "人事審査が必要",
     "qualificationNotGranted": "人事による資格審査が必要です（日数未付与）",
-    "qualificationNotice": "この休暇は事前に人事による資格審査が必要です。証明書類をご用意のうえ人事にお問い合わせください。日数が付与され次第、申請できます。"
+    "qualificationNotice": "この休暇は事前に人事による資格審査が必要です。証明書類をご用意のうえ人事にお問い合わせください。日数が付与され次第、申請できます。",
+    "specialLeaveTab": "特別休暇申請",
+    "specialLeaveApply": "特別休暇を申請",
+    "selectSpecialType": "特別休暇の種類を選択",
+    "qualificationReasonLabel": "申請理由",
+    "qualificationAttachmentsLabel": "証明書類（複数ファイル可）",
+    "addAttachment": "添付を追加",
+    "uploadingAttachment": "アップロード中…",
+    "uploadFailed": "添付のアップロードに失敗しました",
+    "qualificationSubmitted": "特別休暇の申請を送信しました（人事の審査待ち）",
+    "noQualificationRequests": "特別休暇の申請はまだありません",
+    "myQualificationsTitle": "自分の特別休暇申請",
+    "qualificationReviewTitle": "資格審査",
+    "noPendingQualifications": "審査待ちの資格申請はありません",
+    "applicantLabel": "申請者",
+    "grantDaysLabel": "付与日数",
+    "hrNoteLabel": "人事メモ",
+    "approveAndGrant": "承認して付与",
+    "grantedDaysInfo": "{days}日付与済み",
+    "attachmentLabel": "添付"
   },
   "overtime": {
     "title": "残業",
@@ -1306,6 +1326,7 @@
       "fullTime": "正社員",
       "intern": "インターン",
       "saveShort": "保存",
+      "usedDays": "使用 {n}",
       "autoFillSeniority": "勤続年数から特別休暇を自動入力",
       "autoFilling": "生成中…",
       "autoFillDone": "特別休暇の付与 {generated} 件を生成しました（手動設定 {skipped} 件を保持、入社日なし {missing} 名）"
@@ -1553,6 +1574,11 @@
       "rejected": "この書類を差し戻しました。",
       "approvedFinal": "承認しました。この書類の承認が完了しました。",
       "approvedAdvanced": "承認しました。次の承認者に送りました。"
+    },
+    "leaveQualifications": {
+      "notSpecialType": "この休暇は資格審査が不要です",
+      "invalidGrantDays": "付与日数は0より大きくする必要があります",
+      "alreadyProcessed": "この申請は既に処理済みです"
     }
   },
   "teamsMessages": {
@@ -2326,6 +2352,16 @@
         "approved": "承認済み",
         "rejected": "却下",
         "voided": "無効"
+      },
+      "linked": {
+        "itemsTitle": "品目と数量",
+        "quotesTitle": "見積結果",
+        "prsTitle": "関連発注書",
+        "vendor": "取引先",
+        "quoteDate": "見積日",
+        "total": "合計金額",
+        "fulfillment": "入荷状況",
+        "empty": "この見積依頼書に関連データはありません"
       },
       "created": "見積依頼書の下書きを作成しました",
       "submitted": "承認申請しました",

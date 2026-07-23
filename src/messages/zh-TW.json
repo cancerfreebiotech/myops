@@ -146,7 +146,8 @@
     "labSupplies": "試劑耗材",
     "performance": "績效考核",
     "adminShifts": "班別管理",
-    "geofences": "打卡範圍"
+    "geofences": "打卡範圍",
+    "adminAttendance": "打卡紀錄管理"
   },
   "dailyReport": {
     "title": "每日報告",
@@ -678,7 +679,26 @@
     },
     "requiresQualificationBadge": "需人資審核",
     "qualificationNotGranted": "需人資審核資格，尚未核給額度",
-    "qualificationNotice": "此假別需先經人資審核資格。請洽人資並提供相關證明文件，經核給額度後即可申請。"
+    "qualificationNotice": "此假別需先經人資審核資格。請洽人資並提供相關證明文件，經核給額度後即可申請。",
+    "specialLeaveTab": "特殊假申請",
+    "specialLeaveApply": "提出特殊假申請",
+    "selectSpecialType": "選擇特殊假別",
+    "qualificationReasonLabel": "申請原因",
+    "qualificationAttachmentsLabel": "證明文件（可上傳多個檔案）",
+    "addAttachment": "新增附件",
+    "uploadingAttachment": "上傳中…",
+    "uploadFailed": "附件上傳失敗",
+    "qualificationSubmitted": "特殊假申請已送出，待人資審核",
+    "noQualificationRequests": "尚無特殊假申請",
+    "myQualificationsTitle": "我的特殊假申請",
+    "qualificationReviewTitle": "資格審核",
+    "noPendingQualifications": "目前無待審資格申請",
+    "applicantLabel": "申請人",
+    "grantDaysLabel": "核給天數",
+    "hrNoteLabel": "人資備註",
+    "approveAndGrant": "核准並核給",
+    "grantedDaysInfo": "已核給 {days} 天",
+    "attachmentLabel": "附件"
   },
   "overtime": {
     "title": "加班",
@@ -1306,6 +1326,7 @@
       "fullTime": "正職",
       "intern": "實習",
       "saveShort": "存",
+      "usedDays": "已用 {n}",
       "autoFillSeniority": "依年資自動帶入特休",
       "autoFilling": "產生中…",
       "autoFillDone": "已產生 {generated} 筆特休額度（保留 {skipped} 筆手動設定，{missing} 人缺到職日）"
@@ -1553,6 +1574,11 @@
       "rejected": "已退回此單據。",
       "approvedFinal": "已核准，此單據已完成簽核。",
       "approvedAdvanced": "已核准，已送交下一關簽核。"
+    },
+    "leaveQualifications": {
+      "notSpecialType": "此假別無需資格審核",
+      "invalidGrantDays": "核給天數必須大於 0",
+      "alreadyProcessed": "此申請已處理"
     }
   },
   "teamsMessages": {
@@ -2326,6 +2352,16 @@
         "approved": "簽核完成",
         "rejected": "拒絕簽核",
         "voided": "已作廢"
+      },
+      "linked": {
+        "itemsTitle": "品項與數量",
+        "quotesTitle": "廠商與報價結果",
+        "prsTitle": "相關採購單",
+        "vendor": "廠商",
+        "quoteDate": "報價日期",
+        "total": "合計金額",
+        "fulfillment": "進貨狀態",
+        "empty": "此詢價單無相關資料"
       },
       "created": "已建立詢價單草稿",
       "submitted": "已送簽",

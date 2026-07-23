@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Fragment, useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -43,12 +44,45 @@ interface RfqDoc extends Record<string, unknown> {
   voided_by_name: string | null
 }
 
+interface LinkedPr {
+  id: string
+  doc_no: string | null
+  status: DocStatus
+  vendor_name: string | null
+  total_amount: number | null
+  fulfillment_status: string | null
+  purchase_date: string | null
+}
+interface PrItem {
+  pr_id: string
+  line_no: number | null
+  product_code: string | null
+  product_name: string | null
+  spec: string | null
+  unit: string | null
+  unit_price: number | null
+  quantity: number | null
+  amount: number | null
+}
+interface Quote {
+  vendor_name: string | null
+  product_code: string | null
+  product_name: string | null
+  spec: string | null
+  unit: string | null
+  unit_price: number | null
+  quote_date: string | null
+}
+
 interface RfqDetail {
   doc: RfqDoc
   steps: TimelineStep[]
   can_act: boolean
   current_step_kind: TimelineStep['approver_kind'] | null
   locked_fields: string[]
+  linked_purchase_requests: LinkedPr[]
+  pr_items: PrItem[]
+  quotes: Quote[]
 }
 
 const USER_FIELD_NAME: Record<string, keyof RfqDoc> = {
@@ -66,6 +100,7 @@ export function RfqDetailClient({ rfqId, users }: Props) {
   const router = useRouter()
   const t = useTranslations('procurement.rfqs')
   const tc = useTranslations('common')
+  const tItem = useTranslations('procurement.purchaseRequests.itemCols')
 
   const [detail, setDetail] = useState<RfqDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -180,9 +215,10 @@ export function RfqDetailClient({ rfqId, users }: Props) {
     return <p className="text-sm text-slate-400 py-16 text-center">{tc('loading')}</p>
   }
 
-  const { doc, steps, can_act, current_step_kind, locked_fields } = detail
+  const { doc, steps, can_act, current_step_kind, locked_fields, linked_purchase_requests, pr_items, quotes } = detail
   const canEdit = doc.status === 'draft' || doc.status === 'in_approval'
   const canVoidClone = doc.status === 'approved' || doc.status === 'rejected'
+  const fmtAmount = (n: number | null) => (n == null ? '—' : `NT$ ${Number(n).toLocaleString('en-US')}`)
 
   const displayValue = (name: string, kind: string): string => {
     if (kind === 'user') {
@@ -294,6 +330,111 @@ export function RfqDetailClient({ rfqId, users }: Props) {
             </div>
           </div>
         </section>
+      </div>
+
+      {/* 品項與數量（依採購單分組） */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{t('linked.itemsTitle')}</h3>
+        {pr_items.length === 0 ? (
+          <p className="text-sm text-slate-400">{t('linked.empty')}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm whitespace-nowrap">
+              <thead>
+                <tr className="text-left text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-1.5 pr-3 font-medium">{tItem('lineNo')}</th>
+                  <th className="py-1.5 pr-3 font-medium">{tItem('productName')}</th>
+                  <th className="py-1.5 pr-3 font-medium">{tItem('spec')}</th>
+                  <th className="py-1.5 pr-3 font-medium">{tItem('unit')}</th>
+                  <th className="py-1.5 pr-3 font-medium text-right">{tItem('unitPrice')}</th>
+                  <th className="py-1.5 pr-3 font-medium text-right">{tItem('quantity')}</th>
+                  <th className="py-1.5 font-medium text-right">{tItem('amount')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {linked_purchase_requests.map(pr => {
+                  const rows = pr_items.filter(it => it.pr_id === pr.id)
+                  if (rows.length === 0) return null
+                  return (
+                    <Fragment key={pr.id}>
+                      <tr className="bg-slate-50 dark:bg-slate-700/40">
+                        <td colSpan={7} className="py-1.5 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                          {t('linked.prsTitle')}: {pr.doc_no ?? '—'}
+                        </td>
+                      </tr>
+                      {rows.map((it, i) => (
+                        <tr key={`${pr.id}-${i}`} className="border-b border-slate-100 dark:border-slate-700/50">
+                          <td className="py-1.5 pr-3 tabular-nums text-slate-500">{it.line_no ?? ''}</td>
+                          <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{it.product_name ?? it.product_code ?? '—'}</td>
+                          <td className="py-1.5 pr-3 text-slate-500">{it.spec ?? '—'}</td>
+                          <td className="py-1.5 pr-3 text-slate-500">{it.unit ?? '—'}</td>
+                          <td className="py-1.5 pr-3 text-right tabular-nums">{fmtAmount(it.unit_price)}</td>
+                          <td className="py-1.5 pr-3 text-right tabular-nums">{it.quantity ?? '—'}</td>
+                          <td className="py-1.5 text-right tabular-nums">{fmtAmount(it.amount)}</td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 廠商與報價結果 */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{t('linked.quotesTitle')}</h3>
+        {quotes.length === 0 ? (
+          <p className="text-sm text-slate-400">{t('linked.empty')}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm whitespace-nowrap">
+              <thead>
+                <tr className="text-left text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                  <th className="py-1.5 pr-3 font-medium">{t('linked.vendor')}</th>
+                  <th className="py-1.5 pr-3 font-medium">{tItem('productName')}</th>
+                  <th className="py-1.5 pr-3 font-medium">{tItem('spec')}</th>
+                  <th className="py-1.5 pr-3 font-medium text-right">{tItem('unitPrice')}</th>
+                  <th className="py-1.5 font-medium">{t('linked.quoteDate')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quotes.map((q, i) => (
+                  <tr key={i} className="border-b border-slate-100 dark:border-slate-700/50">
+                    <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{q.vendor_name ?? '—'}</td>
+                    <td className="py-1.5 pr-3 text-slate-700 dark:text-slate-300">{q.product_name ?? q.product_code ?? '—'}</td>
+                    <td className="py-1.5 pr-3 text-slate-500">{q.spec ?? '—'}</td>
+                    <td className="py-1.5 pr-3 text-right tabular-nums">{fmtAmount(q.unit_price)}</td>
+                    <td className="py-1.5 text-slate-500 tabular-nums">{q.quote_date ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 相關採購單 */}
+      <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">{t('linked.prsTitle')}</h3>
+        {linked_purchase_requests.length === 0 ? (
+          <p className="text-sm text-slate-400">{t('linked.empty')}</p>
+        ) : (
+          <ul className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            {linked_purchase_requests.map(pr => (
+              <li key={pr.id} className="py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <Link href={`/procurement/purchase-requests/${pr.id}`} className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                  {pr.doc_no ?? '—'}
+                </Link>
+                <RfqStatusBadge status={pr.status} />
+                {pr.vendor_name && <span className="text-slate-500">{pr.vendor_name}</span>}
+                <span className="ml-auto tabular-nums text-slate-700 dark:text-slate-300">{fmtAmount(pr.total_amount)}</span>
+                {pr.fulfillment_status && <span className="text-xs text-slate-400">· {pr.fulfillment_status}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Approval timeline + actions */}

@@ -40,10 +40,13 @@ export async function POST(request: NextRequest) {
 
   // leave_balances 實際欄位：total_days(NOT NULL)/used_days；無 allocated_days/remaining_days
   // （餘額 = total_days - used_days，於讀取端換算）。前端傳入的配額寫入 total_days。
+  // source:'manual' — HR 手動調整標記為 manual override，使其能覆寫 auto 特休列，
+  // 且不會被下次「依年資自動帶入」清掉（auto-fill 只跳過 source==='manual' 的列）。
   const { error } = await admin.from('leave_balances').upsert({
     user_id, leave_type_id, year,
     total_days: allocated_days,
     used_days: used,
+    source: 'manual',
   }, { onConflict: 'user_id,leave_type_id,year' })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
