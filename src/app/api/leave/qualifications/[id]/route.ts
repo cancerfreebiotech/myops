@@ -1,6 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { sendProactiveMessage } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 // HR 審核特殊假別資格申請（回報4）。核准→原子寫入 leave_balances（既有送單阻擋自動解鎖）。
 // house pattern：AAL2 MFA 重檢、HR 授權、職責分離＋compare-and-swap 於 SECURITY DEFINER RPC 內。
@@ -48,5 +50,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     console.error('[leave qualifications] rpc failed:', error)
     return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
   }
+
+  // best-effort：以申請人語言通知審核結果（永不影響回應）
+  try {
+    const row = Array.isArray(data) ? data[0] : data
+    if (row?.user_id) {
+      const { data: applicant } = await service.from('users').select('language').eq('id', row.user_id).single()
+      const { data: lt } = await service.from('leave_types').select('name:name_zh').eq('id', row.leave_type_id).single()
+      const ltName = lt?.name ?? ''
+      const text = action === 'approve'
+        ? teamsText(applicant?.language, 'leaveQualificationApproved', { leaveType: ltName, days: row.granted_days ?? 0 })
+        : teamsText(applicant?.language, 'leaveQualificationRejected', { leaveType: ltName, reason: (hr_note ? String(hr_note) : '') || '-' })
+      await sendProactiveMessage(row.user_id, text)
+    }
+  } catch (e) {
+    console.error('[leave qualifications] applicant notify failed:', e)
+  }
+
   return NextResponse.json({ data })
 }

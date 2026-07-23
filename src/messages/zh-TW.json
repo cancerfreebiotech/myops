@@ -1634,7 +1634,10 @@
     "contractApprovedCoo": "📄 合約已核准：「{title}」（申請人：{applicant}）",
     "contractRejectedCoo": "📄 合約已退回：「{title}」（申請人：{applicant}），原因：{reason}",
     "projectOtCooAlert": "⏰ 專案加班超額提醒：{name} 於 {date} 申請專案「{project}」加班 {hours} 小時，已超過門檻 {threshold} 小時，請至 myOPS 審核 👉 https://ops.cancerfree.io/overtime",
-    "announcementReminder": "【提醒】您尚未確認公告「{title}」，請盡快閱讀並點選確認。"
+    "announcementReminder": "【提醒】您尚未確認公告「{title}」，請盡快閱讀並點選確認。",
+    "leaveQualificationApproved": "✅ 你的特殊假申請（{leaveType}）已核准，核給 {days} 天",
+    "leaveQualificationRejected": "❌ 你的特殊假申請（{leaveType}）未通過：{reason}",
+    "leaveQualificationSubmitted": "📝 {name} 提出特殊假申請（{leaveType}），請至請假頁審核資格"
   },
   "procurement": {
     "approval": {

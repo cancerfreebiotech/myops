@@ -1634,7 +1634,10 @@
     "contractApprovedCoo": "📄 契約が承認されました：「{title}」（申請者：{applicant}）",
     "contractRejectedCoo": "📄 契約が却下されました：「{title}」（申請者：{applicant}）、理由：{reason}",
     "projectOtCooAlert": "⏰ プロジェクト残業アラート：{name} さんが {date} にプロジェクト「{project}」の残業 {hours} 時間を申請し、しきい値 {threshold} 時間を超えました。myOPS で確認してください 👉 https://ops.cancerfree.io/overtime",
-    "announcementReminder": "【リマインド】お知らせ「{title}」がまだ未確認です。お早めに内容を確認してください。"
+    "announcementReminder": "【リマインド】お知らせ「{title}」がまだ未確認です。お早めに内容を確認してください。",
+    "leaveQualificationApproved": "✅ 特別休暇の申請（{leaveType}）が承認され、{days}日付与されました",
+    "leaveQualificationRejected": "❌ 特別休暇の申請（{leaveType}）が却下されました：{reason}",
+    "leaveQualificationSubmitted": "📝 {name} が特別休暇を申請しました（{leaveType}）。休暇ページで審査してください"
   },
   "procurement": {
     "approval": {

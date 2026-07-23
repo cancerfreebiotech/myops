@@ -1,6 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
+import { sendProactiveMessages } from '@/lib/teams-bot'
+import { teamsText } from '@/lib/teams-i18n'
 
 // 特殊假別資格申請（回報4）。
 // POST：員工提出資格申請（限 requires_qualification 假別）＋多檔附件路徑。
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
   // 僅特殊假別（requires_qualification）可走此流程
   const { data: leaveType } = await service
     .from('leave_types')
-    .select('requires_qualification')
+    .select('requires_qualification, name:name_zh')
     .eq('id', leave_type_id)
     .single()
   if (!leaveType?.requires_qualification) {
@@ -40,6 +42,23 @@ export async function POST(request: NextRequest) {
     status: 'pending',
   }).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+
+  // best-effort：通知 HR（admin 或 granted_features 含 hr_manager）有新特殊假資格申請待審；
+  // 以各 HR 自己的語言發送，永不影響送出回應。
+  try {
+    const { data: applicant } = await service.from('users').select('display_name').eq('id', user.id).single()
+    const { data: staff } = await service.from('users').select('id, language, role, granted_features').eq('is_active', true)
+    const recipients = (staff ?? []).filter(s =>
+      s.id !== user.id && (s.role === 'admin' || ((s.granted_features as string[] | null) ?? []).includes('hr_manager')))
+    const msgs = recipients.map(s => ({
+      userId: s.id,
+      text: teamsText(s.language, 'leaveQualificationSubmitted', { name: applicant?.display_name ?? '', leaveType: leaveType?.name ?? '' }),
+    }))
+    if (msgs.length) await sendProactiveMessages(msgs)
+  } catch (e) {
+    console.error('[leave qualifications] HR notify failed:', e)
+  }
+
   return NextResponse.json({ data })
 }
 

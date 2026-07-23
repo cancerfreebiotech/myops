@@ -1634,7 +1634,10 @@
     "contractApprovedCoo": "📄 Contract approved: 「{title}」 (submitted by {applicant})",
     "contractRejectedCoo": "📄 Contract rejected: 「{title}」 (submitted by {applicant}) — reason: {reason}",
     "projectOtCooAlert": "⏰ Project overtime alert: {name} requested {hours}h of overtime on {date} for project \"{project}\", exceeding the {threshold}h threshold. Review on myOPS 👉 https://ops.cancerfree.io/overtime",
-    "announcementReminder": "[Reminder] You haven't confirmed the announcement \"{title}\" yet. Please read and confirm it as soon as possible."
+    "announcementReminder": "[Reminder] You haven't confirmed the announcement \"{title}\" yet. Please read and confirm it as soon as possible.",
+    "leaveQualificationApproved": "✅ Your special-leave application ({leaveType}) was approved — {days} days granted",
+    "leaveQualificationRejected": "❌ Your special-leave application ({leaveType}) was rejected: {reason}",
+    "leaveQualificationSubmitted": "📝 {name} submitted a special-leave application ({leaveType}); please review on the Leave page"
   },
   "procurement": {
     "approval": {
