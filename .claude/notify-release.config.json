@@ -8,6 +8,7 @@
   "changelogPath": "CHANGELOG.md",
   "versionSource": "package.json",
   "projectName": "myOPS",
+  "projectUrl": "https://ops.cancerfree.io",
   "subjectTemplate": "{projectName} 已更新到 v{version}",
   "greeting": "大家好，",
   "introTemplate": "{projectName} 發布了 v{version}。",
