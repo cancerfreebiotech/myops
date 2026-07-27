@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## v0.9.1 — 修復意見回饋頁面無法開啟（2026-07-27）
+
+### Fixed（修復）
+- **意見回饋頁面 500**：`/feedback` 清單頁在伺服器端呼叫按鈕樣式函式 `buttonVariants()`，但該函式綁在 client 元件模組上，Next.js 不允許從 server 呼叫，導致整頁伺服器錯誤、使用者無法進入或送出回饋。已將 `buttonVariants` 抽離為獨立的非 client 模組（server/client 皆可使用）。
+
 ## v0.9.0 — 使用者回報修復＋安全性強化（2026-07-23）
 
 ### Added（新增）

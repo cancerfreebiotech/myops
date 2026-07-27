@@ -4,7 +4,8 @@ import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { buttonVariants } from '@/components/ui/button'
+// buttonVariants 由非 'use client' 模組匯入：server component 不可呼叫 client 模組匯出的函式
+import { buttonVariants } from '@/components/ui/button-variants'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 import { MyFeedbackList } from './MyFeedbackList'
 
