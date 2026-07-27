@@ -4,6 +4,7 @@ import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
 import { userHasFeature } from '@/lib/job-role-features'
 import type { UserOption } from '../shared'
 import { RfqDetailClient } from './RfqDetailClient'
+import type { VendorOption } from './RfqItemsSection'
 
 // 詢價單詳情 — server gate only; the client loads the document + approval
 // steps from /api/procurement/rfqs/[id] (which also computes locked fields
@@ -41,7 +42,18 @@ export default async function RfqDetailPage({ params }: { params: Promise<{ id: 
     .eq('is_active', true)
     .order('display_name', { ascending: true })
 
+  // 廠商主檔（登錄廠商清冊）— 供品項的「建議廠商」與報價的「廠商」下拉選用
+  const { data: vendors } = await service
+    .from('vendors')
+    .select('id, vendor_code, name')
+    .is('deleted_at', null)
+    .order('name', { ascending: true })
+
   return (
-    <RfqDetailClient rfqId={id} users={(users as UserOption[]) ?? []} />
+    <RfqDetailClient
+      rfqId={id}
+      users={(users as UserOption[]) ?? []}
+      vendors={(vendors as VendorOption[]) ?? []}
+    />
   )
 }

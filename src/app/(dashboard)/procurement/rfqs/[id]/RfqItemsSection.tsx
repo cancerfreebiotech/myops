@@ -4,12 +4,19 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Plus, Trash2, Paperclip, Upload, Loader2, X, Save } from 'lucide-react'
 
 // 本張詢價單「自己的」請購商品與逐項報價（可編輯）。
 // 與 RfqDetailClient 下方「相關採購單」帶出的唯讀區塊刻意分開：那些是下游採購單的資料。
 // 請購人填品項；詢價人員填每個品項的多家報價（is_selected 標記採用）與整單報價單附件。
+
+export interface VendorOption {
+  id: string
+  vendor_code: string | null
+  name: string
+}
 
 export interface RfqItem {
   id?: string
@@ -20,18 +27,23 @@ export interface RfqItem {
   unit: string | null
   quantity: number | null
   usage_notes: string | null
+  suggested_vendor_id: string | null
   notes: string | null
 }
 
 export interface RfqQuote {
   id?: string
   rfq_item_id?: string
+  vendor_id: string | null
   vendor_name: string | null
   unit_price: number | null
   quote_date: string | null
   is_selected: boolean
   notes: string | null
 }
+
+/** Select 不接受空字串當值，用 sentinel 表示「未指定」（與 shared.tsx 的 RfqForm 一致） */
+const NONE = '__none'
 
 interface Props {
   rfqId: string
@@ -40,6 +52,8 @@ interface Props {
   initialQuoteFiles: string[]
   /** 簽核中鎖定的明細/報價欄位（詢價人員豁免）；非空即代表目前不可編輯這些欄位 */
   lockedItemFields: string[]
+  /** 廠商主檔（登錄廠商清冊）— 建議廠商與報價廠商的下拉來源 */
+  vendors: VendorOption[]
   /** 文件狀態允許編輯且使用者有權限 */
   canEdit: boolean
   onSaved: () => void
@@ -47,11 +61,11 @@ interface Props {
 
 const emptyItem = (lineNo: number): RfqItem => ({
   line_no: lineNo, product_code: null, product_name: null, spec: null,
-  unit: null, quantity: null, usage_notes: null, notes: null,
+  unit: null, quantity: null, usage_notes: null, suggested_vendor_id: null, notes: null,
 })
 
 export function RfqItemsSection({
-  rfqId, initialItems, initialQuotes, initialQuoteFiles, lockedItemFields, canEdit, onSaved,
+  rfqId, initialItems, initialQuotes, initialQuoteFiles, lockedItemFields, vendors, canEdit, onSaved,
 }: Props) {
   const t = useTranslations('procurement.rfqs')
   const tItem = useTranslations('procurement.purchaseRequests.itemCols')
@@ -107,7 +121,7 @@ export function RfqItemsSection({
       byItem[it.id] = quotes
         .filter(q => q.rfq_item_id === it.id)
         .map(q => ({
-          id: q.id, vendor_name: q.vendor_name, unit_price: q.unit_price,
+          id: q.id, vendor_id: q.vendor_id, vendor_name: q.vendor_name, unit_price: q.unit_price,
           quote_date: q.quote_date, is_selected: q.is_selected, notes: q.notes,
         }))
     }
@@ -151,12 +165,13 @@ export function RfqItemsSection({
               <th className="py-1.5 pr-2 font-medium w-20">{tItem('unit')}</th>
               <th className="py-1.5 pr-2 font-medium w-24">{tItem('quantity')}</th>
               <th className="py-1.5 pr-2 font-medium">{t('own.usageNotes')}</th>
+              <th className="py-1.5 pr-2 font-medium">{t('own.suggestedVendor')}</th>
               {editable && <th className="py-1.5 w-10"></th>}
             </tr>
           </thead>
           <tbody>
             {items.length === 0 ? (
-              <tr><td colSpan={editable ? 8 : 7} className="py-4 text-center text-slate-400">{t('own.noItems')}</td></tr>
+              <tr><td colSpan={editable ? 9 : 8} className="py-4 text-center text-slate-400">{t('own.noItems')}</td></tr>
             ) : items.map((it, i) => (
               <tr key={it.id ?? `new-${i}`} className="border-b border-slate-100 dark:border-slate-700/50">
                 <td className="py-1 pr-2">
@@ -186,6 +201,19 @@ export function RfqItemsSection({
                 <td className="py-1 pr-2">
                   <Input className="h-8 min-w-[9rem]" disabled={!editable}
                     value={it.usage_notes ?? ''} onChange={e => setItem(i, { usage_notes: e.target.value || null })} />
+                </td>
+                <td className="py-1 pr-2">
+                  <Select
+                    value={it.suggested_vendor_id ?? NONE}
+                    onValueChange={v => setItem(i, { suggested_vendor_id: !v || v === NONE ? null : v })}
+                    disabled={!editable}
+                  >
+                    <SelectTrigger className="h-8 min-w-[10rem]"><SelectValue placeholder={t('own.selectVendor')} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>{t('own.noVendor')}</SelectItem>
+                      {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </td>
                 {editable && (
                   <td className="py-1">
@@ -241,8 +269,20 @@ export function RfqItemsSection({
                     ) : rows.map(({ q, idx }) => (
                       <tr key={q.id ?? `nq-${idx}`} className="border-b border-slate-100 dark:border-slate-700/50">
                         <td className="py-1 pr-2">
-                          <Input className="h-8 min-w-[9rem]" disabled={!editable}
-                            value={q.vendor_name ?? ''} onChange={e => setQuote(idx, { vendor_name: e.target.value || null })} />
+                          {/* 選定廠商時同時記下 vendor_name 快照（vendor_products 沿用此欄） */}
+                          <Select
+                            value={q.vendor_id ?? NONE}
+                            onValueChange={v => setQuote(idx, v && v !== NONE
+                              ? { vendor_id: v, vendor_name: vendors.find(x => x.id === v)?.name ?? null }
+                              : { vendor_id: null, vendor_name: null })}
+                            disabled={!editable}
+                          >
+                            <SelectTrigger className="h-8 min-w-[10rem]"><SelectValue placeholder={t('own.selectVendor')} /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value={NONE}>{t('own.noVendor')}</SelectItem>
+                              {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="py-1 pr-2">
                           <Input type="number" step="0.01" className="h-8 w-32 tabular-nums" disabled={!editable}
@@ -277,7 +317,7 @@ export function RfqItemsSection({
               {editable && (
                 <Button variant="ghost" size="sm" className="mt-1 min-h-[36px] cursor-pointer"
                   onClick={() => setQuotes(prev => [...prev, {
-                    rfq_item_id: it.id, vendor_name: null, unit_price: null,
+                    rfq_item_id: it.id, vendor_id: null, vendor_name: null, unit_price: null,
                     quote_date: null, is_selected: false, notes: null,
                   }])}>
                   <Plus size={13} className="mr-1" />{t('own.addQuote')}

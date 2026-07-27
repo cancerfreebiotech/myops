@@ -2450,7 +2450,10 @@
         "noQuoteFiles": "No quotation files yet",
         "uploading": "Uploading…",
         "uploadFailed": "Upload failed",
-        "lockedHint": "In approval: only the inquirer may edit items and quotes."
+        "lockedHint": "In approval: only the inquirer may edit items and quotes.",
+        "suggestedVendor": "Suggested Vendor",
+        "selectVendor": "Select vendor",
+        "noVendor": "Not specified"
       }
     },
     "scanner": {

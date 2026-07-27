@@ -2450,7 +2450,10 @@
         "noQuoteFiles": "尚無報價單附件",
         "uploading": "上傳中…",
         "uploadFailed": "附件上傳失敗",
-        "lockedHint": "簽核中：僅詢價人員可修改品項與報價。"
+        "lockedHint": "簽核中：僅詢價人員可修改品項與報價。",
+        "suggestedVendor": "建議廠商",
+        "selectVendor": "選擇廠商",
+        "noVendor": "未指定"
       }
     },
     "scanner": {

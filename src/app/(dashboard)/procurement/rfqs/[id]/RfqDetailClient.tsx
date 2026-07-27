@@ -21,7 +21,7 @@ import {
   RfqStatusBadge,
   type UserOption,
 } from '../shared'
-import { RfqItemsSection, type RfqItem, type RfqQuote } from './RfqItemsSection'
+import { RfqItemsSection, type RfqItem, type RfqQuote, type VendorOption } from './RfqItemsSection'
 
 // 詢價單詳情: sectioned read view + edit form (簽核中欄位鎖定 honoured via the
 // API's locked_fields), 送簽, shared approval timeline / actions, 轉採購單
@@ -100,9 +100,10 @@ const USER_FIELD_NAME: Record<string, keyof RfqDoc> = {
 interface Props {
   rfqId: string
   users: UserOption[]
+  vendors: VendorOption[]
 }
 
-export function RfqDetailClient({ rfqId, users }: Props) {
+export function RfqDetailClient({ rfqId, users, vendors }: Props) {
   const router = useRouter()
   const t = useTranslations('procurement.rfqs')
   const tc = useTranslations('common')
@@ -345,6 +346,7 @@ export function RfqDetailClient({ rfqId, users }: Props) {
         initialQuotes={rfq_quotes ?? []}
         initialQuoteFiles={(doc.quote_files as string[] | null) ?? []}
         lockedItemFields={locked_item_fields ?? []}
+        vendors={vendors}
         canEdit={canEdit}
         onSaved={load}
       />

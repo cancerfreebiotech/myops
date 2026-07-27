@@ -496,6 +496,83 @@ const VENDOR_MASTER_FIELDS = [
 async function runPostApprovalHook(service: Service, docType: DocType, docId: string, userId: string): Promise<void> {
   if (docType === 'vendor_evaluation') return registerVendor(service, docId, userId)
   if (docType === 'product_evaluation') return registerVendorProducts(service, docId)
+  if (docType === 'rfq') return registerRfqSelectedQuotes(service, docId)
+}
+
+/**
+ * rfq approved → 將每個品項「採用」(is_selected) 的那筆報價寫入 vendor_products
+ * （登錄廠商商品價格），供後續請採購單帶價與歷史比價。
+ * 商品面資料取自 rfq_items，廠商/價格面取自 rfq_quotes；source_rfq_no 記本張詢價單號。
+ * 已登錄過（同 source_rfq_no）則略過，讓 hook 可安全重跑。
+ */
+async function registerRfqSelectedQuotes(service: Service, docId: string): Promise<void> {
+  const { data: rfq } = await service.from('rfqs').select('doc_no').eq('id', docId).maybeSingle()
+  const sourceRfqNo = (rfq?.doc_no as string | undefined) ?? null
+
+  const { data: items, error: itemsError } = await service
+    .from('rfq_items')
+    .select('id, product_id, product_code, product_name, spec, unit')
+    .eq('rfq_id', docId)
+  if (itemsError) {
+    console.warn(`[procurement] rfq_items unavailable (${itemsError.message}) — skipping vendor_products registration`)
+    return
+  }
+  if (!items || items.length === 0) return
+
+  const { data: quotes, error: quotesError } = await service
+    .from('rfq_quotes')
+    .select('rfq_item_id, vendor_id, vendor_name, vendor_product_code, vendor_product_name, unit, unit_price, quote_date')
+    .in('rfq_item_id', items.map(i => i.id))
+    .eq('is_selected', true)
+  if (quotesError) {
+    console.warn(`[procurement] rfq_quotes unavailable (${quotesError.message}) — skipping vendor_products registration`)
+    return
+  }
+  if (!quotes || quotes.length === 0) return
+
+  // 冪等：本張詢價單已登錄過就不重複寫
+  if (sourceRfqNo) {
+    const { data: existing } = await service
+      .from('vendor_products')
+      .select('id')
+      .eq('source_rfq_no', sourceRfqNo)
+      .is('deleted_at', null)
+      .limit(1)
+    if (existing && existing.length > 0) return
+  }
+
+  // vendor_code 由 vendors 主檔補齊（vendor_products 有此快照欄位）
+  const vendorIds = Array.from(new Set(quotes.map(q => q.vendor_id).filter((v): v is string => !!v)))
+  const vendorCodes = new Map<string, string | null>()
+  if (vendorIds.length > 0) {
+    const { data: vendors } = await service.from('vendors').select('id, vendor_code').in('id', vendorIds)
+    for (const v of vendors ?? []) vendorCodes.set(v.id as string, (v.vendor_code as string | null) ?? null)
+  }
+
+  const itemById = new Map(items.map(i => [i.id as string, i]))
+  const today = new Date().toISOString().slice(0, 10)
+  const rows = quotes.map(q => {
+    const it = itemById.get(q.rfq_item_id as string)
+    return {
+      product_id: it?.product_id ?? null,
+      product_code: it?.product_code ?? null,
+      // 廠商端品名/品號優先，缺則回退我方品項資料
+      product_name: q.vendor_product_name ?? it?.product_name ?? null,
+      spec: it?.spec ?? null,
+      unit: q.unit ?? it?.unit ?? null,
+      purchase_code: q.vendor_product_code ?? null,
+      vendor_id: q.vendor_id ?? null,
+      vendor_name: q.vendor_name ?? null,
+      vendor_code: q.vendor_id ? vendorCodes.get(q.vendor_id as string) ?? null : null,
+      unit_price: q.unit_price ?? null,
+      quote_date: q.quote_date ?? null,
+      filled_date: today,
+      source_rfq_no: sourceRfqNo,
+    }
+  })
+
+  const { error } = await service.from('vendor_products').insert(rows)
+  if (error) throw new Error(`vendor_products insert failed: ${error.message}`)
 }
 
 /** vendor_evaluation approved → upsert the vendor into the vendors master (登錄廠商清冊) */

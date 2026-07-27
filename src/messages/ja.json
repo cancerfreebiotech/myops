@@ -2450,7 +2450,10 @@
         "noQuoteFiles": "見積書はまだありません",
         "uploading": "アップロード中…",
         "uploadFailed": "アップロードに失敗しました",
-        "lockedHint": "承認中：見積担当者のみ品目・見積を編集できます。"
+        "lockedHint": "承認中：見積担当者のみ品目・見積を編集できます。",
+        "suggestedVendor": "推奨取引先",
+        "selectVendor": "取引先を選択",
+        "noVendor": "未指定"
       }
     },
     "scanner": {
