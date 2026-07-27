@@ -2362,8 +2362,8 @@
         "voided": "已作廢"
       },
       "linked": {
-        "itemsTitle": "品項與數量",
-        "quotesTitle": "廠商與報價結果",
+        "itemsTitle": "相關採購單－品項與數量",
+        "quotesTitle": "相關採購單－廠商與報價",
         "prsTitle": "相關採購單",
         "vendor": "廠商",
         "quoteDate": "報價日期",
@@ -2428,6 +2428,29 @@
       "errors": {
         "notEditable": "此狀態無法編輯",
         "fieldsLocked": "欄位於簽核中已鎖定，無法修改"
+      },
+      "own": {
+        "itemsTitle": "請購商品（本詢價單）",
+        "itemsHint": "由請購人填寫；品項儲存後才能為其新增廠商報價。",
+        "addItem": "新增品項",
+        "noItems": "尚無請購商品",
+        "usageNotes": "用途說明",
+        "saveAll": "儲存品項與報價",
+        "quotesTitle": "詢價結果",
+        "quotesHint": "由詢價人員填寫；每個品項可有多家廠商報價，勾選「採用」標記最終選定者。",
+        "addQuote": "新增報價",
+        "noQuotes": "尚無報價",
+        "itemUnsavedHint": "請先新增並儲存品項，才能填寫報價。",
+        "vendorName": "廠商",
+        "unitPrice": "報價單價",
+        "quoteDate": "報價日期",
+        "selected": "採用",
+        "quoteFilesTitle": "廠商報價單",
+        "addQuoteFile": "上傳報價單",
+        "noQuoteFiles": "尚無報價單附件",
+        "uploading": "上傳中…",
+        "uploadFailed": "附件上傳失敗",
+        "lockedHint": "簽核中：僅詢價人員可修改品項與報價。"
       }
     },
     "scanner": {

@@ -3,10 +3,12 @@ import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { userHasFeature } from '@/lib/job-role-features'
-import { lockedFieldsFor } from '@/lib/procurement/field-locks'
+import { lockedFieldsFor, lockedItemFieldsFor } from '@/lib/procurement/field-locks'
 import {
   RFQ_WRITABLE_FIELDS,
   pickRfqFields,
+  pickRfqItems,
+  pickRfqQuotes,
   requireProcurementUser,
   type ProcurementUser,
 } from '../helpers'
@@ -95,6 +97,25 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     quotes = (quotesData ?? []) as Record<string, unknown>[]
   }
 
+  // 本張詢價單「自己的」請購商品與逐項報價（可編輯）。
+  // 注意與上方 (a)(b)(c) 區隔：那些是從關聯的請採購單帶出的唯讀資料。
+  const { data: ownItemsData } = await service
+    .from('rfq_items')
+    .select('id, line_no, product_id, product_code, product_name, spec, unit, quantity, usage_notes, suggested_vendor_id, notes')
+    .eq('rfq_id', id)
+    .order('line_no', { ascending: true })
+    .order('created_at', { ascending: true })
+  const ownItems = ownItemsData ?? []
+  let ownQuotes: Record<string, unknown>[] = []
+  if (ownItems.length > 0) {
+    const { data: q } = await service
+      .from('rfq_quotes')
+      .select('id, rfq_item_id, vendor_id, vendor_name, vendor_product_code, vendor_product_name, unit, unit_price, quote_date, is_selected, notes')
+      .in('rfq_item_id', ownItems.map(i => i.id))
+      .order('created_at', { ascending: true })
+    ownQuotes = (q ?? []) as Record<string, unknown>[]
+  }
+
   const { data: stepsData, error: stepsError } = await service
     .from('procurement_approval_steps')
     .select('id, step_no, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
@@ -142,7 +163,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const canAct = !!currentStep && canActOnStep(me, currentStep)
 
   // 簽核中欄位鎖定 — which header columns this user must not modify right now
-  const lockedFields = lockedFieldsFor('rfq', { status: docRow.status as string, inquirer_id: docRow.inquirer_id as string | null }, me.id)
+  const lockDoc = { status: docRow.status as string, inquirer_id: docRow.inquirer_id as string | null }
+  const lockedFields = lockedFieldsFor('rfq', lockDoc, me.id)
+  // 明細/報價層鎖定（欄位橫跨 rfq_items 與 rfq_quotes，見 field-locks.ts）
+  const lockedItemFields = lockedItemFieldsFor('rfq', lockDoc, me.id)
 
   return NextResponse.json({
     data: {
@@ -158,6 +182,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       can_act: canAct,
       current_step_kind: currentStep?.approver_kind ?? null,
       locked_fields: lockedFields,
+      locked_item_fields: lockedItemFields,
+      // 本單自己的資料（可編輯）
+      rfq_items: ownItems,
+      rfq_quotes: ownQuotes,
+      // 關聯請採購單帶出的唯讀資料
       linked_purchase_requests: linkedPrs,
       pr_items: prItems,
       quotes,
@@ -206,29 +235,128 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
   const requested = Object.keys(fields).filter(f => (RFQ_WRITABLE_FIELDS as readonly string[]).includes(f))
-  if (requested.length === 0) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
-  // 簽核中欄位鎖定: strip locked fields for non-inquirer users; 400 when the
-  // whole update was locked away (the caller had nothing it was allowed to change)
+  // 簽核中欄位鎖定: strip locked fields for non-inquirer users
   const locked = lockedFieldsFor('rfq', doc, me.id)
-  const update: Record<string, string | null> = {}
+  const update: Record<string, unknown> = {}
   for (const f of requested) {
     if (!locked.includes(f)) update[f] = fields[f]
   }
-  if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: tr('errors.fieldsLocked') }, { status: 400 })
+
+  // 廠商報價單附件（rfqs.quote_files，storage bucket 'procurement' 的 object path 陣列）
+  let quoteFilesRequested = false
+  if ('quote_files' in body) {
+    quoteFilesRequested = true
+    const raw = body.quote_files
+    if (!Array.isArray(raw) || raw.some(p => typeof p !== 'string')) {
+      return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+    }
+    if (!locked.includes('quote_files')) update.quote_files = raw as string[]
   }
 
-  const { data, error } = await write
-    .from('rfqs')
-    .update({ ...update, updated_by: me.id, updated_at: new Date().toISOString() })
-    .eq('id', id)
-    .select('id, doc_no, status')
-    .single()
+  // 明細/報價層鎖定（欄位橫跨 rfq_items 與 rfq_quotes）
+  const lockedItem = lockedItemFieldsFor('rfq', doc, me.id)
 
-  if (error) {
-    console.error('[procurement rfqs] update failed:', error)
-    return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+  // 請購商品（rfq_items）— merge 模式：帶 id 的更新、無 id 的新增、payload 未含的刪除
+  let items: Record<string, unknown>[] | null = null
+  if ('items' in body) {
+    const r = pickRfqItems(body.items, lockedItem)
+    if (r.invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+    items = r.items
   }
-  return NextResponse.json({ data, stripped: requested.filter(f => locked.includes(f)) })
+
+  // 逐項報價（rfq_quotes）— { [rfq_item_id]: Quote[] }，每個品項 replace
+  let quotesByItem: Record<string, Record<string, unknown>[]> | null = null
+  if ('quotes' in body) {
+    const raw = body.quotes
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+      return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+    }
+    quotesByItem = {}
+    for (const [itemId, list] of Object.entries(raw as Record<string, unknown>)) {
+      const r = pickRfqQuotes(list, lockedItem)
+      if (r.invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+      quotesByItem[itemId] = r.quotes
+    }
+  }
+
+  const hasHeader = Object.keys(update).length > 0
+  if (!hasHeader && items === null && quotesByItem === null) {
+    // 送出的欄位全被鎖定（或根本沒帶可寫欄位）
+    const askedSomething = requested.length > 0 || quoteFilesRequested
+    return NextResponse.json(
+      { error: askedSomething ? tr('errors.fieldsLocked') : t('common.invalidRequest') },
+      { status: 400 },
+    )
+  }
+
+  const now = new Date().toISOString()
+  const patch = { ...update, updated_by: me.id, updated_at: now }
+
+  let data: { id: string; doc_no: string | null; status: string } | null = null
+  if (items !== null) {
+    // 表頭 + 明細一次原子寫入（泛用 RPC，表名當參數）
+    const { data: rpcData, error } = await write.rpc('procurement_update_with_items', {
+      p_parent_table: 'rfqs',
+      p_parent_id: id,
+      p_parent_patch: patch,
+      p_item_table: 'rfq_items',
+      p_fk_column: 'rfq_id',
+      p_items: items,
+      p_sync_mode: 'merge',
+    })
+    if (error || !rpcData) {
+      console.error('[procurement rfqs] update with items failed:', error)
+      return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+    }
+    data = { id: rpcData.id, doc_no: rpcData.doc_no, status: rpcData.status }
+  } else if (hasHeader) {
+    const { data: upd, error } = await write
+      .from('rfqs')
+      .update(patch)
+      .eq('id', id)
+      .select('id, doc_no, status')
+      .single()
+    if (error) {
+      console.error('[procurement rfqs] update failed:', error)
+      return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+    }
+    data = upd
+  }
+
+  // 報價是「孫層」（rfqs → rfq_items → rfq_quotes），泛用 RPC 只吃兩層，
+  // 因此改以 rfq_items 為 parent 逐品項 replace：單一品項的報價是原子的，
+  // 但跨品項不在同一交易內（報價為詢價人填寫的參考資料，非帳務關鍵，可接受）。
+  if (quotesByItem) {
+    const itemIds = Object.keys(quotesByItem)
+    if (itemIds.length > 0) {
+      // 只允許寫入屬於本張詢價單的品項，避免越權寫他單
+      const { data: owned } = await service.from('rfq_items').select('id').eq('rfq_id', id).in('id', itemIds)
+      const ownedIds = new Set((owned ?? []).map(r => r.id as string))
+      for (const itemId of itemIds) {
+        if (!ownedIds.has(itemId)) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+        const { error } = await write.rpc('procurement_update_with_items', {
+          p_parent_table: 'rfq_items',
+          p_parent_id: itemId,
+          p_parent_patch: { updated_at: now },
+          p_item_table: 'rfq_quotes',
+          p_fk_column: 'rfq_item_id',
+          p_items: quotesByItem[itemId],
+          p_sync_mode: 'replace',
+        })
+        if (error) {
+          console.error('[procurement rfqs] quotes write failed:', error, 'item:', itemId)
+          return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+        }
+      }
+    }
+  }
+
+  if (!data) {
+    const { data: cur } = await service.from('rfqs').select('id, doc_no, status').eq('id', id).single()
+    data = cur
+  }
+  const strippedHeader = requested.filter(f => locked.includes(f))
+  if (quoteFilesRequested && locked.includes('quote_files')) strippedHeader.push('quote_files')
+  return NextResponse.json({ data, stripped: strippedHeader })
 }

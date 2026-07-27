@@ -81,6 +81,105 @@ export function pickRfqFields(
   return { fields }
 }
 
+/**
+ * rfq_items（請購商品）/ rfq_quotes（逐項多廠商報價）可由 API 寫入的欄位。
+ * schema: supabase/migrations/20260727000001_rfq_items_quotes.sql
+ * 欄位名與 field-locks.ts 的 RFQ_ITEM_LOCKED_FIELDS_IN_APPROVAL 對齊（跨兩張表）。
+ */
+const ITEM_NUM_FIELDS = ['line_no', 'quantity'] as const
+const ITEM_TEXT_FIELDS = ['product_code', 'product_name', 'spec', 'unit', 'usage_notes', 'notes'] as const
+const ITEM_UUID_FIELDS = ['product_id', 'suggested_vendor_id'] as const
+
+const QUOTE_NUM_FIELDS = ['unit_price'] as const
+const QUOTE_TEXT_FIELDS = ['vendor_name', 'vendor_product_code', 'vendor_product_name', 'unit', 'notes'] as const
+const QUOTE_UUID_FIELDS = ['vendor_id'] as const
+const QUOTE_DATE_FIELDS = ['quote_date'] as const
+
+type Row = Record<string, unknown>
+
+/** 依白名單挑欄位並正規化；'' / null → null。回傳 null 代表值格式錯誤。 */
+function pickRow(
+  raw: Row,
+  spec: { text: readonly string[]; num: readonly string[]; uuid: readonly string[]; date?: readonly string[] },
+): Row | null {
+  const out: Row = {}
+  // 既有列帶 id（merge 模式據以更新），新列無 id
+  if (typeof raw.id === 'string' && UUID_RE.test(raw.id)) out.id = raw.id
+  for (const f of spec.text) {
+    if (!(f in raw)) continue
+    const v = raw[f]
+    if (v === null || v === '') out[f] = null
+    else if (typeof v === 'string') out[f] = v.trim() || null
+    else return null
+  }
+  for (const f of spec.num) {
+    if (!(f in raw)) continue
+    const v = raw[f]
+    if (v === null || v === '') out[f] = null
+    else if (typeof v === 'number' && Number.isFinite(v)) out[f] = v
+    else if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) out[f] = Number(v)
+    else return null
+  }
+  for (const f of spec.uuid) {
+    if (!(f in raw)) continue
+    const v = raw[f]
+    if (v === null || v === '') out[f] = null
+    else if (typeof v === 'string' && UUID_RE.test(v.trim())) out[f] = v.trim()
+    else return null
+  }
+  for (const f of spec.date ?? []) {
+    if (!(f in raw)) continue
+    const v = raw[f]
+    if (v === null || v === '') out[f] = null
+    else if (typeof v === 'string' && DATE_RE.test(v.trim())) out[f] = v.trim()
+    else return null
+  }
+  return out
+}
+
+/** 白名單化 rfq_items 陣列；omit 為簽核中鎖定、需剔除的欄位。 */
+export function pickRfqItems(
+  raw: unknown,
+  omit: readonly string[] = [],
+): { items: Row[]; invalid?: true } {
+  if (!Array.isArray(raw)) return { items: [], invalid: true }
+  const items: Row[] = []
+  for (const r of raw) {
+    if (typeof r !== 'object' || r === null) return { items: [], invalid: true }
+    const row = pickRow(r as Row, { text: ITEM_TEXT_FIELDS, num: ITEM_NUM_FIELDS, uuid: ITEM_UUID_FIELDS })
+    if (!row) return { items: [], invalid: true }
+    for (const f of omit) if (f !== 'id') delete row[f]
+    items.push(row)
+  }
+  return { items }
+}
+
+/** 白名單化某品項底下的 rfq_quotes 陣列（is_selected 為布林，單獨處理）。 */
+export function pickRfqQuotes(
+  raw: unknown,
+  omit: readonly string[] = [],
+): { quotes: Row[]; invalid?: true } {
+  if (!Array.isArray(raw)) return { quotes: [], invalid: true }
+  const quotes: Row[] = []
+  for (const r of raw) {
+    if (typeof r !== 'object' || r === null) return { quotes: [], invalid: true }
+    const src = r as Row
+    const row = pickRow(src, {
+      text: QUOTE_TEXT_FIELDS, num: QUOTE_NUM_FIELDS, uuid: QUOTE_UUID_FIELDS, date: QUOTE_DATE_FIELDS,
+    })
+    if (!row) return { quotes: [], invalid: true }
+    if ('is_selected' in src) {
+      if (typeof src.is_selected !== 'boolean') return { quotes: [], invalid: true }
+      row.is_selected = src.is_selected
+    }
+    for (const f of omit) if (f !== 'id') delete row[f]
+    quotes.push(row)
+  }
+  // 一個品項至多一筆採用（DB 未加唯一索引，於此把關）
+  if (quotes.filter(q => q.is_selected === true).length > 1) return { quotes: [], invalid: true }
+  return { quotes }
+}
+
 export interface ProcurementUser {
   id: string
   role: string

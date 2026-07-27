@@ -2362,8 +2362,8 @@
         "voided": "Voided"
       },
       "linked": {
-        "itemsTitle": "Line Items",
-        "quotesTitle": "Vendor Quotes",
+        "itemsTitle": "Related PR — Line Items",
+        "quotesTitle": "Related PR — Vendor Quotes",
         "prsTitle": "Related Purchase Requests",
         "vendor": "Vendor",
         "quoteDate": "Quote Date",
@@ -2428,6 +2428,29 @@
       "errors": {
         "notEditable": "This document cannot be edited in its current status",
         "fieldsLocked": "The requested fields are locked during approval"
+      },
+      "own": {
+        "itemsTitle": "Requested Items (this RFQ)",
+        "itemsHint": "Filled in by the requester; save an item before adding vendor quotes to it.",
+        "addItem": "Add item",
+        "noItems": "No requested items yet",
+        "usageNotes": "Usage",
+        "saveAll": "Save items & quotes",
+        "quotesTitle": "Quote Results",
+        "quotesHint": "Filled in by the inquirer; each item may have multiple vendor quotes — tick \"Selected\" for the chosen one.",
+        "addQuote": "Add quote",
+        "noQuotes": "No quotes yet",
+        "itemUnsavedHint": "Add and save an item first, then enter its quotes.",
+        "vendorName": "Vendor",
+        "unitPrice": "Unit Price",
+        "quoteDate": "Quote Date",
+        "selected": "Selected",
+        "quoteFilesTitle": "Vendor Quotation Files",
+        "addQuoteFile": "Upload quotation",
+        "noQuoteFiles": "No quotation files yet",
+        "uploading": "Uploading…",
+        "uploadFailed": "Upload failed",
+        "lockedHint": "In approval: only the inquirer may edit items and quotes."
       }
     },
     "scanner": {

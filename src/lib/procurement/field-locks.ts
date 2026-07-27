@@ -25,14 +25,19 @@ export const RFQ_LOCKED_FIELDS_IN_APPROVAL = [
   'urgency',
   'expected_delivery_date',
   'notes',
+  // 廠商報價單附件（rfqs.quote_files）：由詢價人員上傳，簽核中其他人不得增刪
+  'quote_files',
 ] as const
 
 /**
- * RFQ line-item columns locked during in_approval (for the future rfq_items
- * table — 詢價單明細 is not in the Ragic dump yet; kept here so Phase B form +
- * PUT handlers share one source of truth):
- * 項次, 商品編號, 商品名稱, 規格, 需求數量, 用途說明, 建議登錄廠商,
- * 商品編號(廠商), 廠商名稱, 商品名稱(廠商), 報價檔案, 備註
+ * RFQ line-item columns locked during in_approval.
+ * 欄位橫跨兩張表（20260727000001_rfq_items_quotes.sql）：
+ *   rfq_items  : 項次 line_no, 商品編號 product_code, 商品名稱 product_name, 規格 spec,
+ *                需求數量 quantity, 用途說明 usage_notes, 建議登錄廠商 suggested_vendor_id, 備註 notes
+ *   rfq_quotes : 廠商名稱 vendor_name, 商品編號(廠商) vendor_product_code,
+ *                商品名稱(廠商) vendor_product_name, 備註 notes
+ * → PUT handler 需對 items 與 quotes 兩種 payload 都套用 lockedItemFieldsFor()。
+ * 報價檔案已改為整單層級的 rfqs.quote_files，鎖定改列於 RFQ_LOCKED_FIELDS_IN_APPROVAL。
  */
 export const RFQ_ITEM_LOCKED_FIELDS_IN_APPROVAL = [
   'line_no',
@@ -46,7 +51,6 @@ export const RFQ_ITEM_LOCKED_FIELDS_IN_APPROVAL = [
   'vendor_product_code',
   'vendor_name',
   'vendor_product_name',
-  'quote_file_url',
   'notes',
 ] as const
 

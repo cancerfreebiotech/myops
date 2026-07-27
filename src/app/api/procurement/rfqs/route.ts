@@ -6,6 +6,7 @@ import { type DocStatus, DOC_STATUSES } from '@/lib/procurement/doc-types'
 import {
   RFQ_LIST_SELECT,
   pickRfqFields,
+  pickRfqItems,
   requireProcurementUser,
 } from './helpers'
 
@@ -76,10 +77,36 @@ export async function POST(request: NextRequest) {
   const { fields, invalid } = pickRfqFields(body)
   if (invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
 
+  // 建檔時可一併帶入請購商品（草稿階段無鎖定）
+  let items: Record<string, unknown>[] = []
+  if ('items' in body) {
+    const r = pickRfqItems(body.items)
+    if (r.invalid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+    items = r.items
+  }
+
   const write = procurementWriteClient()
+  const parent = { ...fields, created_by: me.id, updated_by: me.id }
+
+  if (items.length > 0) {
+    // 表頭 + 明細原子寫入（doc_no 由 trigger 產生，RPC 回傳整列）
+    const { data: rpcData, error } = await write.rpc('procurement_insert_with_items', {
+      p_parent_table: 'rfqs',
+      p_parent: parent,
+      p_item_table: 'rfq_items',
+      p_fk_column: 'rfq_id',
+      p_items: items,
+    })
+    if (error || !rpcData) {
+      console.error('[procurement rfqs] create with items failed:', error)
+      return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
+    }
+    return NextResponse.json({ data: { id: rpcData.id, doc_no: rpcData.doc_no, status: rpcData.status } })
+  }
+
   const { data, error } = await write
     .from('rfqs')
-    .insert({ ...fields, created_by: me.id, updated_by: me.id })
+    .insert(parent)
     .select('id, doc_no, status')
     .single()
 

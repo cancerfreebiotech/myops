@@ -2362,8 +2362,8 @@
         "voided": "無効"
       },
       "linked": {
-        "itemsTitle": "品目と数量",
-        "quotesTitle": "見積結果",
+        "itemsTitle": "関連発注書－品目と数量",
+        "quotesTitle": "関連発注書－見積結果",
         "prsTitle": "関連発注書",
         "vendor": "取引先",
         "quoteDate": "見積日",
@@ -2428,6 +2428,29 @@
       "errors": {
         "notEditable": "現在のステータスでは編集できません",
         "fieldsLocked": "承認中のためロックされている項目は変更できません"
+      },
+      "own": {
+        "itemsTitle": "購買希望品目（本見積依頼）",
+        "itemsHint": "申請者が入力します。品目を保存してから見積を追加できます。",
+        "addItem": "品目を追加",
+        "noItems": "品目はまだありません",
+        "usageNotes": "用途",
+        "saveAll": "品目と見積を保存",
+        "quotesTitle": "見積結果",
+        "quotesHint": "見積担当者が入力します。品目ごとに複数社の見積を登録でき、「採用」で最終選定を示します。",
+        "addQuote": "見積を追加",
+        "noQuotes": "見積はまだありません",
+        "itemUnsavedHint": "先に品目を追加・保存してください。",
+        "vendorName": "取引先",
+        "unitPrice": "見積単価",
+        "quoteDate": "見積日",
+        "selected": "採用",
+        "quoteFilesTitle": "見積書ファイル",
+        "addQuoteFile": "見積書をアップロード",
+        "noQuoteFiles": "見積書はまだありません",
+        "uploading": "アップロード中…",
+        "uploadFailed": "アップロードに失敗しました",
+        "lockedHint": "承認中：見積担当者のみ品目・見積を編集できます。"
       }
     },
     "scanner": {

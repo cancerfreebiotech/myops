@@ -21,6 +21,7 @@ import {
   RfqStatusBadge,
   type UserOption,
 } from '../shared'
+import { RfqItemsSection, type RfqItem, type RfqQuote } from './RfqItemsSection'
 
 // 詢價單詳情: sectioned read view + edit form (簽核中欄位鎖定 honoured via the
 // API's locked_fields), 送簽, shared approval timeline / actions, 轉採購單
@@ -80,6 +81,11 @@ interface RfqDetail {
   can_act: boolean
   current_step_kind: TimelineStep['approver_kind'] | null
   locked_fields: string[]
+  locked_item_fields: string[]
+  /** 本張詢價單自己的請購商品（可編輯） */
+  rfq_items: RfqItem[]
+  /** 本張詢價單自己的逐項報價（可編輯） */
+  rfq_quotes: RfqQuote[]
   linked_purchase_requests: LinkedPr[]
   pr_items: PrItem[]
   quotes: Quote[]
@@ -215,7 +221,7 @@ export function RfqDetailClient({ rfqId, users }: Props) {
     return <p className="text-sm text-slate-400 py-16 text-center">{tc('loading')}</p>
   }
 
-  const { doc, steps, can_act, current_step_kind, locked_fields, linked_purchase_requests, pr_items, quotes } = detail
+  const { doc, steps, can_act, current_step_kind, locked_fields, locked_item_fields, rfq_items, rfq_quotes, linked_purchase_requests, pr_items, quotes } = detail
   const canEdit = doc.status === 'draft' || doc.status === 'in_approval'
   const canVoidClone = doc.status === 'approved' || doc.status === 'rejected'
   const fmtAmount = (n: number | null) => (n == null ? '—' : `NT$ ${Number(n).toLocaleString('en-US')}`)
@@ -331,6 +337,19 @@ export function RfqDetailClient({ rfqId, users }: Props) {
           </div>
         </section>
       </div>
+
+      {/* 本張詢價單自己的請購商品 / 詢價結果 / 報價單附件（可編輯） */}
+      <RfqItemsSection
+        rfqId={rfqId}
+        initialItems={rfq_items ?? []}
+        initialQuotes={rfq_quotes ?? []}
+        initialQuoteFiles={(doc.quote_files as string[] | null) ?? []}
+        lockedItemFields={locked_item_fields ?? []}
+        canEdit={canEdit}
+        onSaved={load}
+      />
+
+      {/* ↓↓↓ 以下為「相關採購單」帶出的唯讀資料，非本詢價單自身內容 ↓↓↓ */}
 
       {/* 品項與數量（依採購單分組） */}
       <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
