@@ -60,8 +60,10 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
     weekday: t('dayTypeWeekday'), rest_day: t('dayTypeRestDay'), holiday: t('dayTypeHoliday'),
   }
 
-  const [tab, setTab] = useState<'apply' | 'records' | 'approve'>('records')
+  const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'all'>('records')
   const [records, setRecords] = useState<OvertimeRequest[]>([])
+  const [allRecords, setAllRecords] = useState<OvertimeRequest[]>([])
+  const [allLoading, setAllLoading] = useState(false)
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [loading, setLoading] = useState(true)
   const [applyOpen, setApplyOpen] = useState(false)
@@ -88,6 +90,15 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
     const { data } = await res.json()
     setRecords(data ?? [])
     setLoading(false)
+  }, [])
+
+  // HR 全員紀錄（唯讀）：後端 view=team 僅 admin/HR 可回傳全部，見 route.ts
+  const fetchAllRecords = useCallback(async () => {
+    setAllLoading(true)
+    const res = await fetch('/api/overtime/requests?view=team')
+    const { data } = await res.json()
+    setAllRecords(data ?? [])
+    setAllLoading(false)
   }, [])
 
   useEffect(() => {
@@ -143,10 +154,14 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
           { key: 'records' as const, label: t('tabMyApplications') },
           { key: 'apply' as const, label: t('tabNewOvertime') },
           ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve' as const, label: t('tabPendingApproval'), badge: approvals.length }] : []),
-        ].map((t: { key: 'apply' | 'records' | 'approve'; label: string; badge?: number }) => (
+          ...(isHR ? [{ key: 'all' as const, label: t('tabAllRecords') }] : []),
+        ].map((t: { key: 'apply' | 'records' | 'approve' | 'all'; label: string; badge?: number }) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => {
+              if (t.key === 'all' && tab !== 'all') fetchAllRecords()
+              setTab(t.key)
+            }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               tab === t.key
                 ? 'border-blue-600 text-blue-600'
@@ -200,6 +215,43 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
           <Button onClick={() => setApplyOpen(true)} className="min-h-[44px]">
             <Plus size={16} className="mr-1.5" /> {t('newOvertimeApplication')}
           </Button>
+        </div>
+      )}
+
+      {/* All records tab（HR 全員檢視，唯讀；核准動作仍留在待審核 tab） */}
+      {tab === 'all' && (
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableEmployee')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableDate')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableType')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableTimeRange')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableHours')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableStatus')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {allLoading ? (
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
+              ) : allRecords.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
+              ) : allRecords.map((r) => (
+                <tr key={r.id} className="bg-white dark:bg-slate-800">
+                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.user?.display_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{r.ot_date}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                    {DAY_TYPE_LABELS[r.day_type] ?? r.day_type}
+                    {r.project && <span className="ml-1 text-xs text-slate-400">· {r.project.name}</span>}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_time} ~ {r.end_time}</td>
+                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.total_hours} h</td>
+                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

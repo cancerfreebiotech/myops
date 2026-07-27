@@ -71,8 +71,10 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
   const router = useRouter()
   const t = useTranslations('leave')
   const tc = useTranslations('common')
-  const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance' | 'qualification'>('balance')
+  const [tab, setTab] = useState<'apply' | 'records' | 'approve' | 'balance' | 'qualification' | 'all'>('balance')
   const [records, setRecords] = useState<LeaveRequest[]>([])
+  const [allRecords, setAllRecords] = useState<LeaveRequest[]>([])
+  const [allLoading, setAllLoading] = useState(false)
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -94,6 +96,15 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
     const { data } = await res.json()
     setRecords(data ?? [])
     setLoading(false)
+  }, [])
+
+  // HR 全員紀錄（唯讀）：後端 view=team 僅 admin/HR 可回傳全部，見 route.ts
+  const fetchAllRecords = useCallback(async () => {
+    setAllLoading(true)
+    const res = await fetch('/api/leave/requests?view=team')
+    const { data } = await res.json()
+    setAllRecords(data ?? [])
+    setAllLoading(false)
   }, [])
 
   const leaveType = leaveTypes.find(t => t.id === selectedType)
@@ -177,11 +188,13 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
           { key: 'records' as const, label: t('tabMyRecords') },
           ...(leaveTypes.some(lt => lt.requires_qualification) || isHR ? [{ key: 'qualification' as const, label: t('specialLeaveTab') }] : []),
           ...(pendingApprovals.length > 0 || isHR ? [{ key: 'approve' as const, label: t('tabPendingApproval'), badge: approvals.length }] : []),
-        ].map((t: { key: 'apply' | 'records' | 'approve' | 'balance' | 'qualification'; label: string; badge?: number }) => (
+          ...(isHR ? [{ key: 'all' as const, label: t('tabAllRecords') }] : []),
+        ].map((t: { key: 'apply' | 'records' | 'approve' | 'balance' | 'qualification' | 'all'; label: string; badge?: number }) => (
           <button
             key={t.key}
             onClick={() => {
               if (t.key === 'records' && tab !== 'records') fetchRecords()
+              if (t.key === 'all' && tab !== 'all') fetchAllRecords()
               setTab(t.key)
             }}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
@@ -232,10 +245,20 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
                         <span>{t('usedOf', { used: bal.used_days, allocated: bal.allocated_days })}</span>
                       </div>
                     </div>
+                  ) : lt.requires_qualification ? (
+                    <p className="text-xs text-slate-400 mt-3">{t('qualificationNotGranted')}</p>
+                  ) : lt.max_days_per_year != null ? (
+                    // HR 尚未建立 leave_balances 列時，改顯示法定額度（product 決策）取代「尚未設定額度」，
+                    // 用 muted 樣式 + 提示文字區分於「HR 已核定」的額度，避免員工誤以為是正式核給天數。
+                    <div className="mt-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">{t('available')}</span>
+                        <span className="font-bold text-slate-400 dark:text-slate-500">{lt.max_days_per_year} {t('daysUnit')}</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">{t('defaultQuotaHint')}</p>
+                    </div>
                   ) : (
-                    <p className="text-xs text-slate-400 mt-3">
-                      {lt.requires_qualification ? t('qualificationNotGranted') : t('notAllocated')}
-                    </p>
+                    <p className="text-xs text-slate-400 mt-3">{t('notAllocated')}</p>
                   )}
                 </div>
               )
@@ -291,6 +314,40 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
                       </Button>
                     )}
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* All records tab（HR 全員檢視，唯讀；核准動作仍留在待審核 tab） */}
+      {tab === 'all' && (
+        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('leaveType')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('startDate')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('endDate')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('totalDays')}</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('status')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+              {allLoading ? (
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
+              ) : allRecords.length === 0 ? (
+                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
+              ) : allRecords.map((r) => (
+                <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.leave_type?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_date}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.end_date}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.total_days}</td>
+                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
                 </tr>
               ))}
             </tbody>

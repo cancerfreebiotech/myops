@@ -28,9 +28,10 @@ interface Trip {
 
 interface Props {
   showApproveTab: boolean
+  isHR: boolean
 }
 
-type Tab = 'mine' | 'new' | 'approve'
+type Tab = 'mine' | 'new' | 'approve' | 'all'
 
 const STATUS_KEYS = {
   pending: 'statusPending', approved: 'statusApproved',
@@ -47,7 +48,7 @@ const STATUS_COLORS: Record<Trip['status'], string> = {
 const tripDays = (t: Trip) =>
   Math.round((new Date(t.end_date).getTime() - new Date(t.start_date).getTime()) / 86_400_000) + 1
 
-export function BusinessTripsClient({ showApproveTab }: Props) {
+export function BusinessTripsClient({ showApproveTab, isHR }: Props) {
   const t = useTranslations('businessTrip')
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('mine')
@@ -62,7 +63,8 @@ export function BusinessTripsClient({ showApproveTab }: Props) {
   const [itinerary, setItinerary] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const view = tab === 'approve' ? 'approve' : 'mine'
+  // HR 全員檢視走 view=all（見 /api/business-trips route.ts），唯讀，無審批動作
+  const view = tab === 'approve' ? 'approve' : tab === 'all' ? 'all' : 'mine'
 
   const loadTrips = useCallback(async () => {
     setLoading(true)
@@ -147,6 +149,7 @@ export function BusinessTripsClient({ showApproveTab }: Props) {
     { key: 'mine', label: t('tabMine') },
     { key: 'new', label: t('tabNew') },
     ...(showApproveTab ? [{ key: 'approve' as Tab, label: t('tabApprove') }] : []),
+    ...(isHR ? [{ key: 'all' as Tab, label: t('tabAllRecords') }] : []),
   ]
 
   const renderTrip = (trip: Trip) => (
@@ -165,7 +168,7 @@ export function BusinessTripsClient({ showApproveTab }: Props) {
               <span className="text-xs text-slate-400 tabular-nums">
                 {trip.start_date} ~ {trip.end_date}（{tripDays(trip)} {t('days')}）
               </span>
-              {tab === 'approve' && trip.user && (
+              {(tab === 'approve' || tab === 'all') && trip.user && (
                 <span className="text-xs text-slate-400">{t('applicant')}: {trip.user.display_name}</span>
               )}
               {trip.approver && (

@@ -637,6 +637,7 @@
     "daysUnit": "days",
     "maxDaysLimit": "Max {days} days",
     "notAllocated": "Not allocated yet",
+    "defaultQuotaHint": "Statutory default (not yet set by HR)",
     "available": "Available",
     "usedOf": "Used {used} / Allocated {allocated}",
     "noRecords": "No records",
@@ -698,7 +699,9 @@
     "hrNoteLabel": "HR note",
     "approveAndGrant": "Approve & Grant",
     "grantedDaysInfo": "Granted {days} days",
-    "attachmentLabel": "Attachments"
+    "attachmentLabel": "Attachments",
+    "tabAllRecords": "All Records",
+    "employee": "Employee"
   },
   "overtime": {
     "title": "Overtime",
@@ -749,7 +752,9 @@
     "tableType": "Type",
     "tableTimeRange": "Time",
     "tableHours": "Hours",
-    "tableStatus": "Status"
+    "tableStatus": "Status",
+    "tabAllRecords": "All Records",
+    "tableEmployee": "Employee"
   },
   "payroll": {
     "title": "Payroll",
@@ -2761,7 +2766,8 @@
     "requiredFields": "Please fill in the required fields",
     "saveFailed": "Operation failed, please try again",
     "loadFailed": "Failed to load",
-    "mfaRequired": "Approval actions require two-factor authentication (MFA)"
+    "mfaRequired": "Approval actions require two-factor authentication (MFA)",
+    "tabAllRecords": "All Records"
   },
   "calendarPage": {
     "title": "Company Calendar",

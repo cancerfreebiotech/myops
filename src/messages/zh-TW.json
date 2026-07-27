@@ -637,6 +637,7 @@
     "daysUnit": "天",
     "maxDaysLimit": "上限 {days} 天",
     "notAllocated": "尚未設定額度",
+    "defaultQuotaHint": "法定額度（人資尚未設定）",
     "available": "可用",
     "usedOf": "已用 {used} / 核配 {allocated}",
     "noRecords": "無紀錄",
@@ -698,7 +699,9 @@
     "hrNoteLabel": "人資備註",
     "approveAndGrant": "核准並核給",
     "grantedDaysInfo": "已核給 {days} 天",
-    "attachmentLabel": "附件"
+    "attachmentLabel": "附件",
+    "tabAllRecords": "全員紀錄",
+    "employee": "員工"
   },
   "overtime": {
     "title": "加班",
@@ -749,7 +752,9 @@
     "tableType": "類型",
     "tableTimeRange": "時段",
     "tableHours": "時數",
-    "tableStatus": "狀態"
+    "tableStatus": "狀態",
+    "tabAllRecords": "全員紀錄",
+    "tableEmployee": "員工"
   },
   "payroll": {
     "title": "薪資",
@@ -2761,7 +2766,8 @@
     "requiredFields": "請填寫必填欄位",
     "saveFailed": "操作失敗，請稍後再試",
     "loadFailed": "載入失敗",
-    "mfaRequired": "審批動作需要完成兩階段驗證（MFA）"
+    "mfaRequired": "審批動作需要完成兩階段驗證（MFA）",
+    "tabAllRecords": "全員紀錄"
   },
   "calendarPage": {
     "title": "公司行事曆",

@@ -637,6 +637,7 @@
     "daysUnit": "日",
     "maxDaysLimit": "上限 {days} 日",
     "notAllocated": "未設定",
+    "defaultQuotaHint": "法定日数（人事未設定）",
     "available": "利用可能",
     "usedOf": "使用済み {used} / 付与 {allocated}",
     "noRecords": "記録なし",
@@ -698,7 +699,9 @@
     "hrNoteLabel": "人事メモ",
     "approveAndGrant": "承認して付与",
     "grantedDaysInfo": "{days}日付与済み",
-    "attachmentLabel": "添付"
+    "attachmentLabel": "添付",
+    "tabAllRecords": "全員の記録",
+    "employee": "従業員"
   },
   "overtime": {
     "title": "残業",
@@ -749,7 +752,9 @@
     "tableType": "種別",
     "tableTimeRange": "時間帯",
     "tableHours": "時間数",
-    "tableStatus": "ステータス"
+    "tableStatus": "ステータス",
+    "tabAllRecords": "全員の記録",
+    "tableEmployee": "従業員"
   },
   "payroll": {
     "title": "給与",
@@ -2761,7 +2766,8 @@
     "requiredFields": "必須項目を入力してください",
     "saveFailed": "操作に失敗しました。再試行してください",
     "loadFailed": "読み込みに失敗しました",
-    "mfaRequired": "承認操作には二要素認証（MFA）が必要です"
+    "mfaRequired": "承認操作には二要素認証（MFA）が必要です",
+    "tabAllRecords": "全員の記録"
   },
   "calendarPage": {
     "title": "会社カレンダー",

@@ -86,8 +86,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const view = searchParams.get('view') ?? 'mine'
 
-  const { data: currentUser } = await supabase.from('users').select('role').eq('id', user.id).single()
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'hr'
+  // 全站慣例：HR = admin 或 granted_features 含 'hr_manager'（role 的 CHECK 僅 member/admin，
+  // role === 'hr' 是死碼，且忽略 granted_features 授權）
+  const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
+  const isHR = currentUser?.role === 'admin' || ((currentUser?.granted_features as string[] | null) ?? []).includes('hr_manager')
 
   // ot_type/total_hours 為 client 使用的欄位名；DB 實為 request_type/hours，用別名回傳
   let query = service
@@ -101,7 +103,11 @@ export async function GET(request: NextRequest) {
     // 無 approver_id 欄位：核准對象由 RLS（主管/專案負責人/coo/admin 可見）限定，
     // 僅列 pending 且排除自己的單
     query = query.eq('status', 'pending')
-    if (!isAdmin) query = query.neq('user_id', user.id)
+    if (!isHR) query = query.neq('user_id', user.id)
+  } else if (view === 'team') {
+    // HR 全員檢視（唯讀），同 leave view=team 慣例；非 HR/admin 一律拒絕
+    if (!isHR) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    // All requests
   }
 
   const { data, error } = await query

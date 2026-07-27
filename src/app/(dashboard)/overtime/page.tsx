@@ -13,14 +13,16 @@ export default async function OvertimePage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role, department_id')
+    .select('id, role, department_id, granted_features')
     .eq('id', user.id)
     .single()
 
   const featureFlags = await getFeatureFlags()
   if (!canAccessFeature(currentUser?.role ?? '', featureFlags, 'overtime')) redirect('/no-permission')
 
-  const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
+  // 全站慣例：HR = admin 或 granted_features 含 'hr_manager'（role 的 CHECK 僅 member/admin）
+  const isHR = currentUser?.role === 'admin'
+    || ((currentUser?.granted_features as string[] | null) ?? []).includes('hr_manager')
 
   const { data: projects } = await supabase
     .from('projects')

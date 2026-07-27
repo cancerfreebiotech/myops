@@ -40,7 +40,7 @@ export default async function BusinessTripsPage() {
   return (
     <div>
       <PageHeader title={t('title')} description={t('description')} />
-      <BusinessTripsClient showApproveTab={showApproveTab} />
+      <BusinessTripsClient showApproveTab={showApproveTab} isHR={isApprover} />
     </div>
   )
 }

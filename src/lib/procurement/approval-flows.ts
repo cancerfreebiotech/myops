@@ -53,9 +53,13 @@ export interface FlowStep {
  *   into one manager_of step with fallback to the doc creator.
  */
 export const APPROVAL_FLOWS: Record<DocType, FlowStep[]> = {
-  // §三-1 詢價單: 1 通知詢價人員 (動態: 詢價人員)
+  // §三-1 詢價單: 通知詢價人員 (動態: 詢價人員) → 部門主管
+  // 實務上請購人填請購資料並指定詢價人員，詢價人員回填詢價結果後仍需主管簽核把關，
+  // 故在詢價人員關卡後補上部門主管（比照請採購單的 departmentManager 寫法：
+  // 送簽者無主管時由 procurement_payment_approve 權限持有者代為簽核，不會卡單）。
   rfq: [
     { name: 'notifyInquirer', approver: { kind: 'doc_field', field: 'inquirer_id' } },
+    { name: 'departmentManager', approver: { kind: 'manager_of', actableByFeature: 'procurement_payment_approve' } },
   ],
 
   // §三-2 請採購單: 部門主管(請款簽核主管) → COO → CEO → 通知採購

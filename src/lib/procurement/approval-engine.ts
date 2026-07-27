@@ -376,8 +376,13 @@ export async function actOnStep(
 
   // 職責分立：送簽者本人不得核准/退回自己送出的單（即使身兼該關卡的部門主管/權限持有者）。
   // ack（通知確認）不涉核准，允許。
+  // 例外：doc_field 關卡是「單據上指名的當事人確認」（詢價單的詢價人員、入庫/出庫單的建檔
+  // 人員…），性質是知會確認而非核准把關。當 請購人＝詢價人（或建檔人＝確認人）時，若一併
+  // 套用職責分立會永遠卡單、只能靠 admin 點過去（實例：RFQ-2607-002）。故僅對這類「單據
+  // 指名本人」的關卡放行；真正的把關落在 manager_of / job_role / anyone 關卡，仍維持職責分立。
   const submitter = (doc.submitted_by as string | null) ?? doc.created_by
-  if (action !== 'ack' && submitter === userId && user.role !== 'admin') {
+  const isNamedOnDocStep = step.approver_kind === 'doc_field' && step.resolved_user_id === userId
+  if (action !== 'ack' && !isNamedOnDocStep && submitter === userId && user.role !== 'admin') {
     throw new ApprovalEngineError('notYourTurn')
   }
 
