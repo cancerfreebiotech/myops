@@ -49,7 +49,20 @@
     "day": "Day",
     "total": "Total",
     "actions": "Actions",
-    "status": "Status"
+    "status": "Status",
+    "recordFilters": {
+      "monthLabel": "Month",
+      "allMonths": "All months",
+      "employeeLabel": "Employee",
+      "allEmployees": "All employees",
+      "statusLabel": "Status",
+      "allStatuses": "All statuses",
+      "totalCount": "<b>{count}</b> records",
+      "pageLabel": "Page <b>{page}</b>",
+      "prevPage": "Previous",
+      "nextPage": "Next",
+      "noRecordsHint": "Try different filters or another month."
+    }
   },
   "auth": {
     "login": "Sign In",
@@ -585,7 +598,8 @@
     },
     "clientExtra": {
       "todayDateFormat": "EEEE, MMMM d, yyyy"
-    }
+    },
+    "tabAllRecords": "All records"
   },
   "leave": {
     "title": "Leave",
@@ -701,7 +715,12 @@
     "grantedDaysInfo": "Granted {days} days",
     "attachmentLabel": "Attachments",
     "tabAllRecords": "All Records",
-    "employee": "Employee"
+    "employee": "Employee",
+    "cancelApproved": "Revoke",
+    "cancelApprovedAriaLabel": "Revoke approved leave",
+    "cancelApprovedConfirm": "Revoke this approved leave?",
+    "cancelApprovedDescription": "Revoking restores the deducted leave quota and removes the synced Outlook calendar event. This cannot be undone — a new request must be submitted.",
+    "leaveRevoked": "Leave revoked and quota restored"
   },
   "overtime": {
     "title": "Overtime",
@@ -973,7 +992,9 @@
       "statusActive": "Active",
       "statusInactive": "Deactivated",
       "none": "None",
-      "displayName": "Display Name (English Name)"
+      "displayName": "Display Name (English Name)",
+      "accountPolicyTitle": "Accounts are created by IT",
+      "accountPolicyNotice": "User accounts are created solely by the IT department using the company Microsoft account; HR cannot add users here. A colleague appears in the list below automatically after their first sign-in, with the default \"Member\" permission. Adjust department, manager and special permissions on this page."
     },
     "profile": {
       "title": "Personnel Profile",
@@ -1081,7 +1102,8 @@
       "overtimeRatesLink": "Overtime Rates",
       "attendanceAnomaliesLink": "Attendance Anomalies",
       "bonusesLink": "Bonus Management",
-      "cooSection": "Operations Settings (Read-only)"
+      "cooSection": "Operations Settings (Read-only)",
+      "leaveBalancesMovedNotice": "Leave quotas have moved to their own \"Leave quotas\" page — use the link above to manage them."
     },
     "financeSettings": {
       "title": "Finance Management",
@@ -1543,7 +1565,9 @@
     },
     "leaveRequests": {
       "insufficientBalance": "Insufficient {name} balance ({remaining} days remaining)",
-      "qualificationRequired": "\"{name}\" requires prior HR qualification review. Please contact HR and provide supporting documents."
+      "qualificationRequired": "\"{name}\" requires prior HR qualification review. Please contact HR and provide supporting documents.",
+      "cannotCancel": "This leave request cannot be cancelled in its current status",
+      "revokeForbidden": "Only the applicant or HR/an admin can revoke approved leave"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "No eligible employees"
@@ -1642,7 +1666,9 @@
     "announcementReminder": "[Reminder] You haven't confirmed the announcement \"{title}\" yet. Please read and confirm it as soon as possible.",
     "leaveQualificationApproved": "✅ Your special-leave application ({leaveType}) was approved — {days} days granted",
     "leaveQualificationRejected": "❌ Your special-leave application ({leaveType}) was rejected: {reason}",
-    "leaveQualificationSubmitted": "📝 {name} submitted a special-leave application ({leaveType}); please review on the Leave page"
+    "leaveQualificationSubmitted": "📝 {name} submitted a special-leave application ({leaveType}); please review on the Leave page",
+    "leaveRevoked": "🔄 Your leave ({date}) has been revoked and the quota restored",
+    "leaveRevokedByHr": "🔄 Your leave ({date}) was revoked by HR and the quota restored"
   },
   "procurement": {
     "approval": {

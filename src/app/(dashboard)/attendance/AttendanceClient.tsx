@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -9,6 +10,11 @@ import { toast } from 'sonner'
 import { LogIn, LogOut, MapPin, AlertTriangle } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { MakeupRequestDialog } from './MakeupRequestDialog'
+import {
+  AdminAttendanceClient,
+  type AttendanceRecord as AdminAttendanceRecord,
+  type User as AdminAttendanceUser,
+} from '@/app/(dashboard)/admin/attendance/AdminAttendanceClient'
 
 interface CurrentUser {
   id: string
@@ -18,11 +24,6 @@ interface CurrentUser {
   department_id: string | null
 }
 
-interface Department {
-  id: string
-  name: string
-}
-
 interface AttendanceRecord {
   id: string
   clock_date: string
@@ -30,26 +31,43 @@ interface AttendanceRecord {
   clock_out: string | null
   is_auto_in: boolean
   is_auto_out: boolean
-  user?: { id: string; display_name: string | null } | null
+}
+
+export type AttendanceTab = 'clock' | 'records' | 'all'
+
+/** 「全員紀錄」分頁的伺端資料（＝原本「打卡紀錄管理」頁餵給 AdminAttendanceClient 的那一份） */
+export interface AllRecordsData {
+  attendanceRecords: AdminAttendanceRecord[]
+  allUsers: AdminAttendanceUser[]
+  month: string
+  userId: string
+  employmentType: string
+  todayClockedIn: number
+  avgDays: number
+  autoMakeupCount: number
 }
 
 interface Props {
   currentUser: CurrentUser
-  departments: Department[]
   isHR: boolean
+  /** 由 page.tsx 從 `?tab=` 解出，tab 狀態的唯一來源 */
+  tab: AttendanceTab
+  /** 只有 isHR 且 tab === 'all' 時才有值 */
+  allRecords: AllRecordsData | null
 }
 
-export function AttendanceClient({ currentUser, departments, isHR }: Props) {
+export function AttendanceClient({ currentUser, isHR, tab, allRecords }: Props) {
   const t = useTranslations('attendance')
   const tx = useTranslations('attendance.clientExtra')
+  const router = useRouter()
+  const pathname = usePathname()
+  const [pending, startTransition] = useTransition()
   const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null)
   const [records, setRecords] = useState<AttendanceRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [clocking, setClocking] = useState(false)
-  const [tab, setTab] = useState<'clock' | 'records' | 'team'>('clock')
   const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()))
   const [filterMonth, setFilterMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'))
-  const [filterDept, setFilterDept] = useState('')
   const [makeupOpen, setMakeupOpen] = useState(false)
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'getting' | 'ok' | 'denied'>('idle')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -60,20 +78,27 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
       .then(({ data }) => { setTodayRecord(data ?? null) })
   }, [])
 
-  const fetchRecords = useCallback(async (next?: { tab?: 'clock' | 'records' | 'team'; year?: string; month?: string; dept?: string }) => {
-    setLoading(true)
-    const activeTab = next?.tab ?? tab
-    const dept = next?.dept ?? filterDept
-    const params = new URLSearchParams({ year: next?.year ?? filterYear, month: next?.month ?? filterMonth })
-    if (activeTab === 'team' && dept) params.set('department_id', dept)
-    else if (activeTab === 'records') params.set('user_id', currentUser.id)
-    const res = await fetch(`/api/attendance/records?${params}`)
-    const { data } = await res.json()
-    setRecords(data ?? [])
-    setLoading(false)
-  }, [filterYear, filterMonth, filterDept, tab, currentUser.id])
-
   useEffect(() => { fetchTodayRecord() }, [fetchTodayRecord])
+
+  // 「我的紀錄」改由 tab + 年月驅動自動重取：深連結 ?tab=records 也要有資料，
+  // 且換年/月不必在每個 onChange 手動呼叫。
+  useEffect(() => {
+    if (tab !== 'records') return
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      const params = new URLSearchParams({ year: filterYear, month: filterMonth, user_id: currentUser.id })
+      try {
+        const res = await fetch(`/api/attendance/records?${params}`)
+        const { data } = await res.json()
+        if (!cancelled) setRecords(data ?? [])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [tab, filterYear, filterMonth, currentUser.id])
 
   const getGPS = (): Promise<{ lat: number; lng: number } | null> => {
     return new Promise(resolve => {
@@ -111,6 +136,14 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
     fetchTodayRecord()
   }
 
+  // 切分頁只改 URL（不帶舊參數），離開 all 分頁時 month/user_id/employment_type 自然清掉
+  const goTab = (next: AttendanceTab) => {
+    if (next === tab) return
+    startTransition(() => {
+      router.push(next === 'clock' ? pathname : `${pathname}?tab=${next}`)
+    })
+  }
+
   const canClockIn = !todayRecord?.clock_in
   const canClockOut = todayRecord?.clock_in && !todayRecord?.clock_out
 
@@ -125,15 +158,13 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
         {[
           { key: 'clock' as const, label: t('title') },
           { key: 'records' as const, label: t('myRecords') },
-          ...(isHR ? [{ key: 'team' as const, label: t('teamOverview') }] : []),
+          ...(isHR ? [{ key: 'all' as const, label: t('tabAllRecords') }] : []),
         ].map((item) => (
           <button
             key={item.key}
-            onClick={() => {
-              if (item.key !== 'clock' && item.key !== tab) fetchRecords({ tab: item.key })
-              setTab(item.key)
-            }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            onClick={() => goTab(item.key)}
+            disabled={pending}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer disabled:cursor-wait ${
               tab === item.key
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
@@ -211,7 +242,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
           <div className="text-center">
             <button
               onClick={() => setMakeupOpen(true)}
-              className="text-sm text-slate-400 hover:text-blue-600 transition-colors"
+              className="text-sm text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
             >
               {t('makeupRequest')}
             </button>
@@ -219,45 +250,37 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
         </div>
       )}
 
-      {/* Records tab */}
+      {/* Records tab（我的紀錄） */}
       {tab === 'records' && (
         <>
           <div className="flex items-center gap-3 flex-wrap">
-            <Select value={filterYear} onValueChange={v => { const y = v ?? filterYear; if (y !== filterYear) fetchRecords({ year: y }); setFilterYear(y) }}>
+            <Select value={filterYear} onValueChange={v => setFilterYear(v ?? filterYear)}>
               <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={filterMonth} onValueChange={v => { const m = v ?? filterMonth; if (m !== filterMonth) fetchRecords({ month: m }); setFilterMonth(m) }}>
+            <Select value={filterMonth} onValueChange={v => setFilterMonth(v ?? filterMonth)}>
               <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
               <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <RecordsTable records={records} loading={loading} showUser={false} />
+          <RecordsTable records={records} loading={loading} />
         </>
       )}
 
-      {/* Team tab */}
-      {tab === 'team' && isHR && (
-        <>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Select value={filterYear} onValueChange={v => { const y = v ?? filterYear; if (y !== filterYear) fetchRecords({ year: y }); setFilterYear(y) }}>
-              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
-              <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={filterMonth} onValueChange={v => { const m = v ?? filterMonth; if (m !== filterMonth) fetchRecords({ month: m }); setFilterMonth(m) }}>
-              <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
-              <SelectContent>{months.map(m => <SelectItem key={m} value={m}>{m} {t('monthSuffix')}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={filterDept} onValueChange={v => { const d = v ?? ''; if (d !== filterDept) fetchRecords({ dept: d }); setFilterDept(d) }}>
-              <SelectTrigger className="w-36"><SelectValue placeholder={t('allDepartments')} /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">{t('allDepartments')}</SelectItem>
-                {departments.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <RecordsTable records={records} loading={loading} showUser={true} />
-        </>
+      {/* All tab（全員紀錄）：整套沿用原「打卡紀錄管理」的 client，
+          extraQuery 讓它換月份/篩選時把 tab=all 帶回來 */}
+      {tab === 'all' && isHR && allRecords && (
+        <AdminAttendanceClient
+          attendanceRecords={allRecords.attendanceRecords}
+          allUsers={allRecords.allUsers}
+          initialMonth={allRecords.month}
+          initialUserId={allRecords.userId}
+          initialEmploymentType={allRecords.employmentType}
+          todayClockedIn={allRecords.todayClockedIn}
+          avgDays={allRecords.avgDays}
+          autoMakeupCount={allRecords.autoMakeupCount}
+          extraQuery={{ tab: 'all' }}
+        />
       )}
 
       <MakeupRequestDialog open={makeupOpen} onOpenChange={setMakeupOpen} onSuccess={fetchTodayRecord} />
@@ -265,7 +288,7 @@ export function AttendanceClient({ currentUser, departments, isHR }: Props) {
   )
 }
 
-function RecordsTable({ records, loading, showUser }: { records: AttendanceRecord[], loading: boolean, showUser: boolean }) {
+function RecordsTable({ records, loading }: { records: AttendanceRecord[], loading: boolean }) {
   const t = useTranslations('attendance')
   const tc = useTranslations('common')
   const workHours = (r: AttendanceRecord) => {
@@ -280,7 +303,6 @@ function RecordsTable({ records, loading, showUser }: { records: AttendanceRecor
       <table className="w-full text-sm">
         <thead className="bg-slate-50 dark:bg-slate-800">
           <tr>
-            {showUser && <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>}
             <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('date')}</th>
             <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('clockInLabel')}</th>
             <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('clockOutLabel')}</th>
@@ -289,14 +311,11 @@ function RecordsTable({ records, loading, showUser }: { records: AttendanceRecor
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {loading ? (
-            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
+            <tr><td colSpan={4} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
           ) : records.length === 0 ? (
-            <tr><td colSpan={showUser ? 5 : 4} className="text-center py-8 text-slate-400">{t('noRecordsShort')}</td></tr>
+            <tr><td colSpan={4} className="text-center py-8 text-slate-400">{t('noRecordsShort')}</td></tr>
           ) : records.map((r) => (
             <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
-              {showUser && (
-                <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name ?? '—'}</td>
-              )}
               <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.clock_date}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-1">

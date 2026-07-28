@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
@@ -10,9 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/StatusBadge'
 import { QualificationSection } from './QualificationSection'
+import { RecordsFilterBar, RecordsPagination, type RecordsFilterOption } from '@/components/records/RecordsFilterBar'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle, Ban, Info } from 'lucide-react'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
+
+// 「全員紀錄」分頁大小，沿用 AdminAttendanceClient 的慣例（見該檔案）
+const PAGE_SIZE = 20
 
 interface CurrentUser {
   id: string
@@ -77,8 +81,17 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
   const [allLoading, setAllLoading] = useState(false)
   const [approvals, setApprovals] = useState(pendingApprovals)
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null)
+  // 撤銷已核准請假的確認對話框；fromAll 記住是從「全員紀錄」還是「我的紀錄」按下的，
+  // 才知道成功後該重抓哪個列表（見 handleCancel）
+  const [revokeConfirm, setRevokeConfirm] = useState<{ id: string; fromAll: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
+
+  // All records tab 篩選狀態（實際過濾邏輯見下方 filteredAllRecords 的 useMemo）
+  const [allMonth, setAllMonth] = useState('')
+  const [allEmployeeId, setAllEmployeeId] = useState('')
+  const [allStatus, setAllStatus] = useState('all')
+  const [allPage, setAllPage] = useState(1)
 
   // Apply form state
   const [selectedType, setSelectedType] = useState('')
@@ -152,17 +165,29 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
     router.refresh()
   }
 
-  const handleCancel = async (id: string) => {
+  // action: 'cancel' 同時涵蓋「取消待審」與「撤銷已核准」，後端依單子原狀態決定語意（見 A1 回報）。
+  // opts.revoke 只影響成功 toast 文案；opts.fromAll 決定成功/409 後重抓哪個列表。
+  const handleCancel = async (id: string, opts?: { revoke?: boolean; fromAll?: boolean }) => {
     const res = await fetch(`/api/leave/requests/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'cancel' }),
     })
-    const { error } = await res.json()
-    if (error) { toast.error(error); return }
-    toast.success(t('applicationCancelled'))
+    const { error, code } = await res.json()
+    if (code === 'MFA_REQUIRED') { toast.error(error); router.push('/mfa/verify'); return }
+    if (error) {
+      toast.error(error)
+      // 409（併發：單子已被他人改掉，例如同時被核准/撤銷）：自動重抓，讓畫面立即反映
+      // 真實狀態，避免殘留一顆點了也沒用的操作按鈕
+      if (code === 'ALREADY_PROCESSED') {
+        if (opts?.fromAll) fetchAllRecords(); else fetchRecords()
+      }
+      return
+    }
+    toast.success(opts?.revoke ? t('leaveRevoked') : t('applicationCancelled'))
     setCancelConfirm(null)
-    fetchRecords()
+    setRevokeConfirm(null)
+    if (opts?.fromAll) fetchAllRecords(); else fetchRecords()
     router.refresh()
   }
 
@@ -177,6 +202,33 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
     toast.success(action === 'approve' ? tc('approved') : tc('rejected'))
     setApprovals(prev => prev.filter(r => r.id !== id))
   }
+
+  // 員工下拉選項：從已載入的 allRecords 去重取得申請人清單，不另外打 API
+  const allEmployeeOptions: RecordsFilterOption[] = useMemo(() => {
+    const seen = new Map<string, string>()
+    allRecords.forEach(r => {
+      if (r.user?.id && !seen.has(r.user.id)) seen.set(r.user.id, r.user.display_name ?? r.user.id)
+    })
+    return Array.from(seen, ([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label))
+  }, [allRecords])
+
+  const allStatusOptions: RecordsFilterOption[] = [
+    { value: 'pending', label: tc('pending') },
+    { value: 'approved', label: tc('approved') },
+    { value: 'rejected', label: tc('rejected') },
+    { value: 'cancelled', label: tc('cancelled') },
+  ]
+
+  // all tab 的資料本來就一次抓進來（view=team），篩選/分頁一律前端做，不改後端 API
+  const filteredAllRecords = useMemo(() => allRecords.filter(r => {
+    if (allMonth && !r.start_date.startsWith(allMonth)) return false
+    if (allEmployeeId && r.user?.id !== allEmployeeId) return false
+    if (allStatus !== 'all' && r.status !== allStatus) return false
+    return true
+  }), [allRecords, allMonth, allEmployeeId, allStatus])
+  const allTotalCount = filteredAllRecords.length
+  const allTotalPages = Math.max(1, Math.ceil(allTotalCount / PAGE_SIZE))
+  const pagedAllRecords = filteredAllRecords.slice((allPage - 1) * PAGE_SIZE, allPage * PAGE_SIZE)
 
   return (
     <div className="space-y-4">
@@ -313,6 +365,17 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
                         <Ban size={16} className="mr-1" /> {tc('cancel')}
                       </Button>
                     )}
+                    {/* 已核准可撤銷（會退還額度），語意不同於「取消」故用獨立按鈕/對話框 */}
+                    {r.status === 'approved' && (
+                      <Button
+                        size="sm" variant="ghost"
+                        className="min-h-[44px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                        onClick={() => setRevokeConfirm({ id: r.id, fromAll: false })}
+                        aria-label={t('cancelApprovedAriaLabel')}
+                      >
+                        <Ban size={16} className="mr-1" /> {t('cancelApproved')}
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -321,37 +384,73 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
         </div>
       )}
 
-      {/* All records tab（HR 全員檢視，唯讀；核准動作仍留在待審核 tab） */}
+      {/* All records tab（HR 全員檢視；核准/退回動作仍留在待審核 tab，這裡只多了撤銷已核准） */}
       {tab === 'all' && (
-        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('leaveType')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('startDate')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('endDate')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('totalDays')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('status')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {allLoading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
-              ) : allRecords.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
-              ) : allRecords.map((r) => (
-                <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.leave_type?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_date}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.end_date}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.total_days}</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+        <div className="space-y-3">
+          {/* 載入中把 totalCount 傳 undefined：否則會先閃一下「請確認篩選條件」再跳出真實筆數（與加班/出差頁一致） */}
+          <RecordsFilterBar
+            month={allMonth}
+            onMonthChange={m => { setAllMonth(m); setAllPage(1) }}
+            allowAllMonths
+            employees={allEmployeeOptions}
+            employeeId={allEmployeeId}
+            onEmployeeChange={id => { setAllEmployeeId(id); setAllPage(1) }}
+            statuses={allStatusOptions}
+            status={allStatus}
+            onStatusChange={s => { setAllStatus(s); setAllPage(1) }}
+            totalCount={allLoading ? undefined : allTotalCount}
+          />
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('employee')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('leaveType')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('startDate')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('endDate')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('totalDays')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('status')}</th>
+                  <th className="px-4 py-3"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {allLoading ? (
+                  <tr><td colSpan={7} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
+                ) : pagedAllRecords.length === 0 ? (
+                  <tr><td colSpan={7} className="text-center py-8 text-slate-400">{tc('recordFilters.noRecordsHint')}</td></tr>
+                ) : pagedAllRecords.map((r) => (
+                  <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.leave_type?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_date}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.end_date}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.total_days}</td>
+                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3">
+                      {/* HR/admin 代撤他人已核准的假（使用者回報「管理員也無法取消」的另一半，
+                          後端授權已擋好，這裡只是把入口露出來） */}
+                      {isHR && r.status === 'approved' && (
+                        <Button
+                          size="sm" variant="ghost"
+                          className="min-h-[44px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                          onClick={() => setRevokeConfirm({ id: r.id, fromAll: true })}
+                          aria-label={t('cancelApprovedAriaLabel')}
+                        >
+                          <Ban size={16} className="mr-1" /> {t('cancelApproved')}
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <RecordsPagination
+              page={allPage}
+              totalPages={allTotalPages}
+              totalCount={allTotalCount}
+              onPageChange={setAllPage}
+            />
+          </div>
         </div>
       )}
 
@@ -382,6 +481,25 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelConfirm(null)}>{tc('back')}</Button>
             <Button variant="destructive" className="cursor-pointer" onClick={() => cancelConfirm && handleCancel(cancelConfirm)}>{t('confirmCancel')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Revoke (撤銷已核准) confirm dialog —— 與 cancelConfirm 語意不同，不共用：撤銷會退還額度、
+          刪除已同步的 Outlook 事件，且可能是 HR 代撤，文案需明確告知後果 */}
+      <Dialog open={!!revokeConfirm} onOpenChange={() => setRevokeConfirm(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{t('cancelApprovedConfirm')}</DialogTitle></DialogHeader>
+          <p className="text-sm text-slate-500">{t('cancelApprovedDescription')}</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRevokeConfirm(null)}>{tc('cancel')}</Button>
+            <Button
+              variant="destructive"
+              className="cursor-pointer"
+              onClick={() => revokeConfirm && handleCancel(revokeConfirm.id, { revoke: true, fromAll: revokeConfirm.fromAll })}
+            >
+              {t('confirmCancel')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

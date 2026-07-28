@@ -49,7 +49,20 @@
     "day": "日",
     "total": "合計",
     "actions": "操作",
-    "status": "ステータス"
+    "status": "ステータス",
+    "recordFilters": {
+      "monthLabel": "月",
+      "allMonths": "すべての月",
+      "employeeLabel": "従業員",
+      "allEmployees": "全従業員",
+      "statusLabel": "ステータス",
+      "allStatuses": "すべてのステータス",
+      "totalCount": "全 <b>{count}</b> 件",
+      "pageLabel": "<b>{page}</b> ページ",
+      "prevPage": "前へ",
+      "nextPage": "次へ",
+      "noRecordsHint": "絞り込み条件または月を変更してください。"
+    }
   },
   "auth": {
     "login": "ログイン",
@@ -585,7 +598,8 @@
     },
     "clientExtra": {
       "todayDateFormat": "yyyy年MM月dd日 EEEE"
-    }
+    },
+    "tabAllRecords": "全従業員の記録"
   },
   "leave": {
     "title": "休暇",
@@ -701,7 +715,12 @@
     "grantedDaysInfo": "{days}日付与済み",
     "attachmentLabel": "添付",
     "tabAllRecords": "全員の記録",
-    "employee": "従業員"
+    "employee": "従業員",
+    "cancelApproved": "取り消し",
+    "cancelApprovedAriaLabel": "承認済みの休暇を取り消す",
+    "cancelApprovedConfirm": "承認済みの休暇を取り消しますか？",
+    "cancelApprovedDescription": "取り消すと控除された休暇日数が返却され、Outlook に同期された予定も削除されます。取り消しは元に戻せません（再申請が必要です）。",
+    "leaveRevoked": "休暇を取り消し、日数を返却しました"
   },
   "overtime": {
     "title": "残業",
@@ -973,7 +992,9 @@
       "statusActive": "在職中",
       "statusInactive": "退職（無効）",
       "none": "なし",
-      "displayName": "表示名（英語氏名）"
+      "displayName": "表示名（英語氏名）",
+      "accountPolicyTitle": "アカウントは IT 部門が一括作成します",
+      "accountPolicyNotice": "ユーザーアカウントは IT 部門が会社の Microsoft アカウントで一括作成します。人事はここで追加できません。初回ログイン後、自動的に下記の一覧に表示され、権限は既定で「一般社員」です。部署・上司・特別権限はこのページで調整してください。"
     },
     "profile": {
       "title": "人事情報",
@@ -1081,7 +1102,8 @@
       "overtimeRatesLink": "残業代レート管理",
       "attendanceAnomaliesLink": "勤怠異常",
       "bonusesLink": "賞与管理",
-      "cooSection": "営業設定（閲覧のみ）"
+      "cooSection": "営業設定（閲覧のみ）",
+      "leaveBalancesMovedNotice": "休暇日数の管理は独立した「休暇日数」ページに移動しました。上部のリンクからご利用ください。"
     },
     "financeSettings": {
       "title": "財務管理",
@@ -1543,7 +1565,9 @@
     },
     "leaveRequests": {
       "insufficientBalance": "{name}の残日数が不足しています（残り {remaining} 日）",
-      "qualificationRequired": "「{name}」は事前に人事による資格審査が必要です。証明書類を添えて人事にご連絡ください。"
+      "qualificationRequired": "「{name}」は事前に人事による資格審査が必要です。証明書類を添えて人事にご連絡ください。",
+      "cannotCancel": "現在のステータスではこの休暇申請を取り消せません",
+      "revokeForbidden": "承認済みの休暇を取り消せるのは申請者本人または人事／管理者のみです"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "条件に該当する従業員がいません"
@@ -1642,7 +1666,9 @@
     "announcementReminder": "【リマインド】お知らせ「{title}」がまだ未確認です。お早めに内容を確認してください。",
     "leaveQualificationApproved": "✅ 特別休暇の申請（{leaveType}）が承認され、{days}日付与されました",
     "leaveQualificationRejected": "❌ 特別休暇の申請（{leaveType}）が却下されました：{reason}",
-    "leaveQualificationSubmitted": "📝 {name} が特別休暇を申請しました（{leaveType}）。休暇ページで審査してください"
+    "leaveQualificationSubmitted": "📝 {name} が特別休暇を申請しました（{leaveType}）。休暇ページで審査してください",
+    "leaveRevoked": "🔄 あなたの休暇（{date}）が取り消され、日数が返却されました",
+    "leaveRevokedByHr": "🔄 あなたの休暇（{date}）が人事により取り消され、日数が返却されました"
   },
   "procurement": {
     "approval": {

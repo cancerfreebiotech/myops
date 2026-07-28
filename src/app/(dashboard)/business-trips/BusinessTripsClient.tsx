@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Check, X, Receipt } from 'lucide-react'
@@ -11,6 +11,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { taipeiToday } from '@/lib/taipei-date'
+import { RecordsFilterBar, RecordsPagination, type RecordsFilterOption } from '@/components/records/RecordsFilterBar'
+
+// 全員紀錄分頁大小，與打卡紀錄管理（AdminAttendanceClient）一致
+const PAGE_SIZE = 20
 
 interface Trip {
   id: string
@@ -50,6 +54,7 @@ const tripDays = (t: Trip) =>
 
 export function BusinessTripsClient({ showApproveTab, isHR }: Props) {
   const t = useTranslations('businessTrip')
+  const tc = useTranslations('common')
   const router = useRouter()
   const [tab, setTab] = useState<Tab>('mine')
   const [trips, setTrips] = useState<Trip[]>([])
@@ -62,6 +67,12 @@ export function BusinessTripsClient({ showApproveTab, isHR }: Props) {
   const [endDate, setEndDate] = useState(() => taipeiToday())
   const [itinerary, setItinerary] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // 全員紀錄 tab 的篩選/分頁狀態：純前端篩選 view=all 抓回來的 trips，不另外打 API
+  const [allMonth, setAllMonth] = useState('')
+  const [allEmployeeId, setAllEmployeeId] = useState('')
+  const [allStatus, setAllStatus] = useState<Trip['status'] | 'all'>('all')
+  const [allPage, setAllPage] = useState(1)
 
   // HR 全員檢視走 view=all（見 /api/business-trips route.ts），唯讀，無審批動作
   const view = tab === 'approve' ? 'approve' : tab === 'all' ? 'all' : 'mine'
@@ -151,6 +162,32 @@ export function BusinessTripsClient({ showApproveTab, isHR }: Props) {
     ...(showApproveTab ? [{ key: 'approve' as Tab, label: t('tabApprove') }] : []),
     ...(isHR ? [{ key: 'all' as Tab, label: t('tabAllRecords') }] : []),
   ]
+
+  // 員工下拉選項從已載入的全員紀錄（view=all）去重取得，不另外打 API
+  const employeeOptions: RecordsFilterOption[] = useMemo(() => {
+    const map = new Map<string, string>()
+    trips.forEach(tr => {
+      if (tr.user?.id) map.set(tr.user.id, tr.user.display_name ?? tr.user.id)
+    })
+    return Array.from(map, ([value, label]) => ({ value, label }))
+  }, [trips])
+
+  // 狀態下拉選項沿用卡片本身的顯示方式（businessTrip.status* 系列 key，非 common.*）
+  const statusOptions: RecordsFilterOption[] = useMemo(() => (
+    (Object.keys(STATUS_KEYS) as Trip['status'][]).map(s => ({ value: s, label: t(STATUS_KEYS[s]) }))
+  ), [t])
+
+  const filteredAllTrips = useMemo(() => {
+    return trips.filter(tr => {
+      if (allMonth && !tr.start_date.startsWith(allMonth)) return false
+      if (allEmployeeId && tr.user?.id !== allEmployeeId) return false
+      if (allStatus !== 'all' && tr.status !== allStatus) return false
+      return true
+    })
+  }, [trips, allMonth, allEmployeeId, allStatus])
+
+  const allTotalPages = Math.max(1, Math.ceil(filteredAllTrips.length / PAGE_SIZE))
+  const pagedAllTrips = filteredAllTrips.slice((allPage - 1) * PAGE_SIZE, allPage * PAGE_SIZE)
 
   const renderTrip = (trip: Trip) => (
     <Card key={trip.id}>
@@ -303,8 +340,41 @@ export function BusinessTripsClient({ showApproveTab, isHR }: Props) {
         </Card>
       )}
 
-      {/* Trips list */}
-      {tab !== 'new' && (
+      {/* All records tab（HR 全員檢視，唯讀；核准動作仍留在待審核 tab） */}
+      {tab === 'all' && (
+        <div className="space-y-4">
+          <RecordsFilterBar
+            month={allMonth}
+            onMonthChange={v => { setAllMonth(v); setAllPage(1) }}
+            allowAllMonths
+            employees={employeeOptions}
+            employeeId={allEmployeeId}
+            onEmployeeChange={v => { setAllEmployeeId(v); setAllPage(1) }}
+            statuses={statusOptions}
+            status={allStatus}
+            onStatusChange={v => { setAllStatus(v as Trip['status'] | 'all'); setAllPage(1) }}
+            totalCount={loading ? undefined : filteredAllTrips.length}
+          />
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="p-2 space-y-2">
+              {loading && <p className="text-sm text-slate-400 text-center py-8">…</p>}
+              {!loading && pagedAllTrips.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-8">{tc('recordFilters.noRecordsHint')}</p>
+              )}
+              {pagedAllTrips.map(renderTrip)}
+            </div>
+            <RecordsPagination
+              page={allPage}
+              totalPages={allTotalPages}
+              totalCount={filteredAllTrips.length}
+              onPageChange={setAllPage}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Trips list（我的出差／待審核；全員紀錄改走上面的篩選＋分頁版本） */}
+      {tab !== 'new' && tab !== 'all' && (
         <div className="space-y-2">
           {loading && <p className="text-sm text-slate-400">…</p>}
           {!loading && trips.length === 0 && (

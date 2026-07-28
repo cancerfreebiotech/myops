@@ -20,7 +20,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: t('common.mfaRequired'), code: 'MFA_REQUIRED' }, { status: 403 })
   }
 
-  const { action, reject_reason } = await request.json()
+  const { action, reject_reason, cancel_reason } = await request.json()
 
   const { data: leaveReq } = await service
     .from('leave_requests')
@@ -143,11 +143,112 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
   } else if (action === 'cancel') {
-    // Only requestor can cancel
-    if (leaveReq.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
-    if (leaveReq.status !== 'pending') return NextResponse.json({ error: t('leaveRequestItem.onlyPendingCancellable') }, { status: 400 })
-    const { error } = await service.from('leave_requests').update({ status: 'cancelled' }).eq('id', id)
+    // cancel 同時涵蓋兩種語意：取消「待審」與撤銷「已核准」。
+    // 待審＝只有申請人本人；已核准＝申請人本人或 HR/admin（主管代撤的情境走 HR/admin），
+    // 因為撤銷已核准要退還額度、並刪除已推送的 Outlook 事件，屬敏感操作故留稽核欄位。
+    const prevStatus = leaveReq.status as string
+    let revokedByOther = false
+    if (prevStatus === 'pending') {
+      if (leaveReq.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    } else if (prevStatus === 'approved') {
+      if (leaveReq.user_id !== user.id) {
+        const { data: me } = await service
+          .from('users')
+          .select('role, granted_features')
+          .eq('id', user.id)
+          .single()
+        const isHrOrAdmin = me?.role === 'admin'
+          || (me?.granted_features as string[] | null)?.includes('hr_manager')
+        if (!isHrOrAdmin) return NextResponse.json({ error: t('leaveRequests.revokeForbidden') }, { status: 403 })
+        revokedByOther = true
+      }
+    } else {
+      // rejected / cancelled 已是終態，沒有可撤銷的東西
+      return NextResponse.json({ error: t('leaveRequests.cannotCancel') }, { status: 400 })
+    }
+
+    // compare-and-swap：只在狀態仍為讀取時的原狀態才改，擋並發（例如主管正在核准同一張單、
+    // 或使用者重複點擊造成重複退還額度）
+    const { data: cancelled, error } = await service.from('leave_requests').update({
+      status: 'cancelled',
+      cancelled_by: user.id,
+      cancelled_at: new Date().toISOString(),
+      cancel_reason: cancel_reason ?? null,
+    }).eq('id', id).eq('status', prevStatus).select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    if (!cancelled || cancelled.length === 0) {
+      return NextResponse.json({ error: t('common.forbidden'), code: 'ALREADY_PROCESSED' }, { status: 409 })
+    }
+
+    // 退還額度：只有原狀態 approved 才扣過額度。用 createAdminClient（真正繞 RLS，
+    // leave_balances 的 RLS 只允許 self/hr_manager/admin，HR 以外的撤銷者讀不到），
+    // 並沿用 approve 分支同一套 pickBalanceForDate — 扣哪一列就還哪一列。
+    if (prevStatus === 'approved') {
+      const admin = createAdminClient()
+      const { data: balanceRows } = await admin
+        .from('leave_balances')
+        .select('id, used_days, total_days, period_start, period_end, year')
+        .eq('user_id', leaveReq.user_id)
+        .eq('leave_type_id', leaveReq.leave_type_id)
+      const balance = pickBalanceForDate(balanceRows ?? [], leaveReq.start_date)
+
+      // 無 balance 列＝該假別不受額度控管（核准時也沒扣），無需退還
+      if (balance) {
+        const { data: resData, error: resErr } = await admin.rpc('restore_leave_balance', {
+          p_balance_id: balance.id,
+          p_days: Number(leaveReq.total_days),
+        })
+        const resResult = Array.isArray(resData) ? resData[0] : resData
+        if (resErr || !resResult?.ok) {
+          // 額度與單據必須一致：退還失敗就回捲成 approved（僅在仍為我方剛設的 cancelled 時），
+          // 讓使用者重試，而不是留下「已撤銷但額度沒還」的破洞。
+          // 回捲必須用 admin（真正繞 RLS）：leave_requests 的 UPDATE policy WITH CHECK 只允許
+          // 本人把自己的單留在 pending/cancelled，一般員工自撤時用 service 寫回 approved 會被
+          // RLS 擋掉（42501），回捲失敗＝單子停在 cancelled 但額度沒退，正是這段要防的破洞。
+          const { error: rollbackErr } = await admin.from('leave_requests').update({
+            status: 'approved', cancelled_by: null, cancelled_at: null, cancel_reason: null,
+          }).eq('id', id).eq('status', 'cancelled')
+          if (rollbackErr) console.error('[leave] revoke rollback failed (額度與單據可能不一致):', rollbackErr)
+          console.error('[leave] atomic balance restore failed:', resErr, 'balanceId:', balance.id)
+          return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
+        }
+        // clamped＝退還前的 used_days 就已少於要退還的天數（額度資料在此之前已不一致）。
+        // RPC 夾住下界讓撤銷照樣成功，但這裡必須留下紀錄，否則異常會被靜默吃掉。
+        if (resResult?.clamped) {
+          console.warn(
+            '[leave] balance restore clamped at 0 — used_days 原本就少於退還天數，額度資料疑似不一致.',
+            'balanceId:', balance.id, 'requestId:', id, 'days:', Number(leaveReq.total_days)
+          )
+        }
+      }
+    }
+
+    // 清除核准時推送的 Outlook 事件（best-effort，永不影響撤銷回應）
+    if (leaveReq.outlook_event_id) {
+      try {
+        const { deleteOutlookEvent } = await import('@/lib/ms-calendar')
+        await deleteOutlookEvent(leaveReq.user_id, leaveReq.outlook_event_id)
+        await service.from('leave_requests').update({ outlook_event_id: null }).eq('id', id)
+      } catch (e) { console.error('[leave] Outlook delete failed:', e) }
+    }
+
+    // 通知申請人（best-effort）：只有「被別人撤銷」才通知 —— 自己撤銷自己的單不需要
+    // 反過來通知自己（teamsMessages.leaveRevoked 因此保留未用，供未來代撤情境擴充）
+    if (revokedByOther) {
+      try {
+        const { data: applicant } = await service
+          .from('users')
+          .select('language')
+          .eq('id', leaveReq.user_id)
+          .single()
+        const date = leaveReq.start_date === leaveReq.end_date
+          ? leaveReq.start_date
+          : `${leaveReq.start_date} ~ ${leaveReq.end_date}`
+        await sendProactiveMessage(leaveReq.user_id, teamsText(applicant?.language, 'leaveRevokedByHr', { date }))
+      } catch (e) {
+        console.error('[leave] Teams notify failed:', e)
+      }
+    }
   }
 
   // Notify applicant via Teams (fire-and-forget: never fail the approval response)

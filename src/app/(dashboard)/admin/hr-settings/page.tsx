@@ -1,16 +1,14 @@
-import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { RoleSettingsSection } from '@/components/admin/RoleSettingsSection'
 import { LeaveTypesManager } from '@/app/(dashboard)/admin/leave-types/LeaveTypesManager'
-import { LeaveBalancesManager } from '@/app/(dashboard)/admin/leave-balances/LeaveBalancesManager'
 import { OvertimeRatesManager } from '@/app/(dashboard)/admin/overtime-rates/OvertimeRatesManager'
 import { AnomaliesClient, type AnomalyUser } from '@/app/(dashboard)/admin/attendance-anomalies/AnomaliesClient'
 import { BonusClient } from '@/app/(dashboard)/admin/bonuses/BonusClient'
 import { HR_SETTINGS_KEYS } from '@/lib/role-settings'
-import { pickBalancesForDate } from '@/lib/leave-balance'
-import { taipeiToday } from '@/lib/taipei-date'
 
 function getThirtyDaysAgoStr() {
   return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -77,49 +75,8 @@ export default async function HRSettingsPage() {
     multiplier: r.rate,
   }))
 
-  // Leave balances
+  // 假別額度的資料抓取與表格已移除 —— 統一由 /admin/leave-balances 負責（見下方連結）。
   const currentYear = new Date().getFullYear()
-  const today = taipeiToday()
-  const { data: leaveUsers } = await service
-    .from('users')
-    .select('id, display_name, employment_type, department:departments(name)')
-    .eq('is_active', true)
-    .order('display_name')
-
-  // 加抓 default_quota_days：供固定額度假別（事假/病假/婚假…）在「該員工尚無 balance 列」時
-  // 於前端 fallback 顯示應有額度（否則整欄顯示 0，即 Linda 回報的「剩餘天數都顯示0」主因之一）。
-  const { data: leaveTypesForBalance } = await service
-    .from('leave_types')
-    .select('id, name:name_zh, applies_to:applicable_to, default_quota_days')
-    .eq('is_active', true)
-    .order('sort_order')
-
-  // 抓每位員工的全部餘額列，再用 pickBalancesForDate 依「今天」（台北）歸屬解析每個假別當期那一列。
-  // 取代原本硬過濾 .eq('year', currentYear)：8–12 月到職者的週年制特休列 year=去年（period 跨年），
-  // 會被曆年過濾漏掉而顯示 0（Linda 回報主因之二）。用 admin client 讀（HR 管理頁需讀全員含他人 used_days）。
-  const { data: balanceRows } = await createAdminClient()
-    .from('leave_balances')
-    .select('user_id, leave_type_id, total_days, used_days, period_start, period_end, year')
-
-  type RawBalance = {
-    user_id: string; leave_type_id: string; total_days: number
-    used_days: number | null; period_start: string | null; period_end: string | null; year: number
-  }
-  const byUser = new Map<string, RawBalance[]>()
-  for (const r of (balanceRows ?? []) as RawBalance[]) {
-    const arr = byUser.get(r.user_id) ?? []
-    arr.push(r)
-    byUser.set(r.user_id, arr)
-  }
-  const balances = Array.from(byUser.entries()).flatMap(([uid, rows]) =>
-    pickBalancesForDate(rows, today).map(p => ({
-      user_id: uid,
-      leave_type_id: p.leave_type_id,
-      allocated_days: p.total_days,
-      used_days: p.used_days ?? 0,
-      year: p.year,
-    }))
-  )
 
   // Attendance anomalies computation
   const thirtyDaysAgo = getThirtyDaysAgoStr()
@@ -190,13 +147,14 @@ export default async function HRSettingsPage() {
       <LeaveTypesManager leaveTypes={leaveTypes ?? []} readOnly={!editable} />
 
       <SectionHeader label={tNav('adminLeaveBalances')} />
-      <LeaveBalancesManager
-        users={leaveUsers ?? []}
-        leaveTypes={leaveTypesForBalance ?? []}
-        balances={balances ?? []}
-        year={currentYear}
-        readOnly={!editable}
-      />
+      {/* 假別額度只留 /admin/leave-balances 一個入口（Linda 回報「假別額度功能重複出現」）。
+          這裡改成連結，避免同一份表格兩處維護、兩處查詢邏輯不同步。 */}
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {t('hrSettings.leaveBalancesMovedNotice')}{' '}
+        <Link href="/admin/leave-balances" className="text-blue-600 dark:text-blue-400 hover:underline">
+          {t('hrSettings.leaveBalancesLink')}
+        </Link>
+      </p>
 
       <SectionHeader label={tNav('adminOvertimeRates')} />
       <OvertimeRatesManager rates={rates ?? []} readOnly={!editable} />

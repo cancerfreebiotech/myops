@@ -49,7 +49,20 @@
     "day": "日",
     "total": "合計",
     "actions": "操作",
-    "status": "狀態"
+    "status": "狀態",
+    "recordFilters": {
+      "monthLabel": "月份",
+      "allMonths": "全部月份",
+      "employeeLabel": "員工",
+      "allEmployees": "全部員工",
+      "statusLabel": "狀態",
+      "allStatuses": "全部狀態",
+      "totalCount": "共 <b>{count}</b> 筆",
+      "pageLabel": "第 <b>{page}</b> 頁",
+      "prevPage": "上一頁",
+      "nextPage": "下一頁",
+      "noRecordsHint": "請確認篩選條件或選擇其他月份"
+    }
   },
   "auth": {
     "login": "登入",
@@ -585,7 +598,8 @@
     },
     "clientExtra": {
       "todayDateFormat": "yyyy年MM月dd日 EEEE"
-    }
+    },
+    "tabAllRecords": "全員紀錄"
   },
   "leave": {
     "title": "請假",
@@ -701,7 +715,12 @@
     "grantedDaysInfo": "已核給 {days} 天",
     "attachmentLabel": "附件",
     "tabAllRecords": "全員紀錄",
-    "employee": "員工"
+    "employee": "員工",
+    "cancelApproved": "撤銷",
+    "cancelApprovedAriaLabel": "撤銷已核准的請假",
+    "cancelApprovedConfirm": "確認撤銷已核准的請假？",
+    "cancelApprovedDescription": "撤銷後會退還已扣除的假別額度，並移除已同步到 Outlook 的行事曆事件。撤銷無法復原，需重新提出申請。",
+    "leaveRevoked": "請假已撤銷，額度已退還"
   },
   "overtime": {
     "title": "加班",
@@ -973,7 +992,9 @@
       "statusActive": "在職",
       "statusInactive": "離職（停用）",
       "none": "無",
-      "displayName": "顯示名稱（英文姓名）"
+      "displayName": "顯示名稱（英文姓名）",
+      "accountPolicyTitle": "帳號由 IT 部門統一開立",
+      "accountPolicyNotice": "使用者帳號一律由 IT 部門以公司 Microsoft 帳號建立，人資無法在此新增使用者。同仁首次登入後會自動出現在下方清單，預設權限為「一般員工」；部門、主管與特殊權限請在此頁調整。"
     },
     "profile": {
       "title": "人事資料",
@@ -1081,7 +1102,8 @@
       "overtimeRatesLink": "加班費率管理",
       "attendanceAnomaliesLink": "出勤異常",
       "bonusesLink": "獎金管理",
-      "cooSection": "營運設定（唯讀）"
+      "cooSection": "營運設定（唯讀）",
+      "leaveBalancesMovedNotice": "假別額度已移至側邊欄「假別額度」獨立頁面，請由上方「假別額度」連結前往管理。"
     },
     "financeSettings": {
       "title": "財務管理",
@@ -1543,7 +1565,9 @@
     },
     "leaveRequests": {
       "insufficientBalance": "{name}餘額不足（剩餘 {remaining} 天）",
-      "qualificationRequired": "「{name}」需先經人資審核資格，請洽人資提供證明文件"
+      "qualificationRequired": "「{name}」需先經人資審核資格，請洽人資提供證明文件",
+      "cannotCancel": "此請假單目前狀態無法取消",
+      "revokeForbidden": "只有申請人本人或人資／管理員可以撤銷已核准的請假"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "無符合條件的員工"
@@ -1642,7 +1666,9 @@
     "announcementReminder": "【提醒】您尚未確認公告「{title}」，請盡快閱讀並點選確認。",
     "leaveQualificationApproved": "✅ 你的特殊假申請（{leaveType}）已核准，核給 {days} 天",
     "leaveQualificationRejected": "❌ 你的特殊假申請（{leaveType}）未通過：{reason}",
-    "leaveQualificationSubmitted": "📝 {name} 提出特殊假申請（{leaveType}），請至請假頁審核資格"
+    "leaveQualificationSubmitted": "📝 {name} 提出特殊假申請（{leaveType}），請至請假頁審核資格",
+    "leaveRevoked": "🔄 你的請假（{date}）已撤銷，假別額度已退還",
+    "leaveRevokedByHr": "🔄 你的請假（{date}）已由人資撤銷，假別額度已退還"
   },
   "procurement": {
     "approval": {

@@ -56,6 +56,11 @@ interface Props {
   todayClockedIn: number
   avgDays: number
   autoMakeupCount: number
+  /**
+   * 併入篩選 URL 的額外查詢參數。嵌在 /attendance?tab=all 時傳 { tab: 'all' }，
+   * 換月份／換篩選才不會因為 URL 少了 tab 而掉出「全員紀錄」分頁。不傳＝行為完全不變。
+   */
+  extraQuery?: Record<string, string>
 }
 
 const formatTime = (t: string | null) => {
@@ -78,6 +83,7 @@ export function AdminAttendanceClient({
   todayClockedIn,
   avgDays,
   autoMakeupCount,
+  extraQuery,
 }: Props) {
   const router = useRouter()
   const t = useTranslations('attendance')
@@ -149,6 +155,8 @@ export function AdminAttendanceClient({
     const e = newEmpType ?? employmentType
     setPage(1)
     const params = new URLSearchParams()
+    // 先塞宿主頁面要求保留的參數（如 tab=all），再蓋上本元件自己的篩選值
+    Object.entries(extraQuery ?? {}).forEach(([k, v]) => params.set(k, v))
     if (m) params.set('month', m)
     if (u) params.set('user_id', u)
     if (e && e !== 'all') params.set('employment_type', e)

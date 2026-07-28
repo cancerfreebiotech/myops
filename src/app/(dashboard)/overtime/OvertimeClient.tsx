@@ -1,15 +1,19 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/StatusBadge'
+import { RecordsFilterBar, RecordsPagination, type RecordsFilterOption } from '@/components/records/RecordsFilterBar'
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
+
+// 全員紀錄分頁大小，與打卡紀錄管理（AdminAttendanceClient）一致
+const PAGE_SIZE = 20
 
 interface CurrentUser {
   id: string
@@ -68,6 +72,12 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
   const [loading, setLoading] = useState(true)
   const [applyOpen, setApplyOpen] = useState(false)
 
+  // 全員紀錄 tab 的篩選/分頁狀態：純前端篩選既有的 allRecords，不另外打 API
+  const [allMonth, setAllMonth] = useState('')
+  const [allEmployeeId, setAllEmployeeId] = useState('')
+  const [allStatus, setAllStatus] = useState('all')
+  const [allPage, setAllPage] = useState(1)
+
   // Form state
   const [otDate, setOtDate] = useState('')
   const [startTime, setStartTime] = useState('')
@@ -105,6 +115,32 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
     const load = async () => { await fetchRecords() }
     load()
   }, [fetchRecords])
+
+  // 員工下拉選項從已載入的全員紀錄去重取得，不另外打 API
+  const employeeOptions: RecordsFilterOption[] = useMemo(() => {
+    const map = new Map<string, string>()
+    allRecords.forEach(r => {
+      if (r.user?.id) map.set(r.user.id, r.user.display_name ?? r.user.id)
+    })
+    return Array.from(map, ([value, label]) => ({ value, label }))
+  }, [allRecords])
+
+  // 加班狀態只有 pending/approved/rejected（無多階簽核），沿用既有 StatusBadge 走的 common.* key
+  const statusOptions: RecordsFilterOption[] = useMemo(() => (
+    ['pending', 'approved', 'rejected'].map(s => ({ value: s, label: tc(s) }))
+  ), [tc])
+
+  const filteredAllRecords = useMemo(() => {
+    return allRecords.filter(r => {
+      if (allMonth && !r.ot_date.startsWith(allMonth)) return false
+      if (allEmployeeId && r.user?.id !== allEmployeeId) return false
+      if (allStatus !== 'all' && r.status !== allStatus) return false
+      return true
+    })
+  }, [allRecords, allMonth, allEmployeeId, allStatus])
+
+  const allTotalPages = Math.max(1, Math.ceil(filteredAllRecords.length / PAGE_SIZE))
+  const pagedAllRecords = filteredAllRecords.slice((allPage - 1) * PAGE_SIZE, allPage * PAGE_SIZE)
 
   const hours = startTime && endTime ? (() => {
     const s = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])
@@ -220,38 +256,58 @@ export function OvertimeClient({ projects, pendingApprovals, isHR }: Props) {
 
       {/* All records tab（HR 全員檢視，唯讀；核准動作仍留在待審核 tab） */}
       {tab === 'all' && (
-        <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-800">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableEmployee')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableDate')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableType')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableTimeRange')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableHours')}</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableStatus')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-              {allLoading ? (
-                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
-              ) : allRecords.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-8 text-slate-400">{t('noRecords')}</td></tr>
-              ) : allRecords.map((r) => (
-                <tr key={r.id} className="bg-white dark:bg-slate-800">
-                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.user?.display_name ?? '—'}</td>
-                  <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{r.ot_date}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                    {DAY_TYPE_LABELS[r.day_type] ?? r.day_type}
-                    {r.project && <span className="ml-1 text-xs text-slate-400">· {r.project.name}</span>}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_time} ~ {r.end_time}</td>
-                  <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.total_hours} h</td>
-                  <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+        <div className="space-y-4">
+          <RecordsFilterBar
+            month={allMonth}
+            onMonthChange={v => { setAllMonth(v); setAllPage(1) }}
+            allowAllMonths
+            employees={employeeOptions}
+            employeeId={allEmployeeId}
+            onEmployeeChange={v => { setAllEmployeeId(v); setAllPage(1) }}
+            statuses={statusOptions}
+            status={allStatus}
+            onStatusChange={v => { setAllStatus(v); setAllPage(1) }}
+            totalCount={allLoading ? undefined : filteredAllRecords.length}
+          />
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 dark:bg-slate-800">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableEmployee')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableDate')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableType')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableTimeRange')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableHours')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-slate-600 dark:text-slate-400">{t('tableStatus')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {allLoading ? (
+                  <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('loading')}</td></tr>
+                ) : pagedAllRecords.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-8 text-slate-400">{tc('recordFilters.noRecordsHint')}</td></tr>
+                ) : pagedAllRecords.map((r) => (
+                  <tr key={r.id} className="bg-white dark:bg-slate-800">
+                    <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.user?.display_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-300">{r.ot_date}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                      {DAY_TYPE_LABELS[r.day_type] ?? r.day_type}
+                      {r.project && <span className="ml-1 text-xs text-slate-400">· {r.project.name}</span>}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{r.start_time} ~ {r.end_time}</td>
+                    <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300">{r.total_hours} h</td>
+                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <RecordsPagination
+              page={allPage}
+              totalPages={allTotalPages}
+              totalCount={filteredAllRecords.length}
+              onPageChange={setAllPage}
+            />
+          </div>
         </div>
       )}
 
