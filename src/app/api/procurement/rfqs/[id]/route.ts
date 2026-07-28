@@ -346,6 +346,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         })
         if (error) {
           console.error('[procurement rfqs] quotes write failed:', error, 'item:', itemId)
+          // uq_rfq_quotes_one_selected_per_item：一個品項至多一筆採用（API 端已擋，
+          // 這裡是並發／其他寫入路徑的最後防線）→ 回 400 而非 500
+          if (error.code === '23505') {
+            return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+          }
           return NextResponse.json({ error: isWritePermissionError(error) ? t('common.noWritePermission') : t('common.serverError') }, { status: 500 })
         }
       }
