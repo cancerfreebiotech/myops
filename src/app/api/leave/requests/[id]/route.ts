@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { sendProactiveMessage } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
 import { pickBalanceForDate } from '@/lib/leave-balance'
+import { taipeiToday } from '@/lib/taipei-date'
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const t = await getTranslations('apiErrors')
@@ -151,17 +152,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (prevStatus === 'pending') {
       if (leaveReq.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
     } else if (prevStatus === 'approved') {
-      if (leaveReq.user_id !== user.id) {
+      const isSelf = leaveReq.user_id === user.id
+      // 已開始（含今天起算）的假只能由 HR/admin 撤銷：假已經在休、出勤與額度都已受影響，
+      // 不讓當事人事後自己把額度收回去（例如休完上個月的假再撤銷）。未開始的假仍可自撤。
+      // 以台北日期比較，避免 UTC 換日造成「今天」判斷差一天。
+      const hasStarted = (leaveReq.start_date as string) <= taipeiToday()
+
+      let isHrOrAdmin = false
+      if (!isSelf || hasStarted) {
         const { data: me } = await service
           .from('users')
           .select('role, granted_features')
           .eq('id', user.id)
           .single()
-        const isHrOrAdmin = me?.role === 'admin'
-          || (me?.granted_features as string[] | null)?.includes('hr_manager')
-        if (!isHrOrAdmin) return NextResponse.json({ error: t('leaveRequests.revokeForbidden') }, { status: 403 })
-        revokedByOther = true
+        isHrOrAdmin = me?.role === 'admin'
+          || ((me?.granted_features as string[] | null) ?? []).includes('hr_manager')
       }
+      if (!isSelf && !isHrOrAdmin) {
+        return NextResponse.json({ error: t('leaveRequests.revokeForbidden') }, { status: 403 })
+      }
+      if (hasStarted && !isHrOrAdmin) {
+        return NextResponse.json({ error: t('leaveRequests.revokeStartedHrOnly') }, { status: 403 })
+      }
+      revokedByOther = !isSelf
     } else {
       // rejected / cancelled 已是終態，沒有可撤銷的東西
       return NextResponse.json({ error: t('leaveRequests.cannotCancel') }, { status: 400 })

@@ -1567,7 +1567,8 @@
       "insufficientBalance": "Insufficient {name} balance ({remaining} days remaining)",
       "qualificationRequired": "\"{name}\" requires prior HR qualification review. Please contact HR and provide supporting documents.",
       "cannotCancel": "This leave request cannot be cancelled in its current status",
-      "revokeForbidden": "Only the applicant or HR/an admin can revoke approved leave"
+      "revokeForbidden": "Only the applicant or HR/an admin can revoke approved leave",
+      "revokeStartedHrOnly": "Leave that has already started can only be revoked by HR — please contact HR"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "No eligible employees"

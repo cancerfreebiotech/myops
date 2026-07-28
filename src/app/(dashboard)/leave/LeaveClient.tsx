@@ -14,6 +14,7 @@ import { RecordsFilterBar, RecordsPagination, type RecordsFilterOption } from '@
 import { toast } from 'sonner'
 import { Plus, CheckCircle, XCircle, Ban, Info } from 'lucide-react'
 import { differenceInCalendarDays, parseISO } from 'date-fns'
+import { taipeiToday } from '@/lib/taipei-date'
 
 // 「全員紀錄」分頁大小，沿用 AdminAttendanceClient 的慣例（見該檔案）
 const PAGE_SIZE = 20
@@ -86,6 +87,9 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
   const [revokeConfirm, setRevokeConfirm] = useState<{ id: string; fromAll: boolean } | null>(null)
   const [loading, setLoading] = useState(false)
   const [applyOpen, setApplyOpen] = useState(false)
+
+  // 用來判斷「假是否已開始」→ 已開始的假只有人資能撤銷（與後端 taipeiToday 同一基準）
+  const taipeiTodayStr = useMemo(() => taipeiToday(), [])
 
   // All records tab 篩選狀態（實際過濾邏輯見下方 filteredAllRecords 的 useMemo）
   const [allMonth, setAllMonth] = useState('')
@@ -365,8 +369,10 @@ export function LeaveClient({ leaveTypes, balances, qualifiedTypeIds, colleagues
                         <Ban size={16} className="mr-1" /> {tc('cancel')}
                       </Button>
                     )}
-                    {/* 已核准可撤銷（會退還額度），語意不同於「取消」故用獨立按鈕/對話框 */}
-                    {r.status === 'approved' && (
+                    {/* 已核准可撤銷（會退還額度），語意不同於「取消」故用獨立按鈕/對話框。
+                        已開始（含今天）的假只有人資能撤銷 —— 後端會擋，這裡同步不顯示按鈕，
+                        避免使用者按了才看到 403。人資撤銷的入口在「全員紀錄」分頁。 */}
+                    {r.status === 'approved' && (isHR || r.start_date > taipeiTodayStr) && (
                       <Button
                         size="sm" variant="ghost"
                         className="min-h-[44px] text-xs text-red-500 hover:text-red-700 hover:bg-red-50 cursor-pointer"

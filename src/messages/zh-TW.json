@@ -1567,7 +1567,8 @@
       "insufficientBalance": "{name}餘額不足（剩餘 {remaining} 天）",
       "qualificationRequired": "「{name}」需先經人資審核資格，請洽人資提供證明文件",
       "cannotCancel": "此請假單目前狀態無法取消",
-      "revokeForbidden": "只有申請人本人或人資／管理員可以撤銷已核准的請假"
+      "revokeForbidden": "只有申請人本人或人資／管理員可以撤銷已核准的請假",
+      "revokeStartedHrOnly": "已開始的請假只能由人資撤銷，請洽人資協助"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "無符合條件的員工"

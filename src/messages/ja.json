@@ -1567,7 +1567,8 @@
       "insufficientBalance": "{name}の残日数が不足しています（残り {remaining} 日）",
       "qualificationRequired": "「{name}」は事前に人事による資格審査が必要です。証明書類を添えて人事にご連絡ください。",
       "cannotCancel": "現在のステータスではこの休暇申請を取り消せません",
-      "revokeForbidden": "承認済みの休暇を取り消せるのは申請者本人または人事／管理者のみです"
+      "revokeForbidden": "承認済みの休暇を取り消せるのは申請者本人または人事／管理者のみです",
+      "revokeStartedHrOnly": "既に開始した休暇は人事のみが取り消せます。人事にご連絡ください"
     },
     "payrollCalculate": {
       "noEligibleEmployees": "条件に該当する従業員がいません"
