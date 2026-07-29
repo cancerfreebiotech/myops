@@ -46,11 +46,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: { generated: 0, year, month, message: t('payrollCalculate.noEligibleEmployees') } })
   }
 
-  // 部分寫入失敗要說出來，不能只回「產生 0 筆」讓人以為是沒有符合條件的員工
+  // 部分寫入失敗、或有人因未填月薪被跳過，都要說出來，
+  // 不能只回一個數字讓人以為全部跑完了
   return NextResponse.json({
     data: {
       generated: result.generated,
       total: result.total,
+      eligible: result.eligible,
+      skipped: result.skippedNoSalary,
       year,
       month,
       ...(result.firstError ? { warning: result.firstError } : {}),

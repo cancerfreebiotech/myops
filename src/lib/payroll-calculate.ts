@@ -50,9 +50,21 @@ interface PayrollRecordInsert {
 
 export type PayrollGenerationResult =
   | { kind: 'no_eligible_employees' }
-  /** firstError：寫入失敗時的第一個錯誤訊息。原本 upsert 失敗被 `if (!error)` 吃掉，
-   *  畫面只會看到「產生 0 筆」而完全查不出原因（例如權限不足）。 */
-  | { kind: 'ok'; generated: number; total: number; firstError?: string }
+  /**
+   * generated/total 都只計「真的有建出紀錄」的人，未填月薪者在迴圈裡被 continue 掉，
+   * 所以「已產生 7 / 7 筆」看起來是完整跑完，其實有人被跳過。skippedNoSalary 就是
+   * 為了把這個沉默的排除說出來（eligible = 在職／台灣／全職的人數）。
+   * firstError：寫入失敗時的第一個錯誤訊息。原本 upsert 失敗被 `if (!error)` 吃掉，
+   * 畫面只會看到「產生 0 筆」而完全查不出原因（例如權限不足）。
+   */
+  | {
+      kind: 'ok'
+      generated: number
+      total: number
+      eligible: number
+      skippedNoSalary: number
+      firstError?: string
+    }
 
 // 計算一筆請假落在 [monthStart, monthEnd] 當月的天數（含頭尾、以日曆天計）。
 // 以整段日曆天為分母、當月重疊日曆天為分子，按比例攤 totalDays，
@@ -175,10 +187,12 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
   const records: PayrollRecordInsert[] = []
   let generated = 0
 
+  let skippedNoSalary = 0
   for (const emp of employees) {
     const profile = profileMap.get(emp.id)
     const baseSalary = Number(profile?.monthly_salary ?? 0)
-    if (baseSalary === 0) continue
+    // 沒填月薪的人算不出來，只能跳過——但要記下人數，否則畫面會顯示成「全部跑完」
+    if (!Number.isFinite(baseSalary) || baseSalary <= 0) { skippedNoSalary++; continue }
 
     // Calculate overtime pay（勞基法 §24/§39 依日別分段：平日前2h×1.34/後2h×1.67、
     // 休息日 2h/2-8h/8h+ 三段、國定假日 ×2；倍率可由 overtime_rates 調整）。
@@ -276,5 +290,12 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
     generated++
   }
 
-  return { kind: 'ok', generated, total: records.length, ...(firstError ? { firstError } : {}) }
+  return {
+    kind: 'ok',
+    generated,
+    total: records.length,
+    eligible: employees.length,
+    skippedNoSalary,
+    ...(firstError ? { firstError } : {}),
+  }
 }

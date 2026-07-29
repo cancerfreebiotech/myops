@@ -53,6 +53,8 @@ interface Props {
   canGenerate: boolean
   /** 當年度勞保＋健保級距表都已上傳；否則保費會算成 0 */
   bracketsReady: boolean
+  /** 當月已離開草稿階段的薪資單筆數（重算會覆寫並清掉簽核軌跡），由伺服器端獨立查 */
+  lockedCount: number
   currentYear: number
   currentMonth: number
 }
@@ -60,7 +62,7 @@ interface Props {
 export function PayrollClient({
   currentUser, payrollRecords, myPayslips, allUsers,
   isHR, canViewPayroll, canConfirmPayroll, canApprovePayroll,
-  canGenerate, bracketsReady,
+  canGenerate, bracketsReady, lockedCount,
   currentYear, currentMonth,
 }: Props) {
   const router = useRouter()
@@ -82,10 +84,6 @@ export function PayrollClient({
   // 批次計算
   const [genOpen, setGenOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
-  // 重跑會 upsert 覆寫當月既有紀錄並退回 draft（含簽核軌跡清空），
-  // 所以先算出「已經走過草稿階段」的筆數，讓人在按下去之前就知道會覆寫什麼。
-  const lockedCount = payrollRecords.filter(r => r.status !== 'draft').length
-
   const handleGenerate = async () => {
     setGenerating(true)
     const res = await fetch('/api/payroll/calculate', {
@@ -96,9 +94,11 @@ export function PayrollClient({
     const json = await res.json().catch(() => null)
     setGenerating(false)
     if (!res.ok || json?.error) { toast.error(json?.error ?? tc('error')); return }
-    const { generated = 0, total, warning, message } = json?.data ?? {}
+    const { generated = 0, total, skipped = 0, warning, message } = json?.data ?? {}
     if (warning) toast.error(t('generateWarning', { error: String(warning) }), { duration: 8000 })
     else if (message && !total) toast.info(String(message))
+    // 有人被跳過時一定要講清楚是誰的資料缺，否則「已產生 7/7」看起來就是全部跑完
+    else if (skipped > 0) toast.warning(t('generateDoneSkipped', { generated, skipped }), { duration: 8000 })
     else toast.success(t('generateDone', { generated, total: total ?? generated }))
     setGenOpen(false)
     router.refresh()

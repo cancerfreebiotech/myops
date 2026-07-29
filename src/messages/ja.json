@@ -858,7 +858,8 @@
     "generateDone": "{total} 件中 {generated} 件の給与下書きを作成しました",
     "generateWarning": "計算は完了しましたが書き込みに失敗があります：{error}",
     "bracketsMissing": "{year} 年度の労健保等級表が未アップロードのため、労保費・健保費は 0 で計算されます。",
-    "bracketsMissingLink": "等級表をアップロード"
+    "bracketsMissingLink": "等級表をアップロード",
+    "generateDoneSkipped": "給与下書きを {generated} 件作成しました。月給が未登録の {skipped} 名はスキップしました"
   },
   "projects": {
     "title": "プロジェクト",

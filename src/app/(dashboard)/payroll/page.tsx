@@ -61,6 +61,20 @@ export default async function PayrollPage() {
   // 否則會出現「看得到按鈕、按下去 403」。
   const canGenerate = currentUser?.role === 'admin' || !!currentUser?.granted_features?.includes('hr_manager')
 
+  // 重算會把當月既有薪資單壓回草稿並清掉簽核軌跡，按下去之前必須先講清楚會覆寫幾筆。
+  // 這個數字在伺服器端獨立查，不從 payrollRecords 推導——後者只在 canViewPayroll 時才載入，
+  // 若日後有人只有 hr_manager 而沒有 view_payroll，警告會無聲消失。
+  let lockedCount = 0
+  if (canGenerate) {
+    const { count } = await service
+      .from('payroll_records')
+      .select('id', { count: 'exact', head: true })
+      .eq('year', year)
+      .eq('month', month)
+      .neq('status', 'draft')
+    lockedCount = count ?? 0
+  }
+
   // 級距表沒上傳時，計算出來的勞保費／健保費會是 0（findBracket 查不到就回 0），
   // 這是靜默的錯誤結果——先在畫面上警告，不要讓人事以為算好了。
   let bracketsReady = true
@@ -88,6 +102,7 @@ export default async function PayrollPage() {
         canApprovePayroll={canApprovePayroll}
         canGenerate={canGenerate}
         bracketsReady={bracketsReady}
+        lockedCount={lockedCount}
         currentYear={year}
         currentMonth={month}
       />

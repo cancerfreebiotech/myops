@@ -858,7 +858,8 @@
     "generateDone": "已產生 {generated} / {total} 筆薪資草稿",
     "generateWarning": "計算完成但有寫入失敗：{error}",
     "bracketsMissing": "尚未上傳 {year} 年度勞健保級距表，計算出的勞保費與健保費會是 0。",
-    "bracketsMissingLink": "前往上傳級距表"
+    "bracketsMissingLink": "前往上傳級距表",
+    "generateDoneSkipped": "已產生 {generated} 筆薪資草稿；跳過 {skipped} 人（人事資料未填月薪）"
   },
   "projects": {
     "title": "專案",

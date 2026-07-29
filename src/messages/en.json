@@ -858,7 +858,8 @@
     "generateDone": "Generated {generated} of {total} payroll drafts",
     "generateWarning": "Calculation finished but some writes failed: {error}",
     "bracketsMissing": "Insurance brackets for {year} have not been uploaded — labor and health insurance will be calculated as 0.",
-    "bracketsMissingLink": "Upload brackets"
+    "bracketsMissingLink": "Upload brackets",
+    "generateDoneSkipped": "Generated {generated} payroll draft(s); skipped {skipped} employee(s) with no monthly salary on file"
   },
   "projects": {
     "title": "Projects",
