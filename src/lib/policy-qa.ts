@@ -1,6 +1,7 @@
 import { createServiceClient, createAdminClient } from '@/lib/supabase/server'
 import { getLlmConfig, llmComplete } from '@/lib/llm'
 import { getEmbedConfig, embedTexts } from '@/lib/embeddings'
+import { ASK_AI_DOC_TYPES } from '@/lib/doc-index-types'
 
 /**
  * 政策問答：以文件庫（已發布且有文字內容的規章/公告/內部文件）為根據回答問題。
@@ -11,7 +12,11 @@ import { getEmbedConfig, embedTexts } from '@/lib/embeddings'
 const VECTOR_TOP_K = 12
 
 const MAX_CONTEXT_CHARS = 60000
-const DOC_TYPES = ['REG', 'ANN', 'INTERNAL']
+
+// 語料範圍（可問答的 doc_type）一律以 @/lib/doc-index-types 為唯一來源：
+// 向量模式傳給 match_doc_chunks 的 allowed_doc_types，與全文 fallback 的
+// .in('doc_type', …) 都用同一份，避免兩條路徑漂移。
+const DOC_TYPES = [...ASK_AI_DOC_TYPES]
 
 export interface PolicyAnswer {
   answer: string
@@ -35,6 +40,7 @@ export async function answerPolicyQuestion(question: string, lang: string): Prom
       const { data: hits, error } = await admin.rpc('match_doc_chunks', {
         query_embedding: JSON.stringify(qVec),
         match_count: VECTOR_TOP_K,
+        allowed_doc_types: DOC_TYPES,
       })
       if (!error && hits?.length) {
         const titles = new Set<string>()

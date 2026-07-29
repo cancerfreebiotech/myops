@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { sendProactiveMessages } from '@/lib/teams-bot'
 import { teamsText } from '@/lib/teams-i18n'
+import { generatePayrollDrafts } from '@/lib/payroll-calculate'
 
 // T49: Monthly payroll auto-generation endpoint
 // Can be called by pg_cron or Supabase Edge Function on the 1st of each month
@@ -39,30 +40,27 @@ export async function POST(request: NextRequest) {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  // Forward to the calculate endpoint logic
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ops.cancerfree.io'
-  const calcRes = await fetch(`${baseUrl}/api/payroll/calculate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(cronSecret ? { 'Authorization': `Bearer ${cronSecret}` } : {}),
-      'Cookie': request.headers.get('cookie') ?? '',
-    },
-    body: JSON.stringify({ year, month }),
-  })
-
-  const result = await calcRes.json()
-
-  if (!calcRes.ok) {
-    return NextResponse.json({ error: result.error ?? t('payrollGenerate.generationFailed') }, { status: 500 })
+  // 直接呼叫與 /api/payroll/calculate 共用的同一份計算函式。
+  // 原本這裡是用 NEXT_PUBLIC_APP_URL 對自己發一次 HTTP fetch 再轉發 cookie／cron secret：
+  // serverless 上不可靠（網址設錯、內部不可達、冷啟逾時都會整包失敗），且多一次網路往返。
+  // 授權沒有變弱——舊寫法在 CRON_SECRET 存在時一律帶 cron header 進 calculate，
+  // 真正的閘門本來就只有本 route 上面那段 admin / hr_manager 檢查。
+  let result: Awaited<ReturnType<typeof generatePayrollDrafts>>
+  try {
+    result = await generatePayrollDrafts(year, month)
+  } catch (e) {
+    console.error('[payroll generate-monthly] generation failed:', e)
+    return NextResponse.json({ error: t('payrollGenerate.generationFailed') }, { status: 500 })
   }
+
+  const generated = result.kind === 'ok' ? result.generated : 0
 
   // T71: notify affected employees via Teams that their payslip is ready.
   // Notification sending must never break payroll generation — guard everything.
   let notified = 0
   let notifyFailed = 0
   try {
-    if ((result.data?.generated ?? 0) > 0) {
+    if (generated > 0) {
       const { createServiceClient } = await import('@/lib/supabase/server')
       const service = await createServiceClient()
       const { data: records } = await service
@@ -92,9 +90,12 @@ export async function POST(request: NextRequest) {
     console.error('[payroll generate-monthly] Teams notification error:', e)
   }
 
+  // 輸出維持與舊版（轉發 calculate 回應）等價：
+  // 有符合資格的員工 → generated + total；查無員工 → 只有 generated: 0。
   return NextResponse.json({
     data: {
-      ...result.data,
+      generated,
+      ...(result.kind === 'ok' ? { total: result.total } : {}),
       year,
       month,
       notified,

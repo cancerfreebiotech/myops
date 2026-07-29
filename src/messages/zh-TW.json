@@ -2053,7 +2053,9 @@
         "insufficientStock": "庫存不足，無法過帳",
         "stockNotFound": "找不到對應的庫存資料",
         "notPosted": "此單尚未過帳",
-        "codeNotFound": "找不到符合此條碼的商品或庫存"
+        "codeNotFound": "找不到符合此條碼的商品或庫存",
+        "exceedsGrQuantity": "入庫數量超過來源進貨驗收單的驗收數量，無法過帳。請確認這張進貨驗收單是否已被重複轉成入庫單",
+        "exceedsGrQuantityItem": "「{item}」入庫數量超過來源進貨驗收單的驗收數量（尚可入庫 {remaining} {unit}，本單 {requested} {unit}），無法過帳。請確認這張進貨驗收單是否已被重複轉成入庫單"
       }
     },
     "ledger": {
@@ -2860,7 +2862,8 @@
     "rsvpMaybe": "未定",
     "rsvpSaved": "已更新出席回覆",
     "rsvpAttendingCount": "{count} 人參加",
-    "rsvpNobody": "尚無人回覆"
+    "rsvpNobody": "尚無人回覆",
+    "onLeave": "請假中"
   },
   "insights": {
     "title": "營運儀表板",

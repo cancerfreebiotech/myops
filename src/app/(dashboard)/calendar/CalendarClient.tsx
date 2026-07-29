@@ -33,7 +33,6 @@ interface LeaveItem {
   start_date: string
   end_date: string
   user: { display_name: string | null } | null
-  leave_type: { name: string } | null
 }
 
 interface TripItem {
@@ -166,7 +165,8 @@ export function CalendarClient({ isManager }: { isManager: boolean }) {
       items.push({
         key: `leave-${lv.id}`,
         type: 'leave',
-        label: `${lv.user?.display_name ?? ''} ${lv.leave_type?.name ?? ''}`.trim(),
+        // 只顯示「請假中」，不顯示假別（健康個資）
+        label: `${lv.user?.display_name ?? ''} ${t('onLeave')}`.trim(),
         start: lv.start_date.slice(0, 10),
         end: lv.end_date.slice(0, 10),
       })
@@ -181,7 +181,7 @@ export function CalendarClient({ isManager }: { isManager: boolean }) {
       })
     }
     return items
-  }, [data])
+  }, [data, t])
 
   const itemsOn = useCallback(
     (date: string) => allItems.filter(item => item.start <= date && date <= item.end),

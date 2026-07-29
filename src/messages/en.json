@@ -2053,7 +2053,9 @@
         "insufficientStock": "Insufficient stock — posting aborted",
         "stockNotFound": "Referenced stock record not found",
         "notPosted": "This document has not been posted",
-        "codeNotFound": "No product or stock matches this code"
+        "codeNotFound": "No product or stock matches this code",
+        "exceedsGrQuantity": "Inbound quantity exceeds the quantity received on the source goods receipt — posting aborted. Check whether that goods receipt was already converted into another inbound order",
+        "exceedsGrQuantityItem": "{item}: inbound quantity exceeds the quantity received on the source goods receipt ({remaining} {unit} still available, {requested} {unit} on this document) — posting aborted. Check whether that goods receipt was already converted into another inbound order"
       }
     },
     "ledger": {
@@ -2860,7 +2862,8 @@
     "rsvpMaybe": "Maybe",
     "rsvpSaved": "RSVP updated",
     "rsvpAttendingCount": "{count} attending",
-    "rsvpNobody": "No responses yet"
+    "rsvpNobody": "No responses yet",
+    "onLeave": "On leave"
   },
   "insights": {
     "title": "Operations Insights",

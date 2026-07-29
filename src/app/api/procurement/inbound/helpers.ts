@@ -330,11 +330,53 @@ export async function buildOutboundItemRows(
 
 // ── posting RPC error mapping ──
 
-/** Supabase rpc errors carry the Postgres SQLSTATE in error.code (P0002…P0005). */
+/** Supabase rpc errors carry the Postgres SQLSTATE in error.code (P0002…P0006). */
 export function rpcErrorCode(error: unknown): string | null {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = (error as { code?: unknown }).code
     if (typeof code === 'string') return code
+  }
+  return null
+}
+
+/** 「累計入庫量超過來源進貨驗收單」(P0006) 的明細，用來組出指名商品的訊息 */
+export interface OverReceiptDetail {
+  /** 商品名稱 (或編號) */
+  item: string
+  /** 庫存單位，可能為空字串 */
+  unit: string
+  /** 這張進貨驗收單還可入庫的數量 */
+  remaining: string
+  /** 本張入庫單該商品的數量 */
+  requested: string
+}
+
+/**
+ * post_inbound 的 P0006 在 SQLSTATE 之外，另用 HINT 帶一段 JSON
+ * （PostgREST 原樣轉成 error.hint；也試 error.details 以防版本差異），
+ * 讓 route 能講清楚是哪個商品、還能入多少。
+ * 這是純加值：任何缺欄位/解析失敗都回 null，呼叫端退回不帶參數的通用訊息。
+ */
+export function parseOverReceiptDetail(error: unknown): OverReceiptDetail | null {
+  if (typeof error !== 'object' || error === null) return null
+  const e = error as { hint?: unknown; details?: unknown }
+  for (const raw of [e.hint, e.details]) {
+    if (typeof raw !== 'string' || !raw.trim().startsWith('{')) continue
+    try {
+      const parsed = JSON.parse(raw) as Record<string, unknown>
+      const item = typeof parsed.item === 'string' ? parsed.item.trim() : ''
+      if (!item) continue
+      const num = (v: unknown): string | null => {
+        const n = Number(v)
+        return Number.isFinite(n) ? String(n) : null
+      }
+      const remaining = num(parsed.remaining)
+      const requested = num(parsed.requested)
+      if (remaining === null || requested === null) continue
+      return { item, unit: typeof parsed.unit === 'string' ? parsed.unit : '', remaining, requested }
+    } catch {
+      continue
+    }
   }
   return null
 }

@@ -31,7 +31,9 @@ export async function GET(request: NextRequest) {
     supabase.rpc('calendar_overview_trips', { p_from: monthStart, p_to: monthEnd }),
   ])
 
-  type LeaveRow = { id: string; start_date: string; end_date: string; display_name: string | null; leave_type_name: string | null }
+  // 公司行事曆刻意不含假別（生理假/病假屬健康個資）——calendar_overview_leaves
+  // 自 20260729000002 起不再回傳 leave_type_name，前端一律顯示為「請假中」。
+  type LeaveRow = { id: string; start_date: string; end_date: string; display_name: string | null }
   type TripRow = { id: string; start_date: string; end_date: string; display_name: string | null; destination: string }
   type RsvpRow = { event_id: string; user_id: string; status: 'attending' | 'declined' | 'maybe'; user: { display_name: string | null } | null }
 
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
 
   const leaves = ((leavesRes.data ?? []) as LeaveRow[]).map(r => ({
     id: r.id, start_date: r.start_date, end_date: r.end_date,
-    user: { display_name: r.display_name }, leave_type: { name: r.leave_type_name },
+    user: { display_name: r.display_name },
   }))
   const trips = ((tripsRes.data ?? []) as TripRow[]).map(r => ({
     id: r.id, start_date: r.start_date, end_date: r.end_date,

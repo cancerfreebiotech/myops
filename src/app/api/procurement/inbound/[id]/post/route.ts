@@ -1,7 +1,7 @@
 import { createServiceClient, procurementWriteClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
-import { requireInventoryUser, rpcErrorCode } from '../../helpers'
+import { parseOverReceiptDetail, requireInventoryUser, rpcErrorCode } from '../../helpers'
 import { applyInboundReceipt } from '@/lib/procurement/receipt-progress'
 
 // 庫存過帳 (inbound) — apply the order to warehouse_stock + ledger.
@@ -41,6 +41,21 @@ export async function POST(_request: NextRequest, { params }: { params: Promise<
   if (error) {
     const code = rpcErrorCode(error)
     if (code === 'P0003') return NextResponse.json({ error: ti('errors.alreadyPosted') }, { status: 409 })
+    // 累計入庫量超過來源進貨驗收單的驗收數量 → 通常是同一張進貨單被重複轉入庫單
+    if (code === 'P0006') {
+      const detail = parseOverReceiptDetail(error)
+      console.warn(`[procurement inbound] post blocked (over receipt qty) for ${doc.doc_no}:`, error.message)
+      return NextResponse.json({
+        error: detail
+          ? ti('errors.exceedsGrQuantityItem', {
+              item: detail.item,
+              unit: detail.unit,
+              remaining: detail.remaining,
+              requested: detail.requested,
+            })
+          : ti('errors.exceedsGrQuantity'),
+      }, { status: 409 })
+    }
     if (code === 'P0004') return NextResponse.json({ error: ti('errors.postValidationFailed') }, { status: 400 })
     if (code === 'P0002') return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
     if (code === '42501') return NextResponse.json({ error: t('common.noWritePermission') }, { status: 500 })

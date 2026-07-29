@@ -1,20 +1,20 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getEmbedConfig, embedTexts } from '@/lib/embeddings'
+import { isAskAiDocType } from '@/lib/doc-index-types'
 
 /**
  * 文件向量索引：把文件內容切段、embedding 後寫入 doc_chunks。
  * 觸發時機：文件核准/發布、OCR 完成、AI 翻譯完成（皆 fire-and-forget，不影響主流程）。
  * 未設定 embedding 模型時靜默略過（政策問答會 fallback 全文入 prompt）。
  * 需以真 service-role client 呼叫（doc_chunks 僅 service-role 可存取）。
+ *
+ * 可入索引的 doc_type 白名單一律以 @/lib/doc-index-types 為唯一來源
+ * （合約/NDA/MOU/AMEND 刻意排除的理由寫在那個檔案）。
  */
 
 const CHUNK_SIZE = 1000
 const CHUNK_OVERLAP = 150
 const EMBED_BATCH = 32
-
-// 只索引政策類文件（與 policy-qa 全文模式的 DOC_TYPES 一致）。
-// 合約/NDA/MOU 等機密文件絕不入索引——問答對全體員工開放，索引到就等於洩漏。
-export const INDEXABLE_DOC_TYPES = ['REG', 'ANN', 'INTERNAL']
 
 function chunkText(text: string): string[] {
   const clean = text.replace(/\r/g, '').trim()
@@ -44,7 +44,7 @@ export async function indexDocument(admin: SupabaseClient, docId: string): Promi
   if (!doc || doc.deleted_at) return 0
 
   // 非政策類文件（合約/NDA/MOU…）不入索引，且清掉可能存在的舊段
-  if (!INDEXABLE_DOC_TYPES.includes(doc.doc_type)) {
+  if (!isAskAiDocType(doc.doc_type)) {
     await admin.from('doc_chunks').delete().eq('doc_id', doc.id)
     return 0
   }

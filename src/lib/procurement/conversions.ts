@@ -124,7 +124,10 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
     fieldMap: {
       notes: 'notes',
     },
-    // 擱置：一張 GR 對多張入庫單可能是合理的分批入庫，待確認採購規則後再決定是否防重（2026-07-11 Luna）
+    // 刻意不設 dedupeTarget：一張 GR 對多張入庫單是合法的分批入庫。
+    // 防重複計庫存改在「量」而非「張數」把關 —— post_inbound（過帳）會檢查
+    // 同一來源 GR 的累計入庫量不得超過驗收數量，超過就 raise P0006
+    // （migration 20260729000010_post_inbound_dedup.sql）。
     postProcess: ['buildInboundItems'],
   },
 

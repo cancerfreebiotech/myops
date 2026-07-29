@@ -76,8 +76,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     )
   }
 
-  const updatePayload: { status: string; paid_at?: string } = { status: newStatus }
-  if (action === 'pay') updatePayload.paid_at = new Date().toISOString()
+  // 簽核軌跡：每個階段各自回填「誰、何時」（欄位由 20260729000012 migration 補齊；
+  // 在此之前 paid_at 根本不存在，pay 這一步每次都被 PostgREST 以 PGRST204 擋掉）。
+  const nowIso = new Date().toISOString()
+  const auditByAction: Record<string, Record<string, string>> = {
+    hr_review:       { hr_reviewed_by: user.id,       hr_reviewed_at: nowIso },
+    finance_confirm: { finance_confirmed_by: user.id, finance_confirmed_at: nowIso },
+    coo_approve:     { coo_approved_by: user.id,      coo_approved_at: nowIso },
+    pay:             { paid_by: user.id,              paid_at: nowIso },
+    reject:          { rejected_by: user.id,          rejected_at: nowIso },
+  }
+  const updatePayload: Record<string, string> = { status: newStatus, ...(auditByAction[action] ?? {}) }
 
   // .in('status', allowedPrev)：DB 層條件式寫入，關閉 TOCTOU 競態（被搶改則 0 列，.single() 報錯）
   const { data, error } = await service

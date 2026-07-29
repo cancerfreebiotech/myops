@@ -2053,7 +2053,9 @@
         "insufficientStock": "在庫が不足しているため記帳できません",
         "stockNotFound": "対象の在庫データが見つかりません",
         "notPosted": "この伝票はまだ記帳されていません",
-        "codeNotFound": "このコードに一致する商品・在庫が見つかりません"
+        "codeNotFound": "このコードに一致する商品・在庫が見つかりません",
+        "exceedsGrQuantity": "入庫数量が入荷検収書の検収数量を超えているため記帳できません。同じ入荷検収書から入庫伝票が重複作成されていないか確認してください",
+        "exceedsGrQuantityItem": "「{item}」の入庫数量が入荷検収書の検収数量を超えているため記帳できません（入庫可能残 {remaining} {unit}、本伝票 {requested} {unit}）。同じ入荷検収書から入庫伝票が重複作成されていないか確認してください"
       }
     },
     "ledger": {
@@ -2860,7 +2862,8 @@
     "rsvpMaybe": "未定",
     "rsvpSaved": "出欠を更新しました",
     "rsvpAttendingCount": "参加 {count}名",
-    "rsvpNobody": "まだ回答がありません"
+    "rsvpNobody": "まだ回答がありません",
+    "onLeave": "休暇中"
   },
   "insights": {
     "title": "経営ダッシュボード",
