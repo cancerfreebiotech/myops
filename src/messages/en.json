@@ -62,7 +62,8 @@
       "prevPage": "Previous",
       "nextPage": "Next",
       "noRecordsHint": "Try different filters or another month."
-    }
+    },
+    "remove": "Remove"
   },
   "auth": {
     "login": "Sign In",
@@ -845,7 +846,19 @@
       "scanned": "Scanned",
       "flagged": "Flagged",
       "noAnomalies": "No anomalies found"
-    }
+    },
+    "generateMonth": "Calculate {year}/{month}",
+    "generateTitle": "Calculate payroll for {year}/{month}",
+    "generateExplain": "Draft payroll records will be generated for every eligible employee from HR and attendance data.",
+    "generateScope": "Scope: active, Taiwan-based, full-time employees with a monthly salary on file.",
+    "generateSources": "Inputs: monthly salary, approved overtime, unpaid-leave deductions, bonus records, insurance brackets.",
+    "generateOverwriteWarn": "{count} payroll record(s) this month have entered the approval flow. Recalculating overwrites the amounts, resets them to draft and clears completed approvals.",
+    "generateConfirm": "Start calculation",
+    "generating": "Calculating…",
+    "generateDone": "Generated {generated} of {total} payroll drafts",
+    "generateWarning": "Calculation finished but some writes failed: {error}",
+    "bracketsMissing": "Insurance brackets for {year} have not been uploaded — labor and health insurance will be calculated as 0.",
+    "bracketsMissingLink": "Upload brackets"
   },
   "projects": {
     "title": "Projects",
@@ -1183,7 +1196,9 @@
       "aiStatusVector": "Vector search (policy Q&A)",
       "aiStatusNoEmbedModel": "Embedding model not set (full-text mode)",
       "secretSetPlaceholder": "Set (enter a new value to replace)",
-      "secretUnsetPlaceholder": "Not set"
+      "secretUnsetPlaceholder": "Not set",
+      "prApprovalCooThreshold": "Purchase request: COO approval required above (NT$)",
+      "prApprovalCeoThreshold": "Purchase request: CEO approval required above (NT$)"
     },
     "audit": {
       "title": "Audit Logs",
@@ -1343,7 +1358,10 @@
       "uploadHint": "Upload an Excel file to import rates",
       "yearOption": "{y}",
       "refreshAria": "Refresh rate data",
-      "rateTableTitle": "{label} Rate Table — {year}"
+      "rateTableTitle": "{label} Rate Table — {year}",
+      "unsupportedFileType": "Unsupported file type ({ext}). Official bracket tables are usually PDFs — convert to Excel/CSV first, or download the template below.",
+      "requiredColumns": "Required columns: {columns}",
+      "downloadTemplate": "Download blank template"
     },
     "leaveBalancesMgmt": {
       "allEmployees": "All employees",
@@ -1922,7 +1940,12 @@
         "onlyDraftEditable": "Only draft documents can be edited",
         "vendorCodeReadonly": "You do not have permission to change the vendor code (requires the procurement unit or procurement management feature)"
       },
-      "searchPlaceholder": "Search doc no., source PR, vendor, or status…"
+      "searchPlaceholder": "Search doc no., source PR, vendor, or status…",
+      "uploadFile": "Upload file",
+      "uploading": "Uploading…",
+      "uploadedNeedSave": "File uploaded — press Save to attach it to the document",
+      "uploadFailed": "Upload failed, please retry",
+      "legacyRagicFile": "Attachment still lives in the legacy system (Ragic); not migrated yet"
     },
     "inbox": {
       "title": "Approval inbox",
@@ -2378,7 +2401,8 @@
         "invalidItems": "Invalid line items",
         "onlyDraftEditable": "Only drafts can be edited",
         "onlyDraftDeletable": "Only drafts can be deleted"
-      }
+      },
+      "approvalPreview": "At the current total, submitting will route through: {steps}"
     },
     "rfqs": {
       "title": "RFQs",
@@ -2588,7 +2612,7 @@
     "catTravel": "Travel",
     "catMeal": "Meals",
     "catSupplies": "Supplies",
-    "catOther": "Other",
+    "catOther": "Other expenses",
     "statusPending": "Pending",
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
@@ -2619,7 +2643,14 @@
     "uploadFailed": "Failed to upload attachment",
     "mfaRequired": "Approval actions require two-factor authentication (MFA)",
     "total": "Total",
-    "tripLabel": "Linked trip"
+    "tripLabel": "Linked trip",
+    "claimMonth": "Claim month",
+    "invoiceNo": "Invoice no.",
+    "invoiceNoPlaceholder": "e.g. AB12345678 (leave blank if none)",
+    "catEntertain": "Entertainment",
+    "catWelfare": "Employee welfare",
+    "catStationery": "Stationery & printing",
+    "catMisc": "Miscellaneous"
   },
   "approvals": {
     "title": "Approval Center",

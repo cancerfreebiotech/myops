@@ -224,6 +224,8 @@ export async function requireProcurementUser(): Promise<AuthResult> {
 export interface StepRow {
   id: string
   step_no: number
+  /** 關卡名稱 i18n key（送簽時寫入）；舊資料為 null */
+  step_name: string | null
   approver_kind: 'job_role' | 'manager_of' | 'doc_field' | 'anyone'
   approver_value: string | null
   resolved_user_id: string | null

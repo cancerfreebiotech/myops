@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isValidDateString } from '@/lib/taipei-date'
 import { getTranslations } from 'next-intl/server'
 
-const CATEGORIES = ['transport', 'travel', 'meal', 'supplies', 'other']
+// 會計科目（與 expense_claims_category_check 同步）
+const CATEGORIES = ['travel', 'entertain', 'welfare', 'stationery', 'misc', 'other']
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const CLAIM_MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
 async function getApproverInfo(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase
@@ -66,10 +68,17 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: t('common.unauthorized') }, { status: 401 })
 
   const body = await request.json()
-  const { expense_date, category, amount, description, receipt_paths, trip_id } = body
+  const { expense_date, claim_month, category, invoice_no, amount, description, receipt_paths, trip_id } = body
 
   if (!isValidDateString(expense_date) || !CATEGORIES.includes(category) || !description?.trim()) {
     return NextResponse.json({ error: t('common.missingFields') }, { status: 400 })
+  }
+  // 申請月份可與費用日期不同月（7/31 的收據算 8 月報帳），未給則以費用日期所屬月份補
+  const claimMonth = typeof claim_month === 'string' && CLAIM_MONTH_RE.test(claim_month)
+    ? claim_month
+    : expense_date.slice(0, 7)
+  if (invoice_no != null && (typeof invoice_no !== 'string' || invoice_no.length > 60)) {
+    return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
   }
   const numAmount = Number(amount)
   if (!Number.isFinite(numAmount) || numAmount <= 0) {
@@ -98,7 +107,9 @@ export async function POST(request: NextRequest) {
     .insert({
       user_id: user.id,
       expense_date,
+      claim_month: claimMonth,
       category,
+      invoice_no: typeof invoice_no === 'string' && invoice_no.trim() ? invoice_no.trim() : null,
       amount: numAmount,
       description: description.trim(),
       receipt_paths: Array.isArray(receipt_paths) ? receipt_paths : [],

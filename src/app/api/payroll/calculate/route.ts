@@ -33,15 +33,27 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const body = await request.json()
-  const year = body.year ?? new Date().getFullYear()
-  const month = body.month ?? new Date().getMonth() + 1
+  const body = await request.json().catch(() => ({}))
+  const rawYear = Number(body?.year)
+  const rawMonth = Number(body?.month)
+  const now = new Date()
+  const year = Number.isInteger(rawYear) && rawYear >= 2020 && rawYear <= 2099 ? rawYear : now.getFullYear()
+  const month = Number.isInteger(rawMonth) && rawMonth >= 1 && rawMonth <= 12 ? rawMonth : now.getMonth() + 1
 
   const result = await generatePayrollDrafts(year, month)
 
   if (result.kind === 'no_eligible_employees') {
-    return NextResponse.json({ data: { generated: 0, message: t('payrollCalculate.noEligibleEmployees') } })
+    return NextResponse.json({ data: { generated: 0, year, month, message: t('payrollCalculate.noEligibleEmployees') } })
   }
 
-  return NextResponse.json({ data: { generated: result.generated, total: result.total } })
+  // 部分寫入失敗要說出來，不能只回「產生 0 筆」讓人以為是沒有符合條件的員工
+  return NextResponse.json({
+    data: {
+      generated: result.generated,
+      total: result.total,
+      year,
+      month,
+      ...(result.firstError ? { warning: result.firstError } : {}),
+    },
+  })
 }

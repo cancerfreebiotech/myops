@@ -14,6 +14,8 @@ interface ExpenseClaim {
   id: string
   user_id: string
   expense_date: string
+  claim_month: string | null
+  invoice_no: string | null
   category: string
   amount: number
   currency: string
@@ -33,10 +35,12 @@ interface Props {
 
 type Tab = 'mine' | 'new' | 'approve'
 
-const CATEGORIES = ['transport', 'travel', 'meal', 'supplies', 'other'] as const
+// 會計科目（2026-07-29 起）：直接用記帳科目命名，報帳單才能直接對帳。
+// 舊值 transport/meal/supplies 已由 migration 20260729100001 轉為 travel/welfare/stationery。
+const CATEGORIES = ['travel', 'entertain', 'welfare', 'stationery', 'misc', 'other'] as const
 const CATEGORY_KEYS = {
-  transport: 'catTransport', travel: 'catTravel', meal: 'catMeal',
-  supplies: 'catSupplies', other: 'catOther',
+  travel: 'catTravel', entertain: 'catEntertain', welfare: 'catWelfare',
+  stationery: 'catStationery', misc: 'catMisc', other: 'catOther',
 } as const
 const STATUS_KEYS = {
   pending: 'statusPending', approved: 'statusApproved', rejected: 'statusRejected',
@@ -59,7 +63,10 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
 
   // New claim form
   const [expenseDate, setExpenseDate] = useState(() => taipeiToday())
-  const [category, setCategory] = useState<string>(prefillTrip ? 'travel' : 'transport')
+  // 申請月份預設當月（台北時區），與費用日期分開：月結看的是申請月份
+  const [claimMonth, setClaimMonth] = useState(() => taipeiToday().slice(0, 7))
+  const [category, setCategory] = useState<string>('travel')
+  const [invoiceNo, setInvoiceNo] = useState('')
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState(
     prefillTrip ? `${prefillTrip.destination} ${prefillTrip.start_date}~${prefillTrip.end_date}` : ''
@@ -115,7 +122,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
 
   const submitClaim = async () => {
     const numAmount = Number(amount)
-    if (!expenseDate || !description.trim() || !Number.isFinite(numAmount) || numAmount <= 0) {
+    if (!expenseDate || !/^\d{4}-\d{2}$/.test(claimMonth) || !description.trim() || !Number.isFinite(numAmount) || numAmount <= 0) {
       toast.error(t('requiredFields'))
       return
     }
@@ -126,7 +133,9 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           expense_date: expenseDate,
+          claim_month: claimMonth,
           category,
+          invoice_no: invoiceNo.trim() || null,
           amount: numAmount,
           description: description.trim(),
           receipt_paths: receipts.map(r => r.path),
@@ -137,8 +146,10 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
       toast.success(t('submitted'))
       setAmount('')
       setDescription('')
+      setInvoiceNo('')
       setReceipts([])
       setExpenseDate(taipeiToday())
+      setClaimMonth(taipeiToday().slice(0, 7))
       setTab('mine')
     } catch {
       toast.error(t('saveFailed'))
@@ -201,7 +212,13 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 break-words">{c.description}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
+              {c.claim_month && (
+                <span className="text-xs text-slate-400">{t('claimMonth')}: {c.claim_month}</span>
+              )}
               <span className="text-xs text-slate-400">{c.expense_date}</span>
+              {c.invoice_no && (
+                <span className="text-xs text-slate-400">{t('invoiceNo')}: {c.invoice_no}</span>
+              )}
               {c.trip && (
                 <span className="text-xs text-slate-400 inline-flex items-center gap-1">
                   <Plane size={12} />{c.trip.destination}
@@ -299,6 +316,15 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
             )}
             <div className="flex gap-2 flex-wrap">
               <div>
+                <label className="block text-xs text-slate-500 mb-1">{t('claimMonth')}</label>
+                <input
+                  type="month"
+                  value={claimMonth}
+                  onChange={e => setClaimMonth(e.target.value)}
+                  className="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
                 <label className="block text-xs text-slate-500 mb-1">{t('expenseDate')}</label>
                 <input
                   type="date"
@@ -337,6 +363,15 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 placeholder={t('descriptionPlaceholder')}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-500 mb-1">{t('invoiceNo')}</label>
+              <Input
+                value={invoiceNo}
+                onChange={e => setInvoiceNo(e.target.value)}
+                placeholder={t('invoiceNoPlaceholder')}
+                className="sm:max-w-xs"
               />
             </div>
             <div>

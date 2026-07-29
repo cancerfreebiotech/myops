@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 import { getTranslations } from 'next-intl/server'
 
+// 會計科目（與 expense_claims_category_check 同步）
 const CATEGORY_LABELS: Record<string, string> = {
-  transport: '交通',
-  travel: '差旅',
-  meal: '誤餐',
-  supplies: '用品',
-  other: '其他',
+  travel: '差旅費',
+  entertain: '交際費',
+  welfare: '職工福利',
+  stationery: '文具印刷',
+  misc: '雜支',
+  other: '其他費用',
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -47,11 +49,9 @@ export async function GET(request: NextRequest) {
     `)
     .order('expense_date', { ascending: true })
 
+  // 月結以「申請月份」為準（會計科目視角），而非收據日期——7/31 的收據可能算 8 月報帳。
   if (month && /^\d{4}-\d{2}$/.test(month)) {
-    const [y, m] = month.split('-').map(Number)
-    const start = `${month}-01`
-    const end = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`
-    query = query.gte('expense_date', start).lt('expense_date', end)
+    query = query.eq('claim_month', month)
   }
 
   const { data, error } = await query
@@ -71,11 +71,13 @@ export async function GET(request: NextRequest) {
   }
 
   const rows = ((data ?? []) as unknown as ClaimRow[]).map(c => ({
+    '申請月份': (c.claim_month as string | null) ?? '',
     '費用日期': c.expense_date,
     '員工': c.user?.display_name ?? c.user?.email ?? '',
     '類別': CATEGORY_LABELS[c.category] ?? c.category,
     '金額': c.amount,
     '幣別': c.currency,
+    '發票號碼': (c.invoice_no as string | null) ?? '',
     '事由': c.description,
     '狀態': STATUS_LABELS[c.status] ?? c.status,
     '審核人': c.reviewer?.display_name ?? '',

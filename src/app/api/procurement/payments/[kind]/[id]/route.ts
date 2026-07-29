@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data: stepsData, error: stepsError } = await service
     .from('procurement_approval_steps')
-    .select('id, step_no, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
+    .select('id, step_no, step_name, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
     .eq('doc_type', PAYMENT_DOC_TYPE[kind])
     .eq('doc_id', id)
     .order('step_no', { ascending: true })

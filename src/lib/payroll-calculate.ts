@@ -50,7 +50,9 @@ interface PayrollRecordInsert {
 
 export type PayrollGenerationResult =
   | { kind: 'no_eligible_employees' }
-  | { kind: 'ok'; generated: number; total: number }
+  /** firstError：寫入失敗時的第一個錯誤訊息。原本 upsert 失敗被 `if (!error)` 吃掉，
+   *  畫面只會看到「產生 0 筆」而完全查不出原因（例如權限不足）。 */
+  | { kind: 'ok'; generated: number; total: number; firstError?: string }
 
 // 計算一筆請假落在 [monthStart, monthEnd] 當月的天數（含頭尾、以日曆天計）。
 // 以整段日曆天為分母、當月重疊日曆天為分子，按比例攤 totalDays，
@@ -261,12 +263,18 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
   }
 
   // 9. Upsert (avoid duplicates)
+  let firstError: string | undefined
   for (const rec of records) {
     const { error } = await service
       .from('payroll_records')
       .upsert(rec, { onConflict: 'user_id,year,month' })
-    if (!error) generated++
+    if (error) {
+      if (!firstError) firstError = error.message
+      console.error('[payroll] upsert failed for user', rec.user_id, error.message)
+      continue
+    }
+    generated++
   }
 
-  return { kind: 'ok', generated, total: records.length }
+  return { kind: 'ok', generated, total: records.length, ...(firstError ? { firstError } : {}) }
 }

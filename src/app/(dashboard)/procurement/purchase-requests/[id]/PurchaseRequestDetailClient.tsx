@@ -19,6 +19,7 @@ import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/Ap
 import { ApprovalActions } from '@/components/procurement/ApprovalActions'
 import { BackLink } from '@/components/procurement/BackLink'
 import type { DocStatus } from '@/lib/procurement/doc-types'
+import { resolveFlow, type AmountThresholds } from '@/lib/procurement/approval-flows'
 import { PrStatusBadge, formatAmount } from '../PurchaseRequestsClient'
 
 // 請採購單 detail — sectioned header form (廠商 / 金額 / 條件 / 日期) + pr_items
@@ -82,6 +83,8 @@ interface Detail {
   steps: TimelineStep[]
   can_act: boolean
   current_step_kind: TimelineStep['approver_kind'] | null
+  /** 金額門檻（system_settings），草稿階段用來預覽送簽會經過哪幾關 */
+  amount_thresholds?: AmountThresholds
 }
 
 /** Header text/date fields grouped into form sections (i18n: sections.* / fields.*) */
@@ -161,6 +164,7 @@ interface Props {
 export function PurchaseRequestDetailClient({ docId, users, vendors, products }: Props) {
   const t = useTranslations('procurement.purchaseRequests')
   const tc = useTranslations('common')
+  const tApproval = useTranslations('procurement.approval')
   const router = useRouter()
 
   const [detail, setDetail] = useState<Detail | null>(null)
@@ -240,6 +244,13 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
   const totalAmount = useMemo(
     () => round2(subtotal + taxAmount + (toNum(form.shipping_fee ?? '') ?? 0)),
     [subtotal, taxAmount, form.shipping_fee]
+  )
+
+  // 草稿階段預覽簽核關卡：關卡數依合計金額而定（COO / CEO 兩關有門檻），
+  // 先讓請購人看到「這張單會跑幾關」，不必等送簽後才發現多一關 CEO。
+  const previewSteps = useMemo(
+    () => resolveFlow('purchase_request', totalAmount, detail?.amount_thresholds).map(s => s.name),
+    [totalAmount, detail?.amount_thresholds]
   )
 
   const setField = (name: string, value: string) => setForm(prev => ({ ...prev, [name]: value }))
@@ -786,6 +797,13 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
         <div className="space-y-6">
           <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6">
             <ApprovalTimeline docType="purchase_request" steps={detail.steps} docStatus={doc.status} />
+            {editable && detail.steps.length === 0 && (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                {t('approvalPreview', {
+                  steps: previewSteps.map(n => tApproval(`steps.${n}` as Parameters<typeof tApproval>[0])).join(' → '),
+                })}
+              </p>
+            )}
           </div>
           {detail.can_act && detail.current_step_kind && (
             <ApprovalActions

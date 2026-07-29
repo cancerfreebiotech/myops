@@ -21,6 +21,8 @@ const SETTING_I18N_KEY: Record<string, string> = {
   contract_reminder_days_first: 'contractReminderFirst',
   contract_reminder_days_second: 'contractReminderSecond',
   project_ot_coo_threshold_hours: 'projectOtCooThreshold',
+  pr_approval_coo_threshold: 'prApprovalCooThreshold',
+  pr_approval_ceo_threshold: 'prApprovalCeoThreshold',
 }
 
 interface Setting { key: string; value: string }

@@ -36,9 +36,54 @@ export type ApproverSpec =
   | { kind: 'anyone'; notifyFeature: FeatureKey }
 
 export interface FlowStep {
-  /** i18n key suffix (procurement namespace, steps.*) — also stored as plain text name fallback */
+  /** i18n key suffix (procurement namespace, steps.*) — also persisted to procurement_approval_steps.step_name */
   name: string
   approver: ApproverSpec
+  /**
+   * 金額門檻關卡：只有當文件金額 > 對應門檻時才建立這一關（Linda 7/29 回報 acefefa5）。
+   * 'coo' → pr_approval_coo_threshold（預設 3,000）；'ceo' → pr_approval_ceo_threshold（預設 20,000）。
+   * 未設此欄＝一律建立。金額為 undefined（尚未填金額就送簽）時保守起見一律建立，
+   * 寧可多簽一關，也不要讓大額採購繞過 COO/CEO。
+   */
+  amountGate?: 'coo' | 'ceo'
+}
+
+/** 金額門檻的 system_settings key 與 fallback 預設值（migration 20260729100002 已寫入同樣的預設） */
+export const AMOUNT_THRESHOLD_KEYS = {
+  coo: 'pr_approval_coo_threshold',
+  ceo: 'pr_approval_ceo_threshold',
+} as const
+
+export const DEFAULT_AMOUNT_THRESHOLDS: Record<'coo' | 'ceo', number> = {
+  coo: 3000,
+  ceo: 20000,
+}
+
+export type AmountThresholds = Record<'coo' | 'ceo', number>
+
+/** system_settings 的字串值 → 門檻數字；空值／非數字／負數一律退回預設值 */
+export function parseAmountThresholds(raw: Partial<Record<string, string | null>>): AmountThresholds {
+  const pick = (gate: 'coo' | 'ceo'): number => {
+    const v = Number(raw[AMOUNT_THRESHOLD_KEYS[gate]])
+    return Number.isFinite(v) && v >= 0 ? v : DEFAULT_AMOUNT_THRESHOLDS[gate]
+  }
+  return { coo: pick('coo'), ceo: pick('ceo') }
+}
+
+/**
+ * 依文件金額解析出實際要建立的關卡。
+ * 送簽（approval-engine）與畫面預覽（ApprovalTimeline）共用同一份邏輯，避免兩邊不一致。
+ */
+export function resolveFlow(
+  docType: DocType,
+  amount: number | null | undefined,
+  thresholds: AmountThresholds = DEFAULT_AMOUNT_THRESHOLDS,
+): FlowStep[] {
+  return APPROVAL_FLOWS[docType].filter(step => {
+    if (!step.amountGate) return true
+    if (amount === null || amount === undefined || !Number.isFinite(amount)) return true
+    return amount > thresholds[step.amountGate]
+  })
 }
 
 /**
@@ -62,11 +107,16 @@ export const APPROVAL_FLOWS: Record<DocType, FlowStep[]> = {
     { name: 'departmentManager', approver: { kind: 'manager_of', actableByFeature: 'procurement_payment_approve' } },
   ],
 
-  // §三-2 請採購單: 部門主管(請款簽核主管) → COO → CEO → 通知採購
+  // §三-2 請採購單: 部門主管(請款簽核主管) → [COO] → [CEO] → 通知採購
+  // COO / CEO 兩關依金額門檻決定是否建立（2026-07-29 起，門檻可在 /admin/coo-settings 調整）：
+  //   ≤ 3,000        部門主管 → 通知採購
+  //   3,000~20,000   部門主管 → COO → 通知採購
+  //   > 20,000       部門主管 → COO → CEO → 通知採購
+  // 「通知採購」三段都保留——它是通知關卡而非簽核關卡，採購同事必須知道要去下單。
   purchase_request: [
     { name: 'departmentManager', approver: { kind: 'manager_of', actableByFeature: 'procurement_payment_approve' } },
-    { name: 'coo', approver: { kind: 'job_role', value: 'coo' } },
-    { name: 'ceo', approver: { kind: 'job_role', value: 'ceo' } },
+    { name: 'coo', approver: { kind: 'job_role', value: 'coo' }, amountGate: 'coo' },
+    { name: 'ceo', approver: { kind: 'job_role', value: 'ceo' }, amountGate: 'ceo' },
     { name: 'notifyProcurement', approver: { kind: 'anyone', notifyFeature: 'procurement_unit' } },
   ],
 

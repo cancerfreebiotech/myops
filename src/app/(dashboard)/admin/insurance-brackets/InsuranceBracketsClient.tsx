@@ -59,6 +59,27 @@ const EMP_SHARE_KEYS = ['employeeshare', '個人負擔', 'employee_share', '員�
 const EMP_DEPENDENTS_KEYS = ['employeedependents', '眷屬', 'employee_dependents', '眷屬負擔', '眷口數']
 const EMP_EMPLOYER_KEYS = ['employershare', '雇主負擔', 'employer_share', '雇主自付']
 
+/** 只接受試算表；官方級距表多為 PDF，需先另存為 xlsx/csv */
+const SPREADSHEET_EXTS = ['xlsx', 'xls', 'csv']
+
+/** 範本欄名（第一個別名即為範本使用的中文欄名）*/
+const TEMPLATE_HEADERS = {
+  labor: ['等級', '投保薪資', '個人負擔', '雇主負擔'],
+  health: ['等級', '投保薪資', '個人負擔', '眷屬負擔', '雇主負擔'],
+} as const
+
+/** 產生空白範本（含一列示範值），讓人資照著填欄名，不用猜格式 */
+function downloadTemplate(type: 'labor' | 'health') {
+  const headers = TEMPLATE_HEADERS[type]
+  const sample = type === 'labor'
+    ? { 等級: 1, 投保薪資: 28590, 個人負擔: 578, 雇主負擔: 2023 }
+    : { 等級: 1, 投保薪資: 28590, 個人負擔: 452, 眷屬負擔: 452, 雇主負擔: 1585 }
+  const ws = XLSX.utils.json_to_sheet([sample], { header: [...headers] })
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, type === 'labor' ? '勞保級距' : '健保級距')
+  XLSX.writeFile(wb, type === 'labor' ? 'labor-insurance-brackets-template.xlsx' : 'health-insurance-brackets-template.xlsx')
+}
+
 function findKey(headers: string[], aliases: string[]): string | null {
   for (const h of headers) {
     const normalized = h.toLowerCase().replace(/[\s_\-]/g, '')
@@ -100,6 +121,16 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
     setParseError(null)
     setPreview(null)
     setFileName(file.name)
+
+    // 先擋檔案格式：accept 只約束「選檔對話框」，拖放進來的檔案完全不受限制。
+    // Linda 7/29 回報 b1203e93 就是把勞保局／健保署的官方 PDF 拖進來，
+    // XLSX.read 讀 PDF 不會拋錯、只會解出一堆亂碼欄名，最後顯示成
+    // 「找不到必要欄位」——訊息完全指錯方向。這裡直接說是檔案格式不支援。
+    const ext = file.name.toLowerCase().split('.').pop() ?? ''
+    if (!SPREADSHEET_EXTS.includes(ext)) {
+      setParseError(tm('unsupportedFileType', { ext: ext ? `.${ext}` : file.name }))
+      return
+    }
 
     const reader = new FileReader()
     reader.onload = (e) => {
@@ -257,8 +288,23 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
             <div className="text-center">
               <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{tm('dropZoneTitle')}</p>
               <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{tm('supportedFormats')}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                {tm('requiredColumns', { columns: TEMPLATE_HEADERS[type].join('、') })}
+              </p>
             </div>
           </div>
+        )}
+
+        {/* 範本下載：官方級距表是 PDF，直接上傳一定失敗，先給一份填得進去的空白表 */}
+        {!preview && (
+          <button
+            type="button"
+            onClick={() => downloadTemplate(type)}
+            className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 rounded px-1"
+          >
+            <FileSpreadsheet size={13} aria-hidden="true" />
+            {tm('downloadTemplate')}
+          </button>
         )}
 
         <input

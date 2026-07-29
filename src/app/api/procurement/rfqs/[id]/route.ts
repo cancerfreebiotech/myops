@@ -25,6 +25,8 @@ import {
 interface StepRow {
   id: string
   step_no: number
+  /** 關卡名稱 i18n key（送簽時寫入）；舊資料為 null */
+  step_name: string | null
   approver_kind: 'job_role' | 'manager_of' | 'doc_field' | 'anyone'
   approver_value: string | null
   resolved_user_id: string | null
@@ -118,7 +120,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data: stepsData, error: stepsError } = await service
     .from('procurement_approval_steps')
-    .select('id, step_no, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
+    .select('id, step_no, step_name, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
     .eq('doc_type', 'rfq')
     .eq('doc_id', id)
     .order('step_no', { ascending: true })

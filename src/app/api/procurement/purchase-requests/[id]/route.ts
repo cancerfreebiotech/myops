@@ -3,6 +3,7 @@ import { isWritePermissionError } from '@/lib/procurement/errors'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 import { userHasFeature } from '@/lib/job-role-features'
+import { AMOUNT_THRESHOLD_KEYS, parseAmountThresholds } from '@/lib/procurement/approval-flows'
 import {
   computeTotals,
   normalizeItems,
@@ -22,6 +23,8 @@ import {
 interface StepRow {
   id: string
   step_no: number
+  /** 關卡名稱 i18n key（送簽時寫入）；舊資料為 null */
+  step_name: string | null
   approver_kind: 'job_role' | 'manager_of' | 'doc_field' | 'anyone'
   approver_value: string | null
   resolved_user_id: string | null
@@ -64,7 +67,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
   const docRow = doc as unknown as Record<string, unknown>
 
-  const [{ data: itemsData, error: itemsError }, { data: stepsData, error: stepsError }] = await Promise.all([
+  const [{ data: itemsData, error: itemsError }, { data: stepsData, error: stepsError }, { data: thresholdRows }] = await Promise.all([
     service
       .from('pr_items')
       .select('*')
@@ -72,11 +75,18 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       .order('line_no', { ascending: true }),
     service
       .from('procurement_approval_steps')
-      .select('id, step_no, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
+      .select('id, step_no, step_name, approver_kind, approver_value, resolved_user_id, status, acted_by, acted_at, comment')
       .eq('doc_type', 'purchase_request')
       .eq('doc_id', id)
       .order('step_no', { ascending: true }),
+    service
+      .from('system_settings')
+      .select('key, value')
+      .in('key', [AMOUNT_THRESHOLD_KEYS.coo, AMOUNT_THRESHOLD_KEYS.ceo]),
   ])
+  const thresholds = parseAmountThresholds(
+    Object.fromEntries((thresholdRows ?? []).map(r => [r.key as string, r.value as string | null]))
+  )
   if (itemsError || stepsError) {
     console.error('[procurement purchase-requests] detail load failed:', itemsError ?? stepsError)
     return NextResponse.json({ error: t('common.serverError') }, { status: 500 })
@@ -125,6 +135,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       steps: enrichedSteps,
       can_act: canAct,
       current_step_kind: currentStep?.approver_kind ?? null,
+      // 草稿階段用來預覽「這個金額會經過哪幾關」，讓請購人送簽前就知道要跑幾關
+      amount_thresholds: thresholds,
     },
   })
 }

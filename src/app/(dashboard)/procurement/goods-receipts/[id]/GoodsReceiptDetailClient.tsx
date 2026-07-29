@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from 'sonner'
 import {
   Save, Send, Loader2, PackagePlus, Package, Receipt, CopyX,
-  ExternalLink, AlertTriangle, Ban, HandCoins,
+  ExternalLink, AlertTriangle, Ban, HandCoins, Paperclip,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ApprovalTimeline, type TimelineStep } from '@/components/procurement/ApprovalTimeline'
@@ -118,7 +118,27 @@ const ALL_FIELDS: FieldDef[] = [
   { name: 'deposit_paid_amount', kind: 'number' },
 ]
 
+/** 檔案型欄位：改為真的上傳檔案（Scott 7/29 回報 4a05ca46），舊資料仍可能是 URL 或 ragic:// 佔位字串 */
 const URL_FIELDS = new Set(['invoice_doc_url', 'shipping_doc_url'])
+
+/**
+ * 欄位值的三種來源，顯示方式不同：
+ * - 'ragic'：Ragic 匯入時只搬了「檔名」，檔案本身留在舊系統（全庫 584 筆）。
+ *   給連結只會得到死連結，所以顯示檔名 + 「附件仍在舊系統」提示。
+ * - 'external'：http(s) 外部連結（少數手填），維持原本開新視窗。
+ * - 'storage'：本系統 procurement bucket 的物件路徑，走 /api/storage/download 取簽章網址。
+ */
+function classifyDocValue(v: string): 'ragic' | 'external' | 'storage' {
+  if (v.startsWith('ragic://')) return 'ragic'
+  if (/^https?:\/\//i.test(v)) return 'external'
+  return 'storage'
+}
+
+/** ragic://aCB5js5Q9T@萊富-發票NZ16146436-20250523.JPG → 萊富-發票NZ16146436-20250523.JPG */
+function ragicFileName(v: string): string {
+  const at = v.indexOf('@')
+  return at >= 0 ? v.slice(at + 1) : v.replace('ragic://', '')
+}
 
 function one<T>(v: T | T[] | null): T | null {
   return Array.isArray(v) ? (v[0] ?? null) : v
@@ -155,6 +175,7 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
 
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadingField, setUploadingField] = useState<string | null>(null)
   const [converting, setConverting] = useState<'inbound_order' | 'ap_request' | null>(null)
 
   // void-and-clone dialog
@@ -197,6 +218,33 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
   const pr = doc ? one(doc.pr) : null
 
   const setField = (name: string, value: string) => setForm(prev => ({ ...prev, [name]: value }))
+
+  /**
+   * 發票／出貨單據上傳：存 procurement bucket 的物件路徑（不是公開 URL），
+   * 讀取時一律經 /api/storage/download 換簽章網址，才吃得到該 route 的物件層授權。
+   * 上傳完只寫進表單狀態，仍需按「儲存」才會寫回文件——與其他欄位一致，
+   * 避免使用者以為上傳就等於存檔。
+   */
+  const uploadDocFile = async (field: string, file: File) => {
+    setUploadingField(field)
+    try {
+      const pres = await fetch('/api/storage/presigned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bucket: 'procurement', filename: file.name }),
+      })
+      if (!pres.ok) throw new Error()
+      const { data } = await pres.json()
+      const up = await fetch(data.signedUrl, { method: 'PUT', body: file, headers: { 'Content-Type': file.type } })
+      if (!up.ok) throw new Error()
+      setField(field, data.path)
+      toast.success(t('uploadedNeedSave'))
+    } catch {
+      toast.error(t('uploadFailed'))
+    } finally {
+      setUploadingField(null)
+    }
+  }
 
   const buildSaveBody = () => {
     const body: Record<string, unknown> = {
@@ -289,21 +337,38 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
     }
   }
 
+  /** 檔案欄位的顯示：Ragic 佔位字串不給死連結，本系統檔案走 download route 取簽章網址 */
+  const renderDocValue = (v: string) => {
+    const kind = classifyDocValue(v)
+    if (kind === 'ragic') {
+      return (
+        <div className="mt-0.5">
+          <p className="text-slate-700 dark:text-slate-300 break-all">{ragicFileName(v)}</p>
+          <p className="text-xs text-amber-600 dark:text-amber-400">{t('legacyRagicFile')}</p>
+        </div>
+      )
+    }
+    const href = kind === 'external'
+      ? v
+      : `/api/storage/download?bucket=procurement&path=${encodeURIComponent(v)}`
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline mt-0.5 break-all"
+      >
+        {t('viewFile')}
+        <ExternalLink size={14} aria-hidden />
+      </a>
+    )
+  }
+
   const renderReadOnly = (f: FieldDef) => {
     const v = doc?.[f.name]
     if (v === null || v === undefined || v === '') return <p className="text-slate-700 dark:text-slate-300 mt-0.5">—</p>
     if (URL_FIELDS.has(f.name) && typeof v === 'string') {
-      return (
-        <a
-          href={v}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline mt-0.5 break-all"
-        >
-          {t('viewFile')}
-          <ExternalLink size={14} aria-hidden />
-        </a>
-      )
+      return renderDocValue(v)
     }
     let text: string
     if (f.kind === 'datetime') text = format(new Date(v as string), 'yyyy-MM-dd HH:mm')
@@ -321,6 +386,42 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
           {renderReadOnly(f)}
           {vendorCodeLocked && isDraft && (
             <p className="text-xs text-slate-400 mt-0.5">{t('vendorCodeReadonlyHint')}</p>
+          )}
+        </div>
+      )
+    }
+    if (URL_FIELDS.has(f.name)) {
+      return (
+        <div key={f.name}>
+          <FieldLabel>{t(`fields.${f.name}` as Parameters<typeof t>[0])}</FieldLabel>
+          {form[f.name] ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {renderDocValue(form[f.name])}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setField(f.name, '')}
+                className="text-xs text-slate-400 hover:text-red-500"
+              >
+                {tc('remove')}
+              </Button>
+            </div>
+          ) : (
+            <label className="inline-flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 min-h-[44px]">
+              <Paperclip size={14} aria-hidden />
+              {uploadingField === f.name ? t('uploading') : t('uploadFile')}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+                className="hidden"
+                disabled={uploadingField !== null}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (file) uploadDocFile(f.name, file)
+                  e.target.value = ''
+                }}
+              />
+            </label>
           )}
         </div>
       )

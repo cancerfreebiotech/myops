@@ -57,6 +57,21 @@ export default async function PayrollPage() {
     .eq('is_active', true)
     .order('display_name') : { data: [] }
 
+  // 批次計算的授權條件必須與 /api/payroll/calculate 完全一致（admin 或 hr_manager），
+  // 否則會出現「看得到按鈕、按下去 403」。
+  const canGenerate = currentUser?.role === 'admin' || !!currentUser?.granted_features?.includes('hr_manager')
+
+  // 級距表沒上傳時，計算出來的勞保費／健保費會是 0（findBracket 查不到就回 0），
+  // 這是靜默的錯誤結果——先在畫面上警告，不要讓人事以為算好了。
+  let bracketsReady = true
+  if (canGenerate) {
+    const [{ count: laborCount }, { count: healthCount }] = await Promise.all([
+      service.from('labor_insurance_brackets').select('grade', { count: 'exact', head: true }).eq('effective_year', year),
+      service.from('health_insurance_brackets').select('grade', { count: 'exact', head: true }).eq('effective_year', year),
+    ])
+    bracketsReady = (laborCount ?? 0) > 0 && (healthCount ?? 0) > 0
+  }
+
   const t = await getTranslations('payroll')
 
   return (
@@ -71,6 +86,8 @@ export default async function PayrollPage() {
         canViewPayroll={canViewPayroll}
         canConfirmPayroll={canConfirmPayroll}
         canApprovePayroll={canApprovePayroll}
+        canGenerate={canGenerate}
+        bracketsReady={bracketsReady}
         currentYear={year}
         currentMonth={month}
       />

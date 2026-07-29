@@ -17,6 +17,9 @@ export const COO_SETTINGS_KEYS = [
   'project_ot_coo_threshold_hours',
   'contract_reminder_days_first',
   'contract_reminder_days_second',
+  // 請採購單簽核門檻（超過此金額才加該關卡）——營運政策，不寫死在程式裡
+  'pr_approval_coo_threshold',
+  'pr_approval_ceo_threshold',
 ] as const
 
 // Map each key → which job_role owns (can edit) it

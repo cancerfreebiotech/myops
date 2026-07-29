@@ -62,7 +62,8 @@
       "prevPage": "上一頁",
       "nextPage": "下一頁",
       "noRecordsHint": "請確認篩選條件或選擇其他月份"
-    }
+    },
+    "remove": "移除"
   },
   "auth": {
     "login": "登入",
@@ -845,7 +846,19 @@
       "scanned": "已掃描",
       "flagged": "異常",
       "noAnomalies": "無異常紀錄"
-    }
+    },
+    "generateMonth": "批次計算 {year}/{month}",
+    "generateTitle": "批次計算 {year}/{month} 薪資",
+    "generateExplain": "系統會依人事與出勤資料，為所有符合條件的員工產生薪資草稿。",
+    "generateScope": "對象：在職、台灣、全職，且已在人事資料填寫月薪的員工。",
+    "generateSources": "計算來源：月薪、已核准加班、無薪假扣款、獎金紀錄、勞健保級距表。",
+    "generateOverwriteWarn": "本月已有 {count} 筆薪資單進入簽核流程。重新計算會覆寫金額並退回草稿，已完成的簽核紀錄會被清除。",
+    "generateConfirm": "開始計算",
+    "generating": "計算中…",
+    "generateDone": "已產生 {generated} / {total} 筆薪資草稿",
+    "generateWarning": "計算完成但有寫入失敗：{error}",
+    "bracketsMissing": "尚未上傳 {year} 年度勞健保級距表，計算出的勞保費與健保費會是 0。",
+    "bracketsMissingLink": "前往上傳級距表"
   },
   "projects": {
     "title": "專案",
@@ -1183,7 +1196,9 @@
       "aiStatusVector": "向量檢索（政策問答）",
       "aiStatusNoEmbedModel": "未設定 Embedding 模型（使用全文模式）",
       "secretSetPlaceholder": "已設定（輸入新值可更換）",
-      "secretUnsetPlaceholder": "未設定"
+      "secretUnsetPlaceholder": "未設定",
+      "prApprovalCooThreshold": "請採購單：超過此金額需營運長簽核（元）",
+      "prApprovalCeoThreshold": "請採購單：超過此金額需執行長簽核（元）"
     },
     "audit": {
       "title": "稽核紀錄",
@@ -1343,7 +1358,10 @@
       "uploadHint": "請上傳 Excel 檔案以匯入費率",
       "yearOption": "{y} 年",
       "refreshAria": "重新整理費率資料",
-      "rateTableTitle": "{label}費率表 — {year} 年"
+      "rateTableTitle": "{label}費率表 — {year} 年",
+      "unsupportedFileType": "不支援的檔案格式（{ext}）。官方級距表通常是 PDF，請先另存或轉為 Excel／CSV 再上傳，或下載下方範本填寫。",
+      "requiredColumns": "必要欄位：{columns}",
+      "downloadTemplate": "下載空白範本"
     },
     "leaveBalancesMgmt": {
       "allEmployees": "所有員工",
@@ -1922,7 +1940,12 @@
         "onlyDraftEditable": "只有草稿狀態可以編輯",
         "vendorCodeReadonly": "你沒有修改廠商編號的權限（需採購單位或採購管理權限）"
       },
-      "searchPlaceholder": "搜尋單號、採購單、廠商或狀態…"
+      "searchPlaceholder": "搜尋單號、採購單、廠商或狀態…",
+      "uploadFile": "上傳檔案",
+      "uploading": "上傳中…",
+      "uploadedNeedSave": "檔案已上傳，請按「儲存」才會寫入單據",
+      "uploadFailed": "上傳失敗，請重試",
+      "legacyRagicFile": "附件仍在舊系統（Ragic），尚未移轉到本系統"
     },
     "inbox": {
       "title": "待簽收件匣",
@@ -2378,7 +2401,8 @@
         "invalidItems": "採購細項格式錯誤",
         "onlyDraftEditable": "只有草稿狀態可以編輯",
         "onlyDraftDeletable": "只有草稿狀態可以刪除"
-      }
+      },
+      "approvalPreview": "依目前合計金額，送簽後將經過：{steps}"
     },
     "rfqs": {
       "title": "詢價單",
@@ -2585,10 +2609,10 @@
     "uploadReceipt": "上傳發票",
     "receiptCount": "{count} 張附件",
     "catTransport": "交通",
-    "catTravel": "差旅",
+    "catTravel": "差旅費",
     "catMeal": "誤餐",
     "catSupplies": "用品",
-    "catOther": "其他",
+    "catOther": "其他費用",
     "statusPending": "待審核",
     "statusApproved": "已核准",
     "statusRejected": "已退回",
@@ -2619,7 +2643,14 @@
     "uploadFailed": "附件上傳失敗",
     "mfaRequired": "審批動作需要完成兩階段驗證（MFA）",
     "total": "合計",
-    "tripLabel": "關聯出差"
+    "tripLabel": "關聯出差",
+    "claimMonth": "申請月份",
+    "invoiceNo": "發票憑證",
+    "invoiceNoPlaceholder": "例：AB12345678（無發票可留空）",
+    "catEntertain": "交際費",
+    "catWelfare": "職工福利",
+    "catStationery": "文具印刷",
+    "catMisc": "雜支"
   },
   "approvals": {
     "title": "簽核中心",

@@ -6,7 +6,47 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+/**
+ * 從 children 遞迴蒐集 <SelectItem value=...>label</SelectItem>，組成 base-ui 的 `items` 對照表。
+ *
+ * 為什麼需要：@base-ui 的 `Select.Value` 不像 Radix 會去讀被選中 item 的文字，而是走
+ * resolveSelectedLabel(value, items) —— 沒給 `items` 就直接把 value 印出來。於是所有
+ * 「value 用 UUID、label 顯示名稱」的下拉，選完之後 trigger 都會顯示一串 UUID
+ * （Linda 7/29 回報 22ffe728 的截圖即為此，全站共 28 處都中）。
+ *
+ * 在 wrapper 這層自動推導而不是逐一在 28 個呼叫點補 `items`：呼叫點的 SelectItem 本來就
+ * 已經寫了 value 與 label，重複寫一份對照表容易走鏈（改了 label 忘了改 items）。
+ * 呼叫端自行傳入 `items` 時完全尊重，不覆寫；推不出東西時回 undefined，行為與過去相同。
+ */
+function collectItemLabels(node: React.ReactNode, out: Record<string, React.ReactNode>): void {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as { value?: unknown; children?: React.ReactNode }
+    if ((child.type === SelectItem || child.type === SelectPrimitive.Item) && typeof props.value === 'string') {
+      out[props.value] = props.children
+    }
+    if (props.children) collectItemLabels(props.children, out)
+  })
+}
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  items,
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const derivedItems = React.useMemo(() => {
+    if (items !== undefined) return items
+    const map: Record<string, React.ReactNode> = {}
+    collectItemLabels(children, map)
+    return Object.keys(map).length > 0 ? map : undefined
+  }, [items, children])
+
+  return (
+    <SelectPrimitive.Root items={derivedItems} {...props}>
+      {children}
+    </SelectPrimitive.Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

@@ -25,7 +25,10 @@ import { getBotApprovalPolicy, shouldOneTap } from '@/lib/bot-approval-policy'
 import { buildApprovalCard } from '@/lib/drava-card'
 import { JOB_ROLE_DEFAULT_FEATURES } from '@/lib/job-role-features'
 import type { JobRole } from '@/types'
-import { APPROVAL_FLOWS, type ApproverSpec } from './approval-flows'
+import {
+  AMOUNT_THRESHOLD_KEYS, parseAmountThresholds, resolveFlow,
+  type AmountThresholds, type ApproverSpec,
+} from './approval-flows'
 import { DOC_AMOUNT_FIELD, DOC_TYPE_META, type DocStatus, type DocType } from './doc-types'
 
 export type ApprovalAction = 'approve' | 'reject' | 'ack'
@@ -197,6 +200,20 @@ async function stepRecipients(service: Service, step: Pick<StepRow, 'approver_ki
 
 type TeamsKey = Parameters<typeof teamsText>[1]
 
+/**
+ * 讀取金額門檻設定（system_settings）。讀不到就用預設值——設定表壞掉不該讓送簽整個失敗，
+ * 而預設值是「較嚴格」的一邊（3,000 / 20,000），不會讓大額採購少簽一關。
+ */
+async function fetchAmountThresholds(service: Service): Promise<AmountThresholds> {
+  const { data, error } = await service
+    .from('system_settings')
+    .select('key, value')
+    .in('key', [AMOUNT_THRESHOLD_KEYS.coo, AMOUNT_THRESHOLD_KEYS.ceo])
+  if (error) console.error('[procurement] threshold settings load failed, using defaults:', error.message)
+  const raw = Object.fromEntries((data ?? []).map(r => [r.key as string, r.value as string | null]))
+  return parseAmountThresholds(raw)
+}
+
 /** Read the document's monetary amount (if any) for one-tap threshold checks. */
 function docAmount(docType: DocType, doc: DocRow): number | undefined {
   const field = DOC_AMOUNT_FIELD[docType]
@@ -286,7 +303,10 @@ export async function submitForApproval(docType: DocType, docId: string, userId:
       holdsFeature(submitter, 'procurement_manage'))
   if (!canSubmit) throw new ApprovalEngineError('submitNotAllowed')
 
-  const flow = APPROVAL_FLOWS[docType]
+  // 關卡依文件金額決定（請採購單的 COO / CEO 兩關有門檻），並把關卡名稱寫進該列：
+  // 關卡數會變動之後，畫面不能再用「第幾關」去固定陣列取名稱。
+  const thresholds = await fetchAmountThresholds(service)
+  const flow = resolveFlow(docType, docAmount(docType, doc), thresholds)
   const resolved = []
   for (const [i, step] of flow.entries()) {
     const r = await resolveSpec(service, step.approver, doc, userId)
@@ -294,6 +314,7 @@ export async function submitForApproval(docType: DocType, docId: string, userId:
       doc_type: docType,
       doc_id: docId,
       step_no: i + 1,
+      step_name: step.name,
       ...r,
       status: i === 0 ? 'current' : 'pending',
     })

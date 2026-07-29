@@ -15,6 +15,11 @@ export type TimelineStepStatus = 'pending' | 'current' | 'approved' | 'rejected'
 
 export interface TimelineStep {
   step_no: number
+  /**
+   * 關卡名稱的 i18n key，送簽時由 approval-engine 寫入。
+   * 舊資料（2026-07-29 前送簽者）為 null／undefined，退回用 step_no 推導。
+   */
+  step_name?: string | null
   approver_kind: 'job_role' | 'manager_of' | 'doc_field' | 'anyone'
   approver_value: string | null
   resolved_user_name: string | null
@@ -89,8 +94,11 @@ export function ApprovalTimeline({ docType, steps, docStatus }: Props) {
       <ol className="space-y-0">
         {steps.map((step, i) => {
           const Icon = STEP_ICON[step.status]
+          // 優先用該列記下的關卡名稱：金額門檻會讓關卡數變動，
+          // 用 step_no 去固定陣列取第 N 個會標錯（小額單的第 2 關其實是「通知採購」）。
           const flowStep = flow[step.step_no - 1]
-          const stepName = flowStep ? t(`steps.${flowStep.name}` as Parameters<typeof t>[0]) : t('stepFallback', { no: step.step_no })
+          const nameKey = step.step_name ?? flowStep?.name
+          const stepName = nameKey ? t(`steps.${nameKey}` as Parameters<typeof t>[0]) : t('stepFallback', { no: step.step_no })
           const isLast = i === steps.length - 1
           return (
             <li key={step.step_no} className="relative flex gap-3 pb-5 last:pb-0">

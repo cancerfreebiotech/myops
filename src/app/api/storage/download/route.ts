@@ -25,8 +25,13 @@ const BUCKET_RESOLVERS: Record<string, Resolver[] | null> = {
   'recruiting-files': [{ table: 'candidates', column: 'resume_paths', array: true }],
   // 特殊假別資格申請附件：RLS 已限本人 / HR 可讀 leave_qualification_requests → 當作物件層授權
   'leave-files': [{ table: 'leave_qualification_requests', column: 'attachments', array: true }],
-  // 詢價單的廠商報價單附件：rfqs SELECT 政策（採購群組/管理者/建檔人）即物件層授權
-  procurement: [{ table: 'rfqs', column: 'quote_files', array: true }],
+  // procurement bucket 目前有三種來源：詢價單報價附件、進貨驗收單的發票／出貨單據。
+  // 各表既有的 SELECT 政策（採購群組/管理者/建檔人）即物件層授權。
+  procurement: [
+    { table: 'rfqs', column: 'quote_files', array: true },
+    { table: 'goods_receipts', column: 'invoice_doc_url', array: false },
+    { table: 'goods_receipts', column: 'shipping_doc_url', array: false },
+  ],
   'insurance-brackets': null,
 }
 

@@ -62,7 +62,8 @@
       "prevPage": "前へ",
       "nextPage": "次へ",
       "noRecordsHint": "絞り込み条件または月を変更してください。"
-    }
+    },
+    "remove": "削除"
   },
   "auth": {
     "login": "ログイン",
@@ -845,7 +846,19 @@
       "scanned": "スキャン済み",
       "flagged": "異常",
       "noAnomalies": "異常は見つかりませんでした"
-    }
+    },
+    "generateMonth": "{year}/{month} を一括計算",
+    "generateTitle": "{year}/{month} の給与を一括計算",
+    "generateExplain": "人事・勤怠データから、対象となる全従業員の給与明細（下書き）を作成します。",
+    "generateScope": "対象：在職・台湾・フルタイムで、月給が登録されている従業員。",
+    "generateSources": "計算元：月給、承認済み残業、無給休暇控除、賞与記録、労健保等級表。",
+    "generateOverwriteWarn": "今月は {count} 件の給与明細が承認フローに入っています。再計算すると金額が上書きされ下書きに戻り、完了した承認記録は消去されます。",
+    "generateConfirm": "計算を開始",
+    "generating": "計算中…",
+    "generateDone": "{total} 件中 {generated} 件の給与下書きを作成しました",
+    "generateWarning": "計算は完了しましたが書き込みに失敗があります：{error}",
+    "bracketsMissing": "{year} 年度の労健保等級表が未アップロードのため、労保費・健保費は 0 で計算されます。",
+    "bracketsMissingLink": "等級表をアップロード"
   },
   "projects": {
     "title": "プロジェクト",
@@ -1183,7 +1196,9 @@
       "aiStatusVector": "ベクトル検索（ポリシーQ&A）",
       "aiStatusNoEmbedModel": "Embeddingモデル未設定（全文モード）",
       "secretSetPlaceholder": "設定済み（新しい値を入力で更新）",
-      "secretUnsetPlaceholder": "未設定"
+      "secretUnsetPlaceholder": "未設定",
+      "prApprovalCooThreshold": "購買申請：この金額を超えるとCOO承認が必要（NT$）",
+      "prApprovalCeoThreshold": "購買申請：この金額を超えるとCEO承認が必要（NT$）"
     },
     "audit": {
       "title": "監査ログ",
@@ -1343,7 +1358,10 @@
       "uploadHint": "Excel ファイルをアップロードして料率を取り込んでください",
       "yearOption": "{y} 年",
       "refreshAria": "料率データを再読み込み",
-      "rateTableTitle": "{label}料率表 — {year} 年"
+      "rateTableTitle": "{label}料率表 — {year} 年",
+      "unsupportedFileType": "対応していないファイル形式（{ext}）です。公式の等級表は通常 PDF のため、Excel／CSV に変換するか、下のテンプレートをご利用ください。",
+      "requiredColumns": "必須列：{columns}",
+      "downloadTemplate": "空白テンプレートをダウンロード"
     },
     "leaveBalancesMgmt": {
       "allEmployees": "全従業員",
@@ -1922,7 +1940,12 @@
         "onlyDraftEditable": "下書き状態の伝票のみ編集できます",
         "vendorCodeReadonly": "仕入先コードを変更する権限がありません（購買担当または購買管理権限が必要です）"
       },
-      "searchPlaceholder": "伝票番号・購買依頼・仕入先・ステータスで検索…"
+      "searchPlaceholder": "伝票番号・購買依頼・仕入先・ステータスで検索…",
+      "uploadFile": "ファイルをアップロード",
+      "uploading": "アップロード中…",
+      "uploadedNeedSave": "アップロード完了。「保存」を押すと伝票に反映されます",
+      "uploadFailed": "アップロードに失敗しました。再試行してください",
+      "legacyRagicFile": "添付ファイルは旧システム（Ragic）にあり、本システムへ未移行です"
     },
     "inbox": {
       "title": "承認待ち受信箱",
@@ -2378,7 +2401,8 @@
         "invalidItems": "明細の形式が正しくありません",
         "onlyDraftEditable": "下書きのみ編集できます",
         "onlyDraftDeletable": "下書きのみ削除できます"
-      }
+      },
+      "approvalPreview": "現在の合計金額では、申請後は次の順で承認されます：{steps}"
     },
     "rfqs": {
       "title": "見積依頼書",
@@ -2585,10 +2609,10 @@
     "uploadReceipt": "領収書をアップロード",
     "receiptCount": "添付 {count} 件",
     "catTransport": "交通費",
-    "catTravel": "出張費",
+    "catTravel": "旅費交通費",
     "catMeal": "食事代",
     "catSupplies": "消耗品",
-    "catOther": "その他",
+    "catOther": "その他の費用",
     "statusPending": "承認待ち",
     "statusApproved": "承認済み",
     "statusRejected": "差し戻し",
@@ -2619,7 +2643,14 @@
     "uploadFailed": "添付のアップロードに失敗しました",
     "mfaRequired": "承認操作には二要素認証（MFA）が必要です",
     "total": "合計",
-    "tripLabel": "関連出張"
+    "tripLabel": "関連出張",
+    "claimMonth": "申請月",
+    "invoiceNo": "領収書番号",
+    "invoiceNoPlaceholder": "例：AB12345678（なければ空欄）",
+    "catEntertain": "接待交際費",
+    "catWelfare": "福利厚生費",
+    "catStationery": "事務用品・印刷費",
+    "catMisc": "雑費"
   },
   "approvals": {
     "title": "承認センター",

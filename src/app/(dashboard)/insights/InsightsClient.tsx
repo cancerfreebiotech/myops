@@ -16,9 +16,10 @@ interface InsightsData {
   year: string
 }
 
+// 會計科目（與 expense_claims_category_check 同步；舊值已由 migration 20260729100001 轉換）
 const EXPENSE_CATEGORY_KEYS: Record<string, string> = {
-  transport: 'catTransport', travel: 'catTravel', meal: 'catMeal',
-  supplies: 'catSupplies', other: 'catOther',
+  travel: 'catTravel', entertain: 'catEntertain', welfare: 'catWelfare',
+  stationery: 'catStationery', misc: 'catMisc', other: 'catOther',
 }
 
 export function InsightsClient() {
