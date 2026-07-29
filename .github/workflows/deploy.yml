@@ -21,12 +21,19 @@ jobs:
           node-version: '24'
           cache: 'npm'
 
-      - name: Bump version (patch caps at 9, then carries into minor)
+      # 每一碼上限都是 9：patch 滿 9 進 minor、minor 滿 9 進 major。
+      # 原本只有 patch 會進位，所以 0.9.9 的下一版變成 0.10.0（應為 1.0.0）。
+      # MINOR -gt 9 那條是為了讓已經跑掉的 0.10.x 在下一版收斂回 1.0.0；
+      # 收斂之後就只會走 -eq 9 那條，不再有大於 9 的 minor。
+      - name: Bump version (each digit caps at 9, then carries)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          MINOR=$(node -p "require('./package.json').version.split('.')[1]")
           PATCH=$(node -p "require('./package.json').version.split('.')[2]")
-          if [ "$PATCH" -ge 9 ]; then
+          if [ "$MINOR" -gt 9 ] || { [ "$MINOR" -eq 9 ] && [ "$PATCH" -ge 9 ]; }; then
+            npm version major --no-git-tag-version
+          elif [ "$PATCH" -ge 9 ]; then
             npm version minor --no-git-tag-version
           else
             npm version patch --no-git-tag-version
