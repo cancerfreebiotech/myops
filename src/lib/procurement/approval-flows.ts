@@ -61,10 +61,16 @@ export const DEFAULT_AMOUNT_THRESHOLDS: Record<'coo' | 'ceo', number> = {
 
 export type AmountThresholds = Record<'coo' | 'ceo', number>
 
-/** system_settings 的字串值 → 門檻數字；空值／非數字／負數一律退回預設值 */
+/**
+ * system_settings 的字串值 → 門檻數字；空值／非數字／負數一律退回預設值。
+ * 注意不能直接 Number()：Number(null) 與 Number('') 都是 0，設定被清空時會變成
+ * 「門檻 0 元」——每一張請採購單都要 CEO 簽核。必須先擋掉空字串與 null。
+ */
 export function parseAmountThresholds(raw: Partial<Record<string, string | null>>): AmountThresholds {
   const pick = (gate: 'coo' | 'ceo'): number => {
-    const v = Number(raw[AMOUNT_THRESHOLD_KEYS[gate]])
+    const s = raw[AMOUNT_THRESHOLD_KEYS[gate]]
+    if (typeof s !== 'string' || s.trim() === '') return DEFAULT_AMOUNT_THRESHOLDS[gate]
+    const v = Number(s)
     return Number.isFinite(v) && v >= 0 ? v : DEFAULT_AMOUNT_THRESHOLDS[gate]
   }
   return { coo: pick('coo'), ceo: pick('ceo') }

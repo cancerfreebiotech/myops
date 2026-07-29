@@ -68,13 +68,13 @@ const TEMPLATE_HEADERS = {
   health: ['等級', '投保薪資', '個人負擔', '眷屬負擔', '雇主負擔'],
 } as const
 
-/** 產生空白範本（含一列示範值），讓人資照著填欄名，不用猜格式 */
+/**
+ * 產生空白範本：只有欄名、不放任何示範數字。
+ * 刻意不填示範值——級距金額填錯一格就是全員保費算錯，而範本裡的假數字若沒被刪掉
+ * 就會直接變成一筆有效級距。欄名足以說明格式，數字一律由官方級距表填入。
+ */
 function downloadTemplate(type: 'labor' | 'health') {
-  const headers = TEMPLATE_HEADERS[type]
-  const sample = type === 'labor'
-    ? { 等級: 1, 投保薪資: 28590, 個人負擔: 578, 雇主負擔: 2023 }
-    : { 等級: 1, 投保薪資: 28590, 個人負擔: 452, 眷屬負擔: 452, 雇主負擔: 1585 }
-  const ws = XLSX.utils.json_to_sheet([sample], { header: [...headers] })
+  const ws = XLSX.utils.aoa_to_sheet([[...TEMPLATE_HEADERS[type]]])
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, type === 'labor' ? '勞保級距' : '健保級距')
   XLSX.writeFile(wb, type === 'labor' ? 'labor-insurance-brackets-template.xlsx' : 'health-insurance-brackets-template.xlsx')
