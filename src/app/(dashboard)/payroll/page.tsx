@@ -61,9 +61,12 @@ export default async function PayrollPage() {
     .eq('is_active', true)
     .order('display_name') : { data: [] }
 
-  // 批次計算的授權條件必須與 /api/payroll/calculate 完全一致（admin 或 hr_manager），
-  // 否則會出現「看得到按鈕、按下去 403」。
-  const canGenerate = currentUser?.role === 'admin' || !!currentUser?.granted_features?.includes('hr_manager')
+  // 批次計算的授權條件必須與 /api/payroll/calculate 完全一致，否則會出現
+  // 「看得到按鈕、按下去 403」。hr_manager 兩種來源都要看：它既可能是 granted_features
+  // 的一項，也可能是 job_role（人資長 Eva 就是 job_role='hr_manager'）。
+  const canGenerate = currentUser?.role === 'admin'
+    || !!currentUser?.granted_features?.includes('hr_manager')
+    || currentUser?.job_role === 'hr_manager'
 
   // 重算會把當月既有薪資單壓回草稿並清掉簽核軌跡，按下去之前必須先講清楚會覆寫幾筆。
   // 這個數字在伺服器端獨立查，不從 payrollRecords 推導——後者只在 canViewPayroll 時才載入，

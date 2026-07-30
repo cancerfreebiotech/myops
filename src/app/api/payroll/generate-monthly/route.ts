@@ -25,12 +25,14 @@ export async function POST(request: NextRequest) {
 
     const { data: currentUser } = await supabase
       .from('users')
-      .select('role, granted_features')
+      .select('role, job_role, granted_features')
       .eq('id', user.id)
       .single()
 
     const isAdmin = currentUser?.role === 'admin'
+    // hr_manager 可能來自 granted_features 或 job_role（人資長 Eva 是 job_role）
     const isHR = currentUser?.granted_features?.includes('hr_manager')
+      || currentUser?.job_role === 'hr_manager'
     if (!isAdmin && !isHR) {
       return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
     }
