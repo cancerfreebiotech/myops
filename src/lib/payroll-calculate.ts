@@ -14,6 +14,10 @@ interface InsuranceBracket {
   employer_share: number
 }
 
+interface PensionBracket {
+  contribution_wage: number
+}
+
 interface PayrollRecordInsert {
   user_id: string
   year: number
@@ -99,6 +103,19 @@ function findBracket(brackets: InsuranceBracket[] | null, salary: number) {
   return asc[asc.length - 1]
 }
 
+/**
+ * 勞退月提繳工資：同樣取「第一個 >= 實際工資」的級距（分級表的月提繳工資即該級區間上限），
+ * 超過最高級（150,000）就用最高級。表未載入時回 null，由呼叫端決定退路。
+ */
+function findPensionWage(brackets: PensionBracket[] | null, salary: number): number | null {
+  if (!brackets?.length) return null
+  const asc = [...brackets].sort((a, b) => Number(a.contribution_wage) - Number(b.contribution_wage))
+  for (const b of asc) {
+    if (Number(b.contribution_wage) >= salary) return Number(b.contribution_wage)
+  }
+  return Number(asc[asc.length - 1].contribution_wage)
+}
+
 // T48: Payroll auto-calculation
 // Generates draft payroll records for all active TW full-time employees
 export async function generatePayrollDrafts(year: number, month: number): Promise<PayrollGenerationResult> {
@@ -176,6 +193,14 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
     .eq('effective_year', year)
     .order('insured_salary', { ascending: true })
 
+  // 6b. 勞退月提繳工資分級表（勞退條例 §14）：提繳基礎是「月提繳工資」而非實際月薪，
+  // 例如實際 30,000 應以 30,300 提繳。查法與保費級距相同——取第一個 >= 實際薪資者。
+  const { data: pensionBrackets } = await service
+    .from('pension_wage_brackets')
+    .select('contribution_wage')
+    .eq('effective_year', year)
+    .order('contribution_wage', { ascending: true })
+
   // 7. Get bonuses for the month
   const { data: bonusRecords } = await service
     .from('bonus_records')
@@ -236,8 +261,13 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
 
     const laborIns = Number(laborBracket.employee_share ?? 0)
     const healthIns = Number(healthBracket.employee_share ?? 0)
+
+    // 勞退提繳基礎＝月提繳工資（分級表），不是實際月薪。
+    // 分級表若尚未載入則退回實際月薪——寧可少算（與舊行為一致）也不要因缺表而中斷整批計算，
+    // 但畫面上會顯示級距表缺漏的警告。
+    const pensionWage = findPensionWage(pensionBrackets, baseSalary) ?? baseSalary
     const pensionSelfRate = Number(profile?.labor_pension_self ?? 0) / 100
-    const laborPensionSelf = Math.round(baseSalary * pensionSelfRate)
+    const laborPensionSelf = Math.round(pensionWage * pensionSelfRate)
 
     const grossPay = baseSalary + overtimePay + bonus
     const totalDeduction = unpaidLeaveDeduct + laborIns + healthIns + laborPensionSelf
@@ -261,7 +291,8 @@ export async function generatePayrollDrafts(year: number, month: number): Promis
       net_pay: Math.round(netPay),
       employer_labor_ins: Math.round(Number(laborBracket.employer_share ?? 0)),
       employer_health_ins: Math.round(Number(healthBracket.employer_share ?? 0)),
-      employer_pension: Math.round(baseSalary * 0.06), // 6% employer contribution
+      // 雇主提繳 6%，基礎為月提繳工資（勞退條例 §14），非實際月薪
+      employer_pension: Math.round(pensionWage * 0.06),
       status: 'draft',
       hr_reviewed_by: null,
       hr_reviewed_at: null,

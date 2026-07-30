@@ -795,7 +795,7 @@
     "createRecord": "Create Payroll Record",
     "hrReview": "HR Review",
     "financeConfirm": "Finance Confirm",
-    "cooApprove": "COO Approve",
+    "cooApprove": "HR director approval",
     "confirmPay": "Confirm Payment",
     "payrollTableWithDate": "{year}/{month} Payroll",
     "employee": "Employee",
@@ -834,7 +834,7 @@
     "annualStatusDraft": "Draft",
     "annualStatusHrReviewed": "HR Reviewed",
     "annualStatusFinanceConfirmed": "Finance Confirmed",
-    "annualStatusCooApproved": "Approved",
+    "annualStatusCooApproved": "HR director approved",
     "annualStatusPaid": "Paid",
     "annualStatusRejected": "Rejected",
     "anomalies": {
@@ -877,7 +877,13 @@
     "detailEmployerPension": "Pension contribution (employer 6%)",
     "detailApprovalTrail": "Approval trail",
     "detailRejected": "Rejected",
-    "detailPhaseNote": "This page shows the fields as currently stored. Next, base salary, overtime and deductions will be broken into line items; the calculation formula and payslip layout will then be adjusted to labor law and company rules. A dash means the item was not computed (e.g. manually created records have no insurance figures)."
+    "detailPhaseNote": "This page shows the fields as currently stored. Next, base salary, overtime and deductions will be broken into line items; the calculation formula and payslip layout will then be adjusted to labor law and company rules. A dash means the item was not computed (e.g. manually created records have no insurance figures).",
+    "statusHrDirectorApproved": "HR director approved",
+    "bulkLabel": "Bulk approve:",
+    "bulkAction": "{action} ({count})",
+    "bulkRunning": "Processing…",
+    "bulkDone": "{count} record(s) completed",
+    "bulkPartial": "{ok} succeeded, {failed} failed: {detail}"
   },
   "projects": {
     "title": "Projects",
@@ -1380,7 +1386,9 @@
       "rateTableTitle": "{label} Rate Table — {year}",
       "unsupportedFileType": "Unsupported file type ({ext}). Official bracket tables are usually PDFs — convert to Excel/CSV first, or download the template below.",
       "requiredColumns": "Required columns: {columns}",
-      "downloadTemplate": "Download blank template"
+      "downloadTemplate": "Download blank template",
+      "noValidRows": "No usable bracket rows found (every row is missing the insured salary). Check the column names and contents.",
+      "skippedRows": "Skipped {count} row(s) (missing insured salary, or header/notes rows); the rest will be imported as shown."
     },
     "leaveBalancesMgmt": {
       "allEmployees": "All employees",
@@ -1524,6 +1532,20 @@
       "invalidInput": "Please enter a name and valid latitude, longitude and radius",
       "geoUnsupported": "Geolocation not supported on this device",
       "geoDenied": "Could not get current location"
+    },
+    "pensionBrackets": {
+      "title": "Labor pension — monthly contribution wage brackets",
+      "explain": "Pension contributions are based on the statutory contribution wage, not the actual salary (e.g. an actual 30,000 contributes at 30,300). Employer contributes 6%; each employee's voluntary rate is set in their HR profile.",
+      "applyYear": "Effective year",
+      "missingWageColumn": "No \"contribution wage\" column found. Check the column name or download the template below.",
+      "parsedCount": "Parsed {count} brackets",
+      "confirmUpload": "Upload for {year}",
+      "grade": "Level",
+      "wageRange": "Actual wage range",
+      "contributionWage": "Contribution wage",
+      "employer6": "Employer 6%",
+      "andAbove": "and above",
+      "noData": "No pension bracket table for {year} yet"
     }
   },
   "tooltips": {
@@ -1646,6 +1668,9 @@
       "notSpecialType": "This leave type does not require qualification",
       "invalidGrantDays": "Granted days must be greater than 0",
       "alreadyProcessed": "This application has already been processed"
+    },
+    "adminPension": {
+      "rowMissingWage": "A bracket has a non-positive contribution wage"
     }
   },
   "teamsMessages": {
@@ -1688,7 +1713,7 @@
     "botQueryPayrollStatus_draft": "Draft",
     "botQueryPayrollStatus_hr_reviewed": "HR reviewed",
     "botQueryPayrollStatus_finance_confirmed": "Finance confirmed",
-    "botQueryPayrollStatus_coo_approved": "COO approved",
+    "botQueryPayrollStatus_coo_approved": "HR director approved",
     "botQueryPayrollStatus_paid": "Paid",
     "botQueryPayrollStatus_rejected": "Rejected",
     "botQueryUnknown": "🤔 I didn't understand that. Try asking about your \"pending\" approvals, \"leave\", or \"payroll\".",

@@ -13,7 +13,7 @@ export default async function PayrollPage() {
 
   const { data: currentUser } = await supabase
     .from('users')
-    .select('id, role, granted_features, display_name')
+    .select('id, role, job_role, granted_features, display_name')
     .eq('id', user.id)
     .single()
 
@@ -23,7 +23,11 @@ export default async function PayrollPage() {
   const isHR = currentUser?.role === 'admin' || currentUser?.role === 'hr'
   const canViewPayroll = isHR || currentUser?.granted_features?.includes('view_payroll')
   const canConfirmPayroll = currentUser?.granted_features?.includes('confirm_payroll') || currentUser?.role === 'admin'
-  const canApprovePayroll = currentUser?.granted_features?.includes('approve_payroll') || currentUser?.role === 'admin'
+  // 第三關＝人資長核准（2026-07-30 起，原為營運長）。條件與 /api/payroll/[id] 完全一致，
+  // 否則會出現「看得到按鈕、按下去 403」。
+  const canApprovePayroll = currentUser?.granted_features?.includes('approve_payroll')
+    || currentUser?.job_role === 'hr_manager'
+    || currentUser?.role === 'admin'
 
   // Current month records
   const now = new Date()

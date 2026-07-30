@@ -795,7 +795,7 @@
     "createRecord": "建立薪資紀錄",
     "hrReview": "HR 審核",
     "financeConfirm": "財務確認",
-    "cooApprove": "營運長核准",
+    "cooApprove": "人資長核准",
     "confirmPay": "確認發薪",
     "payrollTableWithDate": "{year}/{month} 薪資表",
     "employee": "員工",
@@ -834,7 +834,7 @@
     "annualStatusDraft": "草稿",
     "annualStatusHrReviewed": "HR 已審",
     "annualStatusFinanceConfirmed": "財務確認",
-    "annualStatusCooApproved": "核准",
+    "annualStatusCooApproved": "人資長已核准",
     "annualStatusPaid": "已發薪",
     "annualStatusRejected": "退回",
     "anomalies": {
@@ -877,7 +877,13 @@
     "detailEmployerPension": "勞退提繳（雇主 6%）",
     "detailApprovalTrail": "簽核軌跡",
     "detailRejected": "退回",
-    "detailPhaseNote": "此頁目前呈現既有欄位。下一步會把底薪、加班費、扣除項拆成逐筆明細，之後再依勞基法與公司規則調整計算公式與薪資單格式。顯示「—」表示該項尚未計算（例如手動建立的薪資單不含保費欄位）。"
+    "detailPhaseNote": "此頁目前呈現既有欄位。下一步會把底薪、加班費、扣除項拆成逐筆明細，之後再依勞基法與公司規則調整計算公式與薪資單格式。顯示「—」表示該項尚未計算（例如手動建立的薪資單不含保費欄位）。",
+    "statusHrDirectorApproved": "人資長已核准",
+    "bulkLabel": "整批簽核：",
+    "bulkAction": "{action}（{count} 筆）",
+    "bulkRunning": "處理中…",
+    "bulkDone": "已完成 {count} 筆",
+    "bulkPartial": "完成 {ok} 筆、失敗 {failed} 筆：{detail}"
   },
   "projects": {
     "title": "專案",
@@ -1380,7 +1386,9 @@
       "rateTableTitle": "{label}費率表 — {year} 年",
       "unsupportedFileType": "不支援的檔案格式（{ext}）。官方級距表通常是 PDF，請先另存或轉為 Excel／CSV 再上傳，或下載下方範本填寫。",
       "requiredColumns": "必要欄位：{columns}",
-      "downloadTemplate": "下載空白範本"
+      "downloadTemplate": "下載空白範本",
+      "noValidRows": "檔案裡沒有可用的級距資料（每一列都缺投保薪資）。請確認欄位名稱與內容。",
+      "skippedRows": "已略過 {count} 列（缺投保薪資或為表頭／說明列），其餘照上表匯入。"
     },
     "leaveBalancesMgmt": {
       "allEmployees": "所有員工",
@@ -1524,6 +1532,20 @@
       "invalidInput": "請填寫名稱並輸入正確的經緯度與半徑",
       "geoUnsupported": "此裝置不支援定位",
       "geoDenied": "無法取得目前位置"
+    },
+    "pensionBrackets": {
+      "title": "勞退 — 月提繳工資分級表",
+      "explain": "勞退提繳的計算基礎是「月提繳工資」而非實際月薪（例如實際 30,000 應以 30,300 提繳）。雇主提繳 6%；個人自願提繳率在每位同事的人事資料裡設定。",
+      "applyYear": "適用年度",
+      "missingWageColumn": "找不到「月提繳工資」欄位。請確認欄名，或下載下方範本填寫。",
+      "parsedCount": "已解析 {count} 個級距",
+      "confirmUpload": "確認上傳（{year} 年度）",
+      "grade": "級",
+      "wageRange": "實際工資區間",
+      "contributionWage": "月提繳工資",
+      "employer6": "雇主提繳 6%",
+      "andAbove": "以上",
+      "noData": "{year} 年度尚無勞退分級表"
     }
   },
   "tooltips": {
@@ -1646,6 +1668,9 @@
       "notSpecialType": "此假別無需資格審核",
       "invalidGrantDays": "核給天數必須大於 0",
       "alreadyProcessed": "此申請已處理"
+    },
+    "adminPension": {
+      "rowMissingWage": "有級距的「月提繳工資」不是正數"
     }
   },
   "teamsMessages": {
@@ -1688,7 +1713,7 @@
     "botQueryPayrollStatus_draft": "草稿",
     "botQueryPayrollStatus_hr_reviewed": "人資已審核",
     "botQueryPayrollStatus_finance_confirmed": "財務已確認",
-    "botQueryPayrollStatus_coo_approved": "營運長已核准",
+    "botQueryPayrollStatus_coo_approved": "人資長已核准",
     "botQueryPayrollStatus_paid": "已發放",
     "botQueryPayrollStatus_rejected": "已退回",
     "botQueryUnknown": "🤔 我看不懂這個指令。你可以問我「我的待簽」「請假」或「薪資」。",

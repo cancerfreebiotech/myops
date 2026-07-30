@@ -121,7 +121,7 @@ export function PayrollDetailClient({ record, actorNames, canViewPayroll }: Prop
               {dept?.name ?? '—'} · {t('detailPeriod', { year: record.year, month: record.month })}
             </p>
           </div>
-          <StatusBadge status={record.status} />
+          <StatusBadge status={record.status} label={record.status === 'coo_approved' ? t('statusHrDirectorApproved') : undefined} />
         </div>
         {canViewPayroll && (
           <Link

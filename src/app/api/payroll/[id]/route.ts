@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: t('common.mfaRequired'), code: 'MFA_REQUIRED' }, { status: 403 })
   }
 
-  const { data: currentUser } = await supabase.from('users').select('role, granted_features').eq('id', user.id).single()
+  const { data: currentUser } = await supabase.from('users').select('role, job_role, granted_features').eq('id', user.id).single()
   const body = await request.json()
   const { action } = body
 
@@ -44,6 +44,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   // Role checks
   const role = currentUser?.role
+  const jobRole = currentUser?.job_role
   const features = currentUser?.granted_features ?? []
 
   if (action === 'hr_review' && !['admin', 'hr'].includes(role)) {
@@ -52,7 +53,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (action === 'finance_confirm' && !features.includes('confirm_payroll') && role !== 'admin') {
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
-  if (action === 'coo_approve' && !features.includes('approve_payroll') && role !== 'admin') {
+  // 第三關 2026-07-30 起由人資長負責（原為營運長，Linda 回報 26011df2；Po 指定 Eva Hung）。
+  // 內部狀態值仍是 coo_approved／coo_approved_by——改名要動 status CHECK 與兩個欄位，
+  // 對進行中的資料沒有好處，因此只改權限與顯示文字。
+  // job_role='hr_manager' 也放行，避免權限完全靠「她剛好是 admin」這件事。
+  if (
+    action === 'coo_approve' &&
+    !features.includes('approve_payroll') &&
+    jobRole !== 'hr_manager' &&
+    role !== 'admin'
+  ) {
     return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
   }
   if (action === 'pay' && role !== 'admin') {

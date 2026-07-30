@@ -18,15 +18,18 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const [laborRes, healthRes] = await Promise.all([
-    service.from('labor_insurance_brackets').select('*').order('effective_year', { ascending: false }).order('grade'),
-    service.from('health_insurance_brackets').select('*').order('effective_year', { ascending: false }).order('grade'),
+  const [laborRes, healthRes, pensionRes] = await Promise.all([
+    // 部分工時級距的 grade 為 0，排序改以投保薪資為主鍵才會落在數字級距之前
+    service.from('labor_insurance_brackets').select('*').order('effective_year', { ascending: false }).order('insured_salary'),
+    service.from('health_insurance_brackets').select('*').order('effective_year', { ascending: false }).order('insured_salary'),
+    service.from('pension_wage_brackets').select('*').order('effective_year', { ascending: false }).order('contribution_wage'),
   ])
 
   return NextResponse.json({
     data: {
       labor: laborRes.data ?? [],
       health: healthRes.data ?? [],
+      pension: pensionRes.data ?? [],
     },
   })
 }

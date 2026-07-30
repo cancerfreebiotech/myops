@@ -42,11 +42,17 @@ const STATUS_KEY: Record<string, string> = {
   urgent: 'urgent',
 }
 
-export function StatusBadge({ status }: { status: string }) {
+/**
+ * `label` 覆寫顯示文字，狀態顏色不變。
+ * 需要它的原因：`coo_approved` 這個狀態值同時用在加班（真的是營運長核准）與薪資
+ * （2026-07-30 起改為人資長核准），共用的 common.coo_approved 不能為了薪資改掉，
+ * 否則加班紀錄會被標成人資長核准。
+ */
+export function StatusBadge({ status, label: labelOverride }: { status: string; label?: string }) {
   const t = useTranslations('common')
   const style = STATUS_STYLE[status] ?? 'bg-slate-50 text-slate-600 border-slate-200'
   const key = STATUS_KEY[status]
-  const label = key ? t(key) : status
+  const label = labelOverride ?? (key ? t(key) : status)
   return (
     <span className={cn(
       'inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-medium',

@@ -76,6 +76,10 @@ export function PayrollClient({
     coo_approved:      { label: t('confirmPay'), next: 'pay' },
   }
 
+  /** 薪資的 coo_approved 顯示為「人資長已核准」；同一狀態值在加班仍是營運長，故只在此覆寫 */
+  const statusLabel = (status: string) =>
+    status === 'coo_approved' ? t('statusHrDirectorApproved') : undefined
+
   const [tab, setTab] = useState<'records' | 'payslips' | 'create'>(canViewPayroll ? 'records' : 'payslips')
   // 直接用 props，router.refresh() 帶回的新資料才會反映到表格（勿用 useState 凍結）
   const records = payrollRecords
@@ -158,6 +162,57 @@ export function PayrollClient({
     return false
   }
 
+  /**
+   * 整批簽核（Linda 7/30 回報 26011df2：不要每一筆分別簽核）。
+   *
+   * 刻意做成「同一關的多筆一起簽」而不是「一鍵從草稿跑到已發薪」：
+   * 四道關卡的意義就是分段覆核，一次跑完等於沒有簽核，而薪資是最需要責任歸屬的資料。
+   * 實作上逐筆呼叫既有的 /api/payroll/[id]——那支 route 有 MFA、逐關權限檢查、
+   * 狀態機前置條件與條件式寫入（CAS）。另寫一支批次端點就得把這些保證重做一遍。
+   */
+  const [bulkRunning, setBulkRunning] = useState<string | null>(null)
+
+  const bulkGroups = Object.entries(
+    records.reduce<Record<string, number>>((acc, r) => {
+      if (canAct(r.status) && FLOW_ACTIONS[r.status]) acc[r.status] = (acc[r.status] ?? 0) + 1
+      return acc
+    }, {})
+  )
+
+  const handleBulk = async (status: string) => {
+    const action = FLOW_ACTIONS[status]?.next
+    if (!action) return
+    const targets = records.filter(r => r.status === status)
+    setBulkRunning(status)
+    let ok = 0
+    const failures: string[] = []
+    for (const r of targets) {
+      try {
+        const res = await fetch(`/api/payroll/${r.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        })
+        const json = await res.json().catch(() => null)
+        if (!res.ok || json?.error) {
+          failures.push(`${r.user?.display_name ?? r.user_id}: ${json?.error ?? res.status}`)
+        } else {
+          ok++
+        }
+      } catch {
+        failures.push(`${r.user?.display_name ?? r.user_id}: ${tc('error')}`)
+      }
+    }
+    setBulkRunning(null)
+    // 部分失敗要指名是誰失敗，否則人資無法知道哪幾筆還卡著
+    if (failures.length > 0) {
+      toast.error(t('bulkPartial', { ok, failed: failures.length, detail: failures.slice(0, 3).join('；') }), { duration: 10000 })
+    } else {
+      toast.success(t('bulkDone', { count: ok }))
+    }
+    router.refresh()
+  }
+
   const formatCurrency = (n: number | null) =>
     n == null ? '—' : `NT$ ${Number(n).toLocaleString('zh-TW')}`
 
@@ -194,6 +249,26 @@ export function PayrollClient({
                   {t('bracketsMissingLink')}
                 </Link>
               </p>
+            </div>
+          )}
+          {/* 整批簽核：每一關一顆按鈕，顯示該關有幾筆待簽 */}
+          {bulkGroups.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-4 py-3">
+              <span className="text-sm text-slate-600 dark:text-slate-300">{t('bulkLabel')}</span>
+              {bulkGroups.map(([status, count]) => (
+                <Button
+                  key={status}
+                  size="sm"
+                  variant="outline"
+                  disabled={bulkRunning !== null}
+                  onClick={() => handleBulk(status)}
+                  className="min-h-[36px]"
+                >
+                  {bulkRunning === status
+                    ? t('bulkRunning')
+                    : t('bulkAction', { action: FLOW_ACTIONS[status].label, count })}
+                </Button>
+              ))}
             </div>
           )}
           {(isHR || canGenerate) && (
@@ -243,7 +318,7 @@ export function PayrollClient({
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.overtime_pay)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-red-500">{formatCurrency(r.total_deduction)}</td>
                     <td className="px-4 py-3 text-right tabular-nums font-bold text-slate-800 dark:text-slate-200">{formatCurrency(r.net_pay)}</td>
-                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3"><StatusBadge status={r.status} label={statusLabel(r.status)} /></td>
                     <td className="px-4 py-3">
                       {canAct(r.status) && FLOW_ACTIONS[r.status] && (
                         <Button
@@ -278,7 +353,7 @@ export function PayrollClient({
                     {t('payslipTitle', { year: r.year, month: r.month })}
                   </span>
                 </Link>
-                <StatusBadge status={r.status} />
+                <StatusBadge status={r.status} label={statusLabel(r.status)} />
               </div>
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                 <div>

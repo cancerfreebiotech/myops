@@ -21,17 +21,25 @@ export default async function InsuranceBracketsPage() {
   const isCOO = currentUser?.job_role === 'coo'
   if (!isAdmin && !isFinance && !isCOO) redirect('/no-permission')
 
+  // 部分工時級距的 grade 為 0，排序以投保薪資為準才會排在數字級距之前
   const { data: laborBrackets } = await service
     .from('labor_insurance_brackets')
     .select('*')
     .order('effective_year', { ascending: false })
-    .order('grade', { ascending: true })
+    .order('insured_salary', { ascending: true })
 
   const { data: healthBrackets } = await service
     .from('health_insurance_brackets')
     .select('*')
     .order('effective_year', { ascending: false })
-    .order('grade', { ascending: true })
+    .order('insured_salary', { ascending: true })
+
+  // 勞退月提繳工資分級表（Linda 7/30 回報 774a2ea3）
+  const { data: pensionBrackets } = await service
+    .from('pension_wage_brackets')
+    .select('*')
+    .order('effective_year', { ascending: false })
+    .order('contribution_wage', { ascending: true })
 
   const t = await getTranslations('admin.insuranceBrackets')
 
@@ -41,6 +49,7 @@ export default async function InsuranceBracketsPage() {
       <InsuranceBracketsClient
         initialLaborBrackets={laborBrackets ?? []}
         initialHealthBrackets={healthBrackets ?? []}
+        initialPensionBrackets={pensionBrackets ?? []}
       />
     </div>
   )

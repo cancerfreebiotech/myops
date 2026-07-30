@@ -795,7 +795,7 @@
     "createRecord": "給与記録を作成",
     "hrReview": "HR審査",
     "financeConfirm": "財務確認",
-    "cooApprove": "COO承認",
+    "cooApprove": "人事部長承認",
     "confirmPay": "支払確認",
     "payrollTableWithDate": "{year}/{month} 給与一覧",
     "employee": "従業員",
@@ -834,7 +834,7 @@
     "annualStatusDraft": "下書き",
     "annualStatusHrReviewed": "HR審査済み",
     "annualStatusFinanceConfirmed": "財務確認済み",
-    "annualStatusCooApproved": "承認済み",
+    "annualStatusCooApproved": "人事部長承認済み",
     "annualStatusPaid": "支払済み",
     "annualStatusRejected": "却下",
     "anomalies": {
@@ -877,7 +877,13 @@
     "detailEmployerPension": "退職金拠出（会社 6%）",
     "detailApprovalTrail": "承認履歴",
     "detailRejected": "差戻し",
-    "detailPhaseNote": "本ページは現在保存されている項目を表示しています。次段階で基本給・残業代・控除を明細化し、その後に労働基準法と社内規則に沿って計算式と明細書の形式を調整します。「—」は未計算を意味します（手動作成の明細には保険料が入りません）。"
+    "detailPhaseNote": "本ページは現在保存されている項目を表示しています。次段階で基本給・残業代・控除を明細化し、その後に労働基準法と社内規則に沿って計算式と明細書の形式を調整します。「—」は未計算を意味します（手動作成の明細には保険料が入りません）。",
+    "statusHrDirectorApproved": "人事部長承認済み",
+    "bulkLabel": "一括承認：",
+    "bulkAction": "{action}（{count} 件）",
+    "bulkRunning": "処理中…",
+    "bulkDone": "{count} 件を処理しました",
+    "bulkPartial": "成功 {ok} 件、失敗 {failed} 件：{detail}"
   },
   "projects": {
     "title": "プロジェクト",
@@ -1380,7 +1386,9 @@
       "rateTableTitle": "{label}料率表 — {year} 年",
       "unsupportedFileType": "対応していないファイル形式（{ext}）です。公式の等級表は通常 PDF のため、Excel／CSV に変換するか、下のテンプレートをご利用ください。",
       "requiredColumns": "必須列：{columns}",
-      "downloadTemplate": "空白テンプレートをダウンロード"
+      "downloadTemplate": "空白テンプレートをダウンロード",
+      "noValidRows": "利用できる等級データがありません（すべての行で投保薪資が欠けています）。列名と内容をご確認ください。",
+      "skippedRows": "{count} 行をスキップしました（投保薪資なし、またはヘッダー／注記行）。残りは上表のとおり取り込みます。"
     },
     "leaveBalancesMgmt": {
       "allEmployees": "全従業員",
@@ -1524,6 +1532,20 @@
       "invalidInput": "名称と正しい緯度・経度・半径を入力してください",
       "geoUnsupported": "この端末は位置情報に対応していません",
       "geoDenied": "現在地を取得できませんでした"
+    },
+    "pensionBrackets": {
+      "title": "労退 — 月拠出賃金等級表",
+      "explain": "労退の拠出基礎は実際の月給ではなく「月拠出賃金」です（実際 30,000 なら 30,300 で拠出）。会社が 6% を拠出し、個人の任意拠出率は各従業員の人事情報で設定します。",
+      "applyYear": "適用年度",
+      "missingWageColumn": "「月拠出賃金」列が見つかりません。列名をご確認いただくか、下のテンプレートをご利用ください。",
+      "parsedCount": "{count} 等級を解析しました",
+      "confirmUpload": "アップロード（{year} 年度）",
+      "grade": "等級",
+      "wageRange": "実際賃金の範囲",
+      "contributionWage": "月拠出賃金",
+      "employer6": "会社拠出 6%",
+      "andAbove": "以上",
+      "noData": "{year} 年度の労退等級表はまだありません"
     }
   },
   "tooltips": {
@@ -1646,6 +1668,9 @@
       "notSpecialType": "この休暇は資格審査が不要です",
       "invalidGrantDays": "付与日数は0より大きくする必要があります",
       "alreadyProcessed": "この申請は既に処理済みです"
+    },
+    "adminPension": {
+      "rowMissingWage": "月拠出賃金が正の数でない等級があります"
     }
   },
   "teamsMessages": {
@@ -1688,7 +1713,7 @@
     "botQueryPayrollStatus_draft": "下書き",
     "botQueryPayrollStatus_hr_reviewed": "人事確認済み",
     "botQueryPayrollStatus_finance_confirmed": "経理確認済み",
-    "botQueryPayrollStatus_coo_approved": "COO承認済み",
+    "botQueryPayrollStatus_coo_approved": "人事部長承認済み",
     "botQueryPayrollStatus_paid": "支払済み",
     "botQueryPayrollStatus_rejected": "却下",
     "botQueryUnknown": "🤔 そのコマンドが分かりませんでした。「待簽」「請假（休暇）」「薪資（給与）」と聞いてみてください。",

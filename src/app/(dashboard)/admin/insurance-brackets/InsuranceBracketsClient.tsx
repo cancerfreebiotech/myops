@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PensionSection, type PensionBracket } from './PensionSection'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -13,6 +14,7 @@ interface LaborBracket {
   id: string
   effective_year: number
   grade: number
+  grade_label?: string | null
   insured_salary: number
   employee_share: number
   employer_share: number
@@ -23,6 +25,7 @@ interface HealthBracket {
   id: string
   effective_year: number
   grade: number
+  grade_label?: string | null
   insured_salary: number
   employee_share: number
   employee_dependents: number
@@ -32,6 +35,8 @@ interface HealthBracket {
 
 interface LaborRow {
   grade: number
+  /** 級別的原始文字：官方表第 1 級之前的「部分工時」等非數字級別存於此 */
+  grade_label: string | null
   insured_salary: number
   employee_share: number
   employer_share: number
@@ -39,6 +44,7 @@ interface LaborRow {
 
 interface HealthRow {
   grade: number
+  grade_label: string | null
   insured_salary: number
   employee_share: number
   employee_dependents: number
@@ -48,6 +54,8 @@ interface HealthRow {
 interface Props {
   initialLaborBrackets: LaborBracket[]
   initialHealthBrackets: HealthBracket[]
+  /** 勞退月提繳工資分級表（欄位與勞健保不同，另一個區塊處理）*/
+  initialPensionBrackets?: PensionBracket[]
   readOnly?: boolean
 }
 
@@ -114,12 +122,14 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
   const [year, setYear] = useState<number>(new Date().getFullYear())
   const [preview, setPreview] = useState<(LaborRow | HealthRow)[] | null>(null)
   const [parseError, setParseError] = useState<string | null>(null)
+  const [skippedRows, setSkippedRows] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [fileName, setFileName] = useState<string | null>(null)
 
   const handleFile = useCallback((file: File) => {
     setParseError(null)
     setPreview(null)
+    setSkippedRows(0)
     setFileName(file.name)
 
     // 先擋檔案格式：accept 只約束「選檔對話框」，拖放進來的檔案完全不受限制。
@@ -163,29 +173,42 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
           return
         }
 
-        if (type === 'labor') {
-          const rows: LaborRow[] = raw.map(r => ({
-            grade: parseNumber(r[gradeKey]),
-            insured_salary: parseNumber(r[salaryKey]),
-            employee_share: parseNumber(r[empShareKey]),
-            employer_share: parseNumber(r[emplShareKey]),
-          })).filter(r => r.grade > 0)
-          setPreview(rows)
-        } else {
-          const depKey = findKey(headers, EMP_DEPENDENTS_KEYS)
-          if (!depKey) {
-            setParseError(tm('missingDependentsColumn'))
-            return
-          }
-          const rows: HealthRow[] = raw.map(r => ({
-            grade: parseNumber(r[gradeKey]),
-            insured_salary: parseNumber(r[salaryKey]),
-            employee_share: parseNumber(r[empShareKey]),
-            employee_dependents: parseNumber(r[depKey]),
-            employer_share: parseNumber(r[emplShareKey]),
-          })).filter(r => r.grade > 0)
-          setPreview(rows)
+        // 判斷「這一列是不是級距資料」只看投保薪資，不看等級欄。
+        // 官方表第 1 級之前的「部分工時」數級（11,100~28,590）等級欄是文字，
+        // 舊寫法用 grade > 0 過濾，那 17 列會被靜默丟掉（Linda 7/30 回報 774a2ea3）。
+        // 級別文字保留在 grade_label，排序仍用投保薪資，計算完全不受影響。
+        const depKey = type === 'health' ? findKey(headers, EMP_DEPENDENTS_KEYS) : null
+        if (type === 'health' && !depKey) {
+          setParseError(tm('missingDependentsColumn'))
+          return
         }
+
+        const mapped = raw.map(r => {
+          const gradeRaw = r[gradeKey]
+          const gradeNum = parseNumber(gradeRaw)
+          const label = typeof gradeRaw === 'string' ? gradeRaw.trim() : ''
+          const base = {
+            grade: gradeNum,
+            // 等級是文字（部分工時）→ 存原文；是數字 → 不需要另存
+            grade_label: gradeNum > 0 ? null : (label || null),
+            insured_salary: parseNumber(r[salaryKey]),
+            employee_share: parseNumber(r[empShareKey]),
+            employer_share: parseNumber(r[emplShareKey]),
+          }
+          return type === 'labor'
+            ? (base as LaborRow)
+            : ({ ...base, employee_dependents: parseNumber(r[depKey!]) } as HealthRow)
+        })
+
+        const rows = mapped.filter(r => r.insured_salary > 0)
+        const dropped = mapped.length - rows.length
+        if (rows.length === 0) {
+          setParseError(tm('noValidRows'))
+          return
+        }
+        // 略過的列一定要說出來——靜默丟資料比丟資料更糟：Linda 少了 17 級卻毫無提示
+        setSkippedRows(dropped)
+        setPreview(rows)
       } catch {
         setParseError(tm('parseFailed'))
       }
@@ -219,6 +242,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
       } else {
         toast.success(tm('uploadSuccess', { count: json.data.inserted, label, year }))
         setPreview(null)
+        setSkippedRows(0)
         setFileName(null)
         if (fileRef.current) fileRef.current.value = ''
         onSuccess()
@@ -233,6 +257,7 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
   const handleReset = () => {
     setPreview(null)
     setParseError(null)
+    setSkippedRows(0)
     setFileName(null)
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -353,6 +378,13 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
               </button>
             </div>
 
+            {/* 被略過的列一定要顯示：靜默丟掉 17 級部分工時就是這樣發生的 */}
+            {skippedRows > 0 && (
+              <p className="rounded-md bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                {tm('skippedRows', { count: skippedRows })}
+              </p>
+            )}
+
             {/* Preview table */}
             <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
               <table className="w-full text-xs">
@@ -370,7 +402,9 @@ function UploadPanel({ type, label, onSuccess }: UploadPanelProps) {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                   {preview.slice(0, 5).map((row, i) => (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="px-3 py-1.5 tabular-nums text-slate-700 dark:text-slate-300">{row.grade}</td>
+                      <td className="px-3 py-1.5 tabular-nums text-slate-700 dark:text-slate-300">
+                        {row.grade_label ?? row.grade}
+                      </td>
                       <td className="px-3 py-1.5 tabular-nums text-right text-slate-700 dark:text-slate-300">
                         {row.insured_salary.toLocaleString()}
                       </td>
@@ -463,7 +497,7 @@ function LaborTable({ brackets, year }: LaborTableProps) {
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {filtered.map(b => (
             <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-              <td className="px-4 py-2.5 tabular-nums text-slate-700 dark:text-slate-300">{b.grade}</td>
+              <td className="px-4 py-2.5 tabular-nums text-slate-700 dark:text-slate-300">{b.grade_label ?? b.grade}</td>
               <td className="px-4 py-2.5 tabular-nums text-right text-slate-700 dark:text-slate-300">
                 NT$ {b.insured_salary.toLocaleString()}
               </td>
@@ -516,7 +550,7 @@ function HealthTable({ brackets, year }: HealthTableProps) {
         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
           {filtered.map(b => (
             <tr key={b.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-              <td className="px-4 py-2.5 tabular-nums text-slate-700 dark:text-slate-300">{b.grade}</td>
+              <td className="px-4 py-2.5 tabular-nums text-slate-700 dark:text-slate-300">{b.grade_label ?? b.grade}</td>
               <td className="px-4 py-2.5 tabular-nums text-right text-slate-700 dark:text-slate-300">
                 NT$ {b.insured_salary.toLocaleString()}
               </td>
@@ -539,7 +573,7 @@ function HealthTable({ brackets, year }: HealthTableProps) {
 
 // ─── Main Client Component ────────────────────────────────────────────────────
 
-export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets, readOnly }: Props) {
+export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBrackets, initialPensionBrackets, readOnly }: Props) {
   const t = useTranslations('admin.insuranceBrackets')
   const tm = useTranslations('admin.insuranceMgmt')
   const tc = useTranslations('common')
@@ -633,6 +667,13 @@ export function InsuranceBracketsClient({ initialLaborBrackets, initialHealthBra
           </div>
           <HealthTable brackets={healthBrackets} year={viewYear} />
         </div>
+
+        {/* 勞退月提繳工資分級表：欄位與勞健保不同（只有月提繳工資），獨立一區 */}
+        <PensionSection
+          initialBrackets={initialPensionBrackets ?? []}
+          viewYear={viewYear}
+          readOnly={readOnly}
+        />
       </div>
     </div>
   )

@@ -4,6 +4,8 @@ import { getTranslations } from 'next-intl/server'
 
 interface LaborRow {
   grade: number
+  /** 「部分工時」等非數字級別的原始文字；此時 grade 為 0 */
+  grade_label?: string | null
   insured_salary: number
   employee_share: number
   employer_share: number
@@ -11,6 +13,7 @@ interface LaborRow {
 
 interface HealthRow {
   grade: number
+  grade_label?: string | null
   insured_salary: number
   employee_share: number
   employee_dependents: number
@@ -53,9 +56,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: t('adminInsurance.emptyRows') }, { status: 400 })
   }
 
-  // Validate all rows have required fields（RPC 內也會再驗一次同樣條件）
+  // 必要條件是「投保薪資為正」；等級可以是 0，但必須帶 grade_label
+  //（官方表第 1 級之前的「部分工時」數級等級欄是文字，見 migration 20260730000001）。
+  // RPC 內有同條件的防禦性檢查。
   for (const row of rows) {
-    if (!row.grade || !row.insured_salary) {
+    const hasLabel = typeof row.grade_label === 'string' && row.grade_label.trim() !== ''
+    if (!row.insured_salary || (!row.grade && !hasLabel)) {
       return NextResponse.json({ error: t('adminInsurance.rowMissingGradeOrSalary') }, { status: 400 })
     }
   }

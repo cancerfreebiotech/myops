@@ -42,13 +42,19 @@ export default async function FinanceSettingsPage() {
     .from('labor_insurance_brackets')
     .select('*')
     .order('effective_year', { ascending: false })
-    .order('grade', { ascending: true })
+    .order('insured_salary', { ascending: true })
 
   const { data: healthBrackets } = await service
     .from('health_insurance_brackets')
     .select('*')
     .order('effective_year', { ascending: false })
-    .order('grade', { ascending: true })
+    .order('insured_salary', { ascending: true })
+
+  const { data: pensionBrackets } = await service
+    .from('pension_wage_brackets')
+    .select('*')
+    .order('effective_year', { ascending: false })
+    .order('contribution_wage', { ascending: true })
 
   const t = await getTranslations('admin')
   const tNav = await getTranslations('nav')
@@ -59,7 +65,7 @@ export default async function FinanceSettingsPage() {
       <RoleSettingsSection title={t('financeSettings.financeSection')} settings={pick(FINANCE_SETTINGS_KEYS)} editable={editable} />
 
       <SectionHeader label={tNav('adminInsuranceBrackets')} />
-      <InsuranceBracketsClient initialLaborBrackets={laborBrackets ?? []} initialHealthBrackets={healthBrackets ?? []} readOnly={!editable} />
+      <InsuranceBracketsClient initialLaborBrackets={laborBrackets ?? []} initialHealthBrackets={healthBrackets ?? []} initialPensionBrackets={pensionBrackets ?? []} readOnly={!editable} />
 
       <SectionHeader label={tNav('adminPayrollAnomalies')} />
       <AnomaliesClient />
