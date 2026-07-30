@@ -229,9 +229,15 @@ export function PayrollClient({
                   <tr><td colSpan={7} className="text-center py-8 text-slate-400">{t('noRecordsMonth')}</td></tr>
                 ) : records.map((r) => (
                   <tr key={r.id} className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    {/* 連結只掛在員工欄位，不做整列點擊——最後一欄有簽核按鈕，
+                        整列連結會讓「按核准」變成「開明細」。 */}
                     <td className="px-4 py-3">
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{r.user?.display_name}</p>
-                      <p className="text-xs text-slate-400">{r.user?.department?.name}</p>
+                      <Link href={`/payroll/${r.id}`} className="group inline-block">
+                        <p className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:underline">
+                          {r.user?.display_name}
+                        </p>
+                        <p className="text-xs text-slate-400">{r.user?.department?.name}</p>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.base_salary)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-slate-600 dark:text-slate-400">{formatCurrency(r.overtime_pay)}</td>
@@ -266,12 +272,12 @@ export function PayrollClient({
           ) : myPayslips.map((r) => (
             <div key={r.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <Link href={`/payroll/${r.id}`} className="flex items-center gap-2 hover:underline">
                   <FileText size={16} className="text-blue-500" />
                   <span className="font-medium text-slate-800 dark:text-slate-200">
                     {t('payslipTitle', { year: r.year, month: r.month })}
                   </span>
-                </div>
+                </Link>
                 <StatusBadge status={r.status} />
               </div>
               <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
