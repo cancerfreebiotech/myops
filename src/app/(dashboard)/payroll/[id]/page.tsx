@@ -11,12 +11,19 @@ import { PayrollDetailClient, type PayrollDetail } from './PayrollDetailClient'
 /** 員工本人可看到的狀態：與薪資表「我的薪資單」一致，不讓直接輸入網址看到未完成的薪資 */
 const SELF_VISIBLE_STATUSES = ['coo_approved', 'paid']
 
+/**
+ * 先擋格式再查：id 不是 UUID 時 `.eq('id', ...)` 會是 Postgres 的型別轉換錯誤（22P02），
+ * maybeSingle() 回的是 error 而不是 null，就不會走到「查不到 → no-permission」而是直接壞頁。
+ */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export default async function PayrollDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  if (!UUID_RE.test(id)) redirect('/no-permission')
 
   // 先查再判斷：payroll_records 的 SELECT 政策是「本人 or hr_manager / finance_payroll /
   // coo_notify / admin」，並**不含** app 端的 view_payroll。若先用 app 旗標放行、再假設查得到列，
