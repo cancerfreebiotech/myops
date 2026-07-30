@@ -2,9 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.0.1 — 薪資明細頁（2026-07-30）
+## v1.0.2 — 薪資明細頁、勞退分級表、整批簽核（2026-07-30）
 
-本段涵蓋 v1.0.0～v1.0.1。
+本段涵蓋 v1.0.0～v1.0.2。
 
 ### Added（新增）
 
