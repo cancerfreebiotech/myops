@@ -132,7 +132,7 @@ const HEADER_SECTIONS: { key: string; fields: { name: string; type: 'text' | 'da
 ]
 
 const HEADER_FIELDS = HEADER_SECTIONS.flatMap(s => s.fields.map(f => f.name))
-  .concat(['tax_rate', 'shipping_fee', 'notes'])
+  .concat(['tax_rate', 'tax_amount', 'shipping_fee', 'notes'])
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100
@@ -179,6 +179,9 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
   const [voidReason, setVoidReason] = useState('')
   const [voiding, setVoiding] = useState<'void' | 'clone' | null>(null)
   const [pickerValue, setPickerValue] = useState('')
+  // 稅額是否由使用者手動指定（Scott 22dafc0d + Linda 7/30 留言）。
+  // false＝跟著小計×稅率跑；true＝使用者填的數字，前端與伺服器都不再覆寫。
+  const [taxManual, setTaxManual] = useState(false)
   const hydratedRef = useRef(false)
 
   const loadDetail = useCallback(async (hydrateForm: boolean) => {
@@ -201,6 +204,7 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
       next.purchaser_id = typeof d.doc.purchaser_id === 'string' ? d.doc.purchaser_id : ''
       next.vendor_id = typeof d.doc.vendor_id === 'string' ? d.doc.vendor_id : ''
       setForm(next)
+      setTaxManual(d.doc.tax_amount_manual === true)
       setItems(d.items.map(it => ({
         id: (it.id as string) ?? null,
         product_id: (it.product_id as string | null) ?? null,
@@ -237,10 +241,13 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
     () => round2(items.reduce((sum, row) => sum + (lineAmount(row) ?? 0), 0)),
     [items]
   )
-  const taxAmount = useMemo(
+  const autoTaxAmount = useMemo(
     () => round2(subtotal * ((toNum(form.tax_rate ?? '') ?? 0) / 100)),
     [subtotal, form.tax_rate]
   )
+  // 手動模式下稅額不隨小計／稅率變動；合計仍然一律是「小計＋稅額＋運費」，
+  // 所以覆寫稅額不會讓這張單的三個數字互相矛盾。
+  const taxAmount = taxManual ? (toNum(form.tax_amount ?? '') ?? 0) : autoTaxAmount
   const totalAmount = useMemo(
     () => round2(subtotal + taxAmount + (toNum(form.shipping_fee ?? '') ?? 0)),
     [subtotal, taxAmount, form.shipping_fee]
@@ -314,6 +321,9 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
     ...Object.fromEntries(HEADER_FIELDS.map(f => [f, form[f] ?? ''])),
     purchaser_id: form.purchaser_id ?? '',
     vendor_id: form.vendor_id ?? '',
+    // 自動模式送出算好的值（伺服器仍會自己重算一次），手動模式送使用者填的
+    tax_amount: taxManual ? (form.tax_amount ?? '') : String(autoTaxAmount),
+    tax_amount_manual: taxManual,
     items: items.map((row, i) => ({
       ...(row.id ? { id: row.id } : {}),
       line_no: i + 1,
@@ -767,8 +777,32 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
                   />
                 </div>
 
-                <span className="text-slate-500 dark:text-slate-400">{t('fields.tax_amount')}</span>
-                <span className="text-right text-slate-800 dark:text-slate-200 tabular-nums">{formatAmount(taxAmount)}</span>
+                <label htmlFor="pr-tax_amount" className="text-slate-500 dark:text-slate-400">{t('fields.tax_amount')}</label>
+                {editable ? (
+                  <div className="flex flex-col items-end gap-1">
+                    <Input
+                      id="pr-tax_amount"
+                      type="number"
+                      inputMode="decimal"
+                      min="0"
+                      value={taxManual ? (form.tax_amount ?? '') : String(autoTaxAmount)}
+                      onChange={e => { setTaxManual(true); setField('tax_amount', e.target.value) }}
+                      className="text-base text-right w-[110px] tabular-nums"
+                    />
+                    {taxManual && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setTaxManual(false); setField('tax_amount', '') }}
+                        className="h-auto py-0.5 px-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      >
+                        {t('taxAmountRestoreAuto')}
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-right text-slate-800 dark:text-slate-200 tabular-nums">{formatAmount(taxAmount)}</span>
+                )}
 
                 <label htmlFor="pr-shipping_fee" className="text-slate-500 dark:text-slate-400">{t('fields.shipping_fee')}</label>
                 <div className="flex justify-end">

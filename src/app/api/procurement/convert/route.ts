@@ -47,12 +47,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: { id: result.newId, doc_no: result.docNo, to_type: result.toType } })
   } catch (e) {
     if (e instanceof ConversionError) {
+      // 「已轉過」要說清楚是哪一種，使用者才知道下一步怎麼做：
+      // 撞到請購單層級的請款防重（detail 帶 pr_id）時給出「改用分期請款」的指引，
+      // 其餘照一般的「此單據已經轉過了」。
       const message = e.code === 'docNotFound'
         ? t('common.notFound')
-        // No dedicated i18n key: reuse the generic 「不支援此轉單組合」 message
-        // (the block is a duplicate/invalid conversion of an already-converted GR).
         : e.code === 'alreadyConverted'
-          ? t('procurement.invalidConversion')
+          ? (e.dedupeKey === 'pr_id' ? t('procurement.apAlreadyForPr') : t('procurement.alreadyConverted'))
           : t(`procurement.${e.code}` as Parameters<typeof t>[0])
       return NextResponse.json({ error: message }, { status: ERROR_STATUS[e.code] })
     }

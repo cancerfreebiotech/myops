@@ -40,7 +40,7 @@ export const GR_DATE_FIELDS = ['invoice_date'] as const
 export const GR_TIMESTAMP_FIELDS = ['received_at', 'inspected_at', 'confirmed_inbound_at'] as const
 
 /** Writable boolean columns */
-export const GR_BOOLEAN_FIELDS = ['has_deposit', 'converted_to_inspection'] as const
+export const GR_BOOLEAN_FIELDS = ['has_deposit', 'converted_to_inspection', 'tax_amount_manual'] as const
 
 export type GrFieldsResult =
   | { ok: true; fields: Record<string, unknown> }

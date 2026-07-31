@@ -70,6 +70,8 @@ export const PR_NUMERIC_FIELDS = [
 
 export const PR_UUID_FIELDS = ['purchaser_id', 'vendor_id', 'rfq_id'] as const
 
+export const PR_BOOL_FIELDS = ['tax_amount_manual'] as const
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -105,6 +107,10 @@ export function pickHeaderFields(body: Record<string, unknown>): Record<string, 
     const v = body[f]
     if (v === null || v === '') out[f] = null
     else if (typeof v === 'string' && UUID_RE.test(v.trim())) out[f] = v.trim()
+  }
+  for (const f of PR_BOOL_FIELDS) {
+    if (!(f in body)) continue
+    out[f] = body[f] === true
   }
   return out
 }
@@ -180,16 +186,42 @@ export function normalizeItems(raw: unknown): NormalizedItem[] | null {
  * Recompute the money columns from the (normalized) items + header values:
  * subtotal = Σ amount, tax_amount = round(subtotal × tax_rate/100),
  * total_amount = subtotal + tax_amount + shipping_fee.
+ *
+ * 稅額可被使用者覆寫（Scott 22dafc0d + Linda 7/30 留言）：manualTaxAmount 不是 null
+ * 時就採用它、不用稅率重算。這個分支是必要的而不是方便——沒有它，使用者改完稅額
+ * 下一次存檔就會被稅率算回去（欄位開放輸入也沒用）。合計一律仍由伺服器算，
+ * 所以「小計＋稅額＋運費」永遠對得起來。
  */
 export function computeTotals(
   items: NormalizedItem[],
   taxRate: number | null,
-  shippingFee: number | null
+  shippingFee: number | null,
+  manualTaxAmount?: number | null
 ): { subtotal: number; tax_amount: number; total_amount: number } {
   const subtotal = round2(items.reduce((sum, it) => sum + (it.amount ?? 0), 0))
-  const tax_amount = round2(subtotal * ((taxRate ?? 0) / 100))
+  const tax_amount = manualTaxAmount === null || manualTaxAmount === undefined
+    ? round2(subtotal * ((taxRate ?? 0) / 100))
+    : round2(manualTaxAmount)
   const total_amount = round2(subtotal + tax_amount + (shippingFee ?? 0))
   return { subtotal, tax_amount, total_amount }
+}
+
+/**
+ * 這次存檔要用的手動稅額，null＝沿用稅率自動算。
+ * 旗標與稅額都可能只出現在其中一邊（PATCH 只改一個欄位），所以兩者都要 fall back
+ * 到文件現值——只看 body 會在「只改稅率」時誤把手動稅額清掉。
+ */
+export function resolveManualTax(
+  header: Record<string, unknown>,
+  current: { tax_amount_manual?: unknown; tax_amount?: unknown } | null
+): number | null {
+  const manual = 'tax_amount_manual' in header
+    ? header.tax_amount_manual === true
+    : current?.tax_amount_manual === true
+  if (!manual) return null
+  const raw = 'tax_amount' in header ? header.tax_amount : current?.tax_amount
+  const n = typeof raw === 'number' ? raw : Number(raw)
+  return Number.isFinite(n) ? n : null
 }
 
 /** Columns returned by the list endpoints */

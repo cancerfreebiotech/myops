@@ -8,6 +8,7 @@ import {
   normalizeItems,
   pickHeaderFields,
   requireProcurementUser,
+  resolveManualTax,
 } from './helpers'
 
 // 請採購單 (purchase requests):
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
     Object.assign(header, computeTotals(
       items,
       typeof header.tax_rate === 'number' ? header.tax_rate : null,
-      typeof header.shipping_fee === 'number' ? header.shipping_fee : null
+      typeof header.shipping_fee === 'number' ? header.shipping_fee : null,
+      resolveManualTax(header, null)
     ))
   }
 

@@ -1654,7 +1654,9 @@
       "voidNotAllowed": "Only approved or rejected documents can be voided",
       "downstreamNotVoided": "Downstream documents are still active: {docs}. Void them first",
       "unpostFailed": "Stock reversal failed — the stock may already have been consumed",
-      "voidReasonRequired": "Please provide a void reason"
+      "voidReasonRequired": "Please provide a void reason",
+      "alreadyConverted": "This document has already been converted and cannot be converted again",
+      "apAlreadyForPr": "This purchase request already has a payment request and cannot be billed again. For split payments, use \"Create installment\" on that payment request; if it is wrong, void it first and convert again."
     },
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot not configured"
@@ -1989,7 +1991,9 @@
       "uploading": "Uploading…",
       "uploadedNeedSave": "File uploaded — press Save to attach it to the document",
       "uploadFailed": "Upload failed, please retry",
-      "legacyRagicFile": "Attachment still lives in the legacy system (Ragic); not migrated yet"
+      "legacyRagicFile": "Attachment still lives in the legacy system (Ragic); not migrated yet",
+      "taxAmountRestoreAuto": "Restore auto-calculation",
+      "totalAutoHint": "Total = subtotal + tax + shipping, calculated automatically"
     },
     "inbox": {
       "title": "Approval inbox",
@@ -2446,7 +2450,8 @@
         "onlyDraftEditable": "Only drafts can be edited",
         "onlyDraftDeletable": "Only drafts can be deleted"
       },
-      "approvalPreview": "At the current total, submitting will route through: {steps}"
+      "approvalPreview": "At the current total, submitting will route through: {steps}",
+      "taxAmountRestoreAuto": "Restore auto-calculation"
     },
     "rfqs": {
       "title": "RFQs",

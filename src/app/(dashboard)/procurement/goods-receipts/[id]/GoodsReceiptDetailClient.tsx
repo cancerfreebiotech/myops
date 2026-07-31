@@ -121,6 +121,9 @@ const ALL_FIELDS: FieldDef[] = [
 /** 檔案型欄位：改為真的上傳檔案（Scott 7/29 回報 4a05ca46），舊資料仍可能是 URL 或 ragic:// 佔位字串 */
 const URL_FIELDS = new Set(['invoice_doc_url', 'shipping_doc_url'])
 
+/** 會觸發金額連動的欄位（見 setAmountField） */
+const AMOUNT_LINKED_FIELDS = new Set(['subtotal', 'tax_rate', 'tax_amount', 'shipping_fee'])
+
 /**
  * 欄位值的三種來源，顯示方式不同：
  * - 'ragic'：Ragic 匯入時只搬了「檔名」，檔案本身留在舊系統（全庫 584 筆）。
@@ -172,6 +175,8 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
   const [hasDeposit, setHasDeposit] = useState(false)
   const [convertedToInspection, setConvertedToInspection] = useState(false)
   const [notes, setNotes] = useState('')
+  // 稅額是否由使用者手動指定（Linda 7/30 留言：希望自動算出並帶入，但員工可以調整）
+  const [taxManual, setTaxManual] = useState(false)
 
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -201,6 +206,7 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
       else next[f.name] = String(v)
     }
     setForm(next)
+    setTaxManual(d.doc.tax_amount_manual === true)
     setHasDeposit(d.doc.has_deposit === true)
     setConvertedToInspection(d.doc.converted_to_inspection === true)
     setNotes(typeof d.doc.notes === 'string' ? d.doc.notes : '')
@@ -218,6 +224,47 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
   const pr = doc ? one(doc.pr) : null
 
   const setField = (name: string, value: string) => setForm(prev => ({ ...prev, [name]: value }))
+
+  /**
+   * 金額連動（Linda 7/30 留言 22dafc0d）：驗收單原本四個金額欄位全是各自獨立的輸入框，
+   * 改小計不會動稅額也不會動合計 → 可以存出一張自己矛盾的付款單據。
+   * 現在：稅額 = 小計 × 稅率（未手動覆寫時），合計 = 小計 + 稅額 + 運費。
+   *
+   * ⚠️ 只在「小計有值」時才連動。Ragic 轉入的歷史驗收單有合計但小計是空的，
+   * 若無條件套公式會把它們的合計覆寫成 0 —— 那是實際付出去的金額，不能動。
+   */
+  const grNum = (s: string | undefined): number | null => {
+    if (s === undefined || s.trim() === '') return null
+    const n = Number(s)
+    return Number.isFinite(n) ? n : null
+  }
+  const grRound2 = (n: number) => Math.round(n * 100) / 100
+  const amountsLinked = grNum(form.subtotal) !== null
+
+  const recalcAmounts = (draft: Record<string, string>, manual: boolean): Record<string, string> => {
+    const subtotal = grNum(draft.subtotal)
+    if (subtotal === null) return draft
+    const tax = manual
+      ? (grNum(draft.tax_amount) ?? 0)
+      : grRound2(subtotal * ((grNum(draft.tax_rate) ?? 0) / 100))
+    return {
+      ...draft,
+      tax_amount: manual ? (draft.tax_amount ?? '') : String(tax),
+      total_amount: String(grRound2(subtotal + tax + (grNum(draft.shipping_fee) ?? 0))),
+    }
+  }
+
+  /** 改動 小計／稅率／運費 → 重算稅額與合計；改動 稅額 → 轉為手動並只重算合計 */
+  const setAmountField = (name: string, value: string) => {
+    const manual = name === 'tax_amount' ? true : taxManual
+    if (name === 'tax_amount' && !taxManual) setTaxManual(true)
+    setForm(prev => recalcAmounts({ ...prev, [name]: value }, manual))
+  }
+
+  const restoreAutoTax = () => {
+    setTaxManual(false)
+    setForm(prev => recalcAmounts(prev, false))
+  }
 
   /**
    * 發票／出貨單據上傳：存 procurement bucket 的物件路徑（不是公開 URL），
@@ -250,6 +297,7 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
     const body: Record<string, unknown> = {
       has_deposit: hasDeposit,
       converted_to_inspection: convertedToInspection,
+      tax_amount_manual: taxManual,
       notes,
     }
     for (const f of ALL_FIELDS) {
@@ -426,10 +474,24 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
         </div>
       )
     }
+    // 合計在金額連動生效時是算出來的，改成唯讀避免存出「合計 ≠ 小計＋稅額＋運費」。
+    // 小計為空的歷史單不連動，合計仍可手動填。
+    if (f.name === 'total_amount' && amountsLinked) {
+      return (
+        <div key={f.name}>
+          <span className="text-sm text-slate-400">{t('fields.total_amount')}</span>
+          <p className="text-slate-700 dark:text-slate-300 mt-0.5 tabular-nums">
+            {Number(form.total_amount ?? 0).toLocaleString()}
+          </p>
+          <p className="text-xs text-slate-400 mt-0.5">{t('totalAutoHint')}</p>
+        </div>
+      )
+    }
     const inputType = f.kind === 'number' ? 'number'
       : f.kind === 'date' ? 'date'
       : f.kind === 'datetime' ? 'datetime-local'
       : 'text'
+    const isAmountField = AMOUNT_LINKED_FIELDS.has(f.name)
     return (
       <div key={f.name}>
         <FieldLabel htmlFor={`gr-${f.name}`}>{t(`fields.${f.name}` as Parameters<typeof t>[0])}</FieldLabel>
@@ -438,9 +500,19 @@ export function GoodsReceiptDetailClient({ id, canConvertToAsset }: { id: string
           type={inputType}
           inputMode={f.kind === 'number' ? 'decimal' : undefined}
           value={form[f.name] ?? ''}
-          onChange={e => setField(f.name, e.target.value)}
+          onChange={e => (isAmountField ? setAmountField : setField)(f.name, e.target.value)}
           className="text-base"
         />
+        {f.name === 'tax_amount' && amountsLinked && taxManual && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={restoreAutoTax}
+            className="h-auto py-0.5 px-1.5 mt-1 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+          >
+            {t('taxAmountRestoreAuto')}
+          </Button>
+        )}
       </div>
     )
   }

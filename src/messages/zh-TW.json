@@ -1654,7 +1654,9 @@
       "voidNotAllowed": "只有簽核完成或被拒簽的單據可以作廢",
       "downstreamNotVoided": "尚有下游單據未作廢：{docs}，請先處理下游單據",
       "unpostFailed": "庫存沖銷失敗，庫存可能已被後續出庫使用",
-      "voidReasonRequired": "請填寫作廢原因"
+      "voidReasonRequired": "請填寫作廢原因",
+      "alreadyConverted": "此單據已經轉過了，不能再轉一次",
+      "apAlreadyForPr": "這張請購單已經有一張採購請款單了，不能再請款一次。分批付款請在該請款單上「建立分期請款」；若原請款單有誤，請先作廢再重轉。"
     },
     "teamsDailyDigest": {
       "botNotConfigured": "尚未設定 Teams Bot"
@@ -1989,7 +1991,9 @@
       "uploading": "上傳中…",
       "uploadedNeedSave": "檔案已上傳，請按「儲存」才會寫入單據",
       "uploadFailed": "上傳失敗，請重試",
-      "legacyRagicFile": "附件仍在舊系統（Ragic），尚未移轉到本系統"
+      "legacyRagicFile": "附件仍在舊系統（Ragic），尚未移轉到本系統",
+      "taxAmountRestoreAuto": "恢復自動計算",
+      "totalAutoHint": "合計 ＝ 小計 ＋ 稅額 ＋ 運費，自動計算"
     },
     "inbox": {
       "title": "待簽收件匣",
@@ -2446,7 +2450,8 @@
         "onlyDraftEditable": "只有草稿狀態可以編輯",
         "onlyDraftDeletable": "只有草稿狀態可以刪除"
       },
-      "approvalPreview": "依目前合計金額，送簽後將經過：{steps}"
+      "approvalPreview": "依目前合計金額，送簽後將經過：{steps}",
+      "taxAmountRestoreAuto": "恢復自動計算"
     },
     "rfqs": {
       "title": "詢價單",

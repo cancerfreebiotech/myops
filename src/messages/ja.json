@@ -1654,7 +1654,9 @@
       "voidNotAllowed": "承認済みまたは却下された伝票のみ無効化できます",
       "downstreamNotVoided": "未処理の下流伝票があります：{docs}。先に下流伝票を処理してください",
       "unpostFailed": "在庫の取消に失敗しました。在庫がすでに使用されている可能性があります",
-      "voidReasonRequired": "無効化の理由を入力してください"
+      "voidReasonRequired": "無効化の理由を入力してください",
+      "alreadyConverted": "この伝票は既に変換済みのため、再度変換できません",
+      "apAlreadyForPr": "この購買申請には既に支払依頼があるため、再度請求できません。分割払いはその支払依頼で「分割請求を作成」してください。誤りがある場合は先に無効化してから再変換してください。"
     },
     "teamsDailyDigest": {
       "botNotConfigured": "Teams Bot が設定されていません"
@@ -1989,7 +1991,9 @@
       "uploading": "アップロード中…",
       "uploadedNeedSave": "アップロード完了。「保存」を押すと伝票に反映されます",
       "uploadFailed": "アップロードに失敗しました。再試行してください",
-      "legacyRagicFile": "添付ファイルは旧システム（Ragic）にあり、本システムへ未移行です"
+      "legacyRagicFile": "添付ファイルは旧システム（Ragic）にあり、本システムへ未移行です",
+      "taxAmountRestoreAuto": "自動計算に戻す",
+      "totalAutoHint": "合計 ＝ 小計 ＋ 税額 ＋ 送料（自動計算）"
     },
     "inbox": {
       "title": "承認待ち受信箱",
@@ -2446,7 +2450,8 @@
         "onlyDraftEditable": "下書きのみ編集できます",
         "onlyDraftDeletable": "下書きのみ削除できます"
       },
-      "approvalPreview": "現在の合計金額では、申請後は次の順で承認されます：{steps}"
+      "approvalPreview": "現在の合計金額では、申請後は次の順で承認されます：{steps}",
+      "taxAmountRestoreAuto": "自動計算に戻す"
     },
     "rfqs": {
       "title": "見積依頼書",

@@ -87,9 +87,16 @@ async function postNotify(
       return false
     }
 
-    const data = (await res.json().catch(() => null)) as NotifyResponse | null
+    // 這裡刻意把回應內容也記下來：原本只印一句 "returned not-ok"，
+    // 無法分辨「Dr.Ave 明確回 ok:false」與「回了非 JSON／空 body 導致 data 為 null」，
+    // 兩者的處理方式完全不同（前者要查 Dr.Ave 的拒絕原因，後者是回應格式問題）。
+    const raw = await res.text().catch(() => '')
+    let data: NotifyResponse | null = null
+    try { data = JSON.parse(raw) as NotifyResponse } catch { data = null }
     if (!data?.ok) {
-      console.error(`[teams-bot] Dr.Ave notify returned not-ok for ${email}`)
+      console.error(
+        `[teams-bot] Dr.Ave notify returned not-ok for ${email} (HTTP ${res.status}, body: ${raw.slice(0, 300)})`
+      )
       return false
     }
     if (data.method === 'skipped') {

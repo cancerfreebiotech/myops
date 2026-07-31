@@ -9,6 +9,7 @@ import {
   normalizeItems,
   pickHeaderFields,
   requireProcurementUser,
+  resolveManualTax,
   round2,
   type ProcurementUser,
 } from '../helpers'
@@ -155,7 +156,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const write = procurementWriteClient()
   const { data: doc } = await service
     .from('purchase_requests')
-    .select('id, status, created_by, tax_rate, shipping_fee')
+    .select('id, status, created_by, tax_rate, shipping_fee, tax_amount, tax_amount_manual')
     .eq('id', id)
     .maybeSingle()
   if (!doc) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
@@ -216,7 +217,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const shippingFee = typeof header.shipping_fee === 'number' ? header.shipping_fee
       : header.shipping_fee === null ? null
         : (doc.shipping_fee as number | null)
-    Object.assign(header, computeTotals(items, taxRate, shippingFee))
+    // 手動稅額要 fall back 到文件現值，否則「只改稅率」的 PATCH 會把使用者
+    // 先前覆寫的稅額算回自動值
+    Object.assign(header, computeTotals(items, taxRate, shippingFee, resolveManualTax(header, doc)))
 
     // merge payload: kept rows carry their id (received_qty deliberately omitted so
     // the RPC preserves it); new rows have no id. The RPC prunes rows absent from the

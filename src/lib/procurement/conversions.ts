@@ -51,6 +51,14 @@ export interface ConversionDef {
    * A voided target is ignored so a mistaken conversion can be redone.
    */
   dedupeTarget?: boolean
+  /**
+   * 額外的防重鍵：除了 fkField 之外，再用來源文件的某個欄位比對目標表的同名欄位。
+   * GR→AP 用它把防重從「一張驗收單一次」擴到「一張請購單一次」——
+   * pr_to_gr 沒有防重，同一張請購單可以開出多張驗收單，光比對 gr_id 攔不住
+   * 「兩張同額驗收單各自請款一次」的全額重複付款（7/31 PR-2607-007 的實例）。
+   * 來源欄位是 null 時跳過這個鍵（Ragic 歷史單沒有請購單）。
+   */
+  dedupeAlso?: { targetField: string; sourceField: string }
   postProcess?: ConversionPostProcess[]
 }
 
@@ -143,9 +151,14 @@ export const CONVERSIONS: Record<ConversionKey, ConversionDef> = {
       tax_id: 'tax_id',
       ap_total_amount: 'total_amount',
       total_amount: 'total_amount',
+      // 帶入來源驗收單的請購單，供「一張請購單只能請款一次」比對與唯一索引
+      pr_id: 'pr_id',
     },
-    // 一張進貨驗收單只能請款一次：防止重複轉採購請款單 → 重複付款
+    // 一張進貨驗收單只能請款一次，**且**一張請購單只能請款一次（Po 2026-07-31）。
+    // 分批付款在本系統是 installment_requests（AP→INS）表達的，不是多張 AP，
+    // 所以收到請購單層級不會擋掉合法流程。
     dedupeTarget: true,
+    dedupeAlso: { targetField: 'pr_id', sourceField: 'pr_id' },
     postProcess: ['fillVendorBankInfo'],
   },
 
@@ -168,7 +181,12 @@ export type ConversionErrorCode =
   | 'alreadyConverted'
 
 export class ConversionError extends Error {
-  constructor(public code: ConversionErrorCode, message?: string) {
+  /**
+   * alreadyConverted 時，是哪一個防重鍵擋下的（'gr_id' / 'pr_id' / undefined＝唯一索引）。
+   * route 用它挑對應的錯誤訊息——請購單層級的重複請款要指引「改用分期請款」，
+   * 用 message 字串比對太脆弱。
+   */
+  constructor(public code: ConversionErrorCode, message?: string, public dedupeKey?: string) {
     super(message ?? code)
     this.name = 'ConversionError'
   }
@@ -423,14 +441,28 @@ export async function convertDoc(
   // NOTE: this is an app-layer check with a residual TOCTOU window; the paired
   // migration adds partial unique indexes on the FK for the DB-level guarantee.
   if (def.dedupeTarget) {
-    const { data: existingTarget } = await service
-      .from(DOC_TYPE_META[toType].table)
-      .select('id')
-      .eq(def.fkField, fromId)
-      .neq('status', 'voided')
-      .limit(1)
-    if (existingTarget && existingTarget.length > 0) {
-      throw new ConversionError('alreadyConverted', `${fromType} already converted to ${toType}`)
+    // 比對鍵可能有兩個（見 dedupeAlso）。用 write（service-role）查而不是 service：
+    // 這是「存不存在」的檢查，不回傳資料列給瀏覽器，但若走 RLS，別人建的請款單
+    // 會被隱藏 → 檢查放行、最後才被 DB 唯一索引以 23505 擋下，變成不明的 500。
+    const dedupeKeys: Array<{ col: string; val: unknown }> = [{ col: def.fkField, val: fromId }]
+    if (def.dedupeAlso) {
+      const v = source[def.dedupeAlso.sourceField]
+      if (v !== null && v !== undefined) dedupeKeys.push({ col: def.dedupeAlso.targetField, val: v })
+    }
+    for (const key of dedupeKeys) {
+      const { data: existingTarget } = await write
+        .from(DOC_TYPE_META[toType].table)
+        .select('id')
+        .eq(key.col, key.val as string)
+        .neq('status', 'voided')
+        .limit(1)
+      if (existingTarget && existingTarget.length > 0) {
+        throw new ConversionError(
+          'alreadyConverted',
+          `${fromType} already converted to ${toType} (${key.col})`,
+          key.col
+        )
+      }
     }
   }
 
@@ -503,6 +535,11 @@ export async function convertDoc(
     break
   }
   if (!created) {
+    // 併發 TOCTOU：兩個請求同時通過上面的存在檢查，其中一個會撞到部分唯一索引。
+    // 回報成「已轉過」而不是 500，使用者才知道發生什麼事。
+    if (!usesInstallmentNo && lastInsertError?.code === '23505') {
+      throw new ConversionError('alreadyConverted', `${fromType} → ${toType} unique violation`)
+    }
     throw new Error(`conversion insert failed: ${lastInsertError?.message ?? 'no row returned'}`)
   }
   const newId = created.id
