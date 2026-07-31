@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## v1.0.5 — Teams 簽核卡片按鈕可以用了（2026-07-31）
+
+### Fixed（修復）
+
+- **Teams 簽核卡片的「核准／退回」按鈕**：Dr.Ave 那邊修好卡片渲染之後（原本所有帶按鈕的
+  通知從 7/29 起就沒有送達過任何人），按鈕按下去仍然會失敗——因為回呼的欄位形狀與
+  myOPS 這端讀的不一樣（對方送 `{ actionType, payload, actor }`，我們照舊規格讀扁平的
+  `{ email, docType, ... }`）。現在兩種形狀都收，卡片按鈕可以正常簽核。
+  - 點擊者身分只認 Dr.Ave 認證過的 `actor.email`，不從卡片自帶的 payload 取。
+  - 非簽核用的按鈕（例如「前往簽核」的連結）會明確回報，不再誤報成「缺少必填欄位」。
+
+### Notes（技術）
+
+- 上線後以 6 種 body 形狀對正式站實測（巢狀／扁平／缺 actor／open_url／錯 token），
+  全部行為正確；測試一律用不存在的單號，不會動到真實單據。
+- 對方已知個案：有一位同事在 Teams 封鎖了 Dr.Ave，他若是簽核人，通知會失敗並在
+  log 顯示 `method:"failed"`——那需要本人在 Teams 解除封鎖，不是系統問題。
+
 ## v1.0.4 — 稅額可覆寫、請款防重、每日回饋彙整補上留言（2026-07-31）
 
 ### Added（新增）
