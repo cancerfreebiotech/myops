@@ -48,7 +48,13 @@
       "Bash(redirect=/ 2>&1)",
       "Bash(grep -v \"//.*[\\\\u4e00-\\\\u9fff]\")",
       "Read(//c/Users/PoChen/myops/**)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "mcp__claude_ai_Supabase__list_tables",
+      "Bash(grep -E '\\\\.\\(ts|tsx\\)$')",
+      "Bash(grep -rniA3 \"create policy\" .)",
+      "Bash(grep -rnB6 '\\\\.update\\(' /home/po/proj/myops/src/app/api/procurement/goods-receipts/\\\\[id\\\\]/route.ts /home/po/proj/myops/src/app/api/procurement/outbound/\\\\[id\\\\]/route.ts /home/po/proj/myops/src/app/api/procurement/evaluations/\\\\[type\\\\]/\\\\[id\\\\]/route.ts /home/po/proj/myops/src/app/api/procurement/vendors/\\\\[id\\\\]/route.ts /home/po/proj/myops/src/app/api/procurement/products/\\\\[id\\\\]/route.ts)",
+      "Bash(python3 -c \"import json;d=json.load\\(open\\('package.json'\\)\\);print\\({k:v for k,v in list\\(d['dependencies'].items\\(\\)\\)[:14]}\\)\")"
     ]
   },
   "enabledPlugins": {
