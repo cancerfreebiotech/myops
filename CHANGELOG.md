@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## v1.0.7 — 登入偶爾被無故踢出、畫面局部消失（2026-08-07）
+## v1.0.8 — 登入偶爾被無故踢出、畫面局部消失（2026-08-07）
 
 ### Fixed（修復）
 
