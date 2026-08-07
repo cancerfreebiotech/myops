@@ -408,12 +408,10 @@ A focused view of the same contract-type documents (NDA, MOU, contract, amendmen
 
 ### Daily Report
 
-Used by roles like sales or case managers to log a working day across three tabs, replacing what used to be a separate daily-reporting site.
+Used by roles like sales or case managers to log a working day across two tabs, replacing what used to be a separate daily-reporting site. (The separate **Completion Report** tab has been removed — checking a schedule item off as done *is* the completion report.)
 
 - Switch dates with the date picker (yesterday / today / tomorrow), based on your local time zone.
-- **Today's Schedule** tab: add, edit, or delete planned tasks for the day and check them off as done. If you've saved a template before, "**Fill from Template**" lets you reuse it — the button only appears once you have at least one saved template.
-- Checking a schedule item off as done automatically mirrors it into the **Completion Report** tab, tagged with a "Schedule" badge; you can still check it complete or add a note there, but to rename it you need to go back to Today's Schedule.
-- **Completion Report** tab: add manual entries of your own, or pull in a saved work-item template with "**Fill from Work Items**." Checking something complete here syncs back to the matching schedule item too — the two tabs stay in sync either way.
+- **Today's Schedule** tab: add, edit, or delete planned tasks for the day and check them off as done — once saved, your manager sees the completion progress in Team View. If you've saved a template before, "**Fill from Template**" lets you reuse it — the button only appears once you have at least one saved template.
 - **KPI** tab: enter today's value for whatever indicators your manager or HR has set up for you (only active indicators show; if none exist yet, you'll see a note to contact your manager). Entries save automatically about 600ms after you stop typing, and if you switch dates before it finishes saving, it still saves to the date you were actually editing.
 
 ### My Tasks

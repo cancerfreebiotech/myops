@@ -22,9 +22,9 @@ export interface DrGroupMember {
 export interface DrScheduleItem {
   label: string
   note: string
-  /** 穩定識別碼（client 產生），用於與完成回報項目同步；舊資料可能沒有 */
+  /** 穩定識別碼（client 產生）；舊資料可能沒有 */
   sid?: string
-  /** 是否已完成（在今日行程分頁勾選，會同步到 daily_completions） */
+  /** 是否已完成（今日行程分頁勾選）。feedback 00dbbd55 移除「完成回報」後這就是唯一的完成狀態來源 */
   done?: boolean
 }
 
@@ -33,23 +33,6 @@ export interface DrSchedule {
   user_id: string
   date: string
   items: DrScheduleItem[]
-}
-
-export interface DrCompletionItem {
-  label: string
-  note: string
-  done: boolean
-  /** 有值 = 由今日行程同步而來（對應 DrScheduleItem.sid）；無值 = 手動新增的行程外事項 */
-  sid?: string
-  /** true = 使用者於完成回報手動新增；行程儲存時不得被 label 認領（區別於 sid 機制前的舊資料） */
-  manual?: boolean
-}
-
-export interface DrCompletion {
-  id: string
-  user_id: string
-  date: string
-  items: DrCompletionItem[]
 }
 
 export interface DrKpiDefinition {
@@ -91,14 +74,6 @@ export interface DrTaskSubtask {
   task_id: string
   title: string
   done: boolean
-  sort_order: number
-}
-
-export interface DrWorkItem {
-  id: string
-  user_id: string
-  label: string
-  count_label: string
   sort_order: number
 }
 

@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
   const formatTime = (t: string | null) => {
     if (!t) return ''
-    return new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Taipei' })
+    return new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Taipei' })
   }
 
   const rows = (data ?? []).map((r: AttendanceExportRow) => {

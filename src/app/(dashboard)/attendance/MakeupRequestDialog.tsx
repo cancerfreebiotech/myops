@@ -21,12 +21,16 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
   const tc = useTranslations('common')
   const [date, setDate] = useState('')
   const [clockType, setClockType] = useState<'in' | 'out'>('in')
-  const [time, setTime] = useState('')
+  // 時/分拆成兩個 24 小時制下拉（feedback 0f8d0d08）：原生 <input type="time"> 的
+  // 顯示格式跟著瀏覽器/OS locale 走（en 環境會變 12 小時制 AM/PM），HTML 沒有
+  // 強制 24h 的屬性，只能自訂控制項。
+  const [hour, setHour] = useState('')
+  const [minute, setMinute] = useState('')
   const [reason, setReason] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
-    if (!date || !time || !reason.trim()) {
+    if (!date || !hour || !minute || !reason.trim()) {
       toast.error(t('requiredFields'))
       return
     }
@@ -34,14 +38,14 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
     const res = await fetch('/api/attendance/makeup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clock_date: date, clock_type: clockType, clock_time: `${date}T${time}:00+08:00`, reason }),
+      body: JSON.stringify({ clock_date: date, clock_type: clockType, clock_time: `${date}T${hour}:${minute}:00+08:00`, reason }),
     })
     const { error } = await res.json()
     setLoading(false)
     if (error) { toast.error(error); return }
     toast.success(t('success'))
     onOpenChange(false)
-    setDate(''); setTime(''); setReason('')
+    setDate(''); setHour(''); setMinute(''); setReason('')
     onSuccess()
   }
 
@@ -66,7 +70,24 @@ export function MakeupRequestDialog({ open, onOpenChange, onSuccess }: Props) {
           </div>
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('time')}</label>
-            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="mt-1" />
+            <div className="mt-1 grid grid-cols-2 gap-2">
+              <Select value={hour || null} onValueChange={v => setHour(v ?? '')}>
+                <SelectTrigger aria-label={t('hour')}><SelectValue placeholder={t('hour')} /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                    <SelectItem key={h} value={h}>{h}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={minute || null} onValueChange={v => setMinute(v ?? '')}>
+                <SelectTrigger aria-label={t('minute')}><SelectValue placeholder={t('minute')} /></SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
+                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('reason')}</label>

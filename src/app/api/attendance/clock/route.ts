@@ -112,20 +112,45 @@ export async function POST(request: NextRequest) {
     .eq('clock_date', clockDate)
     .single()
 
-  // 已作廢列不得寫入下班卡（會寫進被統計/匯出排除的紀錄）；視同尚未打卡
-  if (!record?.clock_in || record.voided_at) {
+  // 已作廢列不得寫入下班卡（會寫進被統計/匯出排除的紀錄）；視同尚未打卡。
+  // 沒有上班卡時，若當天有 pending 的「上班」補卡申請，仍放行下班卡
+  // （feedback 6e585611：忘打上班卡→送補卡申請→主管還沒核准前就到了下班時間）。
+  // 先寫入只有 clock_out 的列；補卡核准後 approve_makeup_request 的
+  // ON CONFLICT DO UPDATE 會把 clock_in 補進同一列。
+  if (record?.voided_at) {
     return NextResponse.json({ error: t('attendanceClock.notClockedIn') }, { status: 400 })
   }
-  if (record.clock_out) {
+  if (record?.clock_out) {
     return NextResponse.json({ error: t('attendanceClock.alreadyClockedOut') }, { status: 400 })
   }
+  if (!record?.clock_in) {
+    const { data: pendingMakeupIn } = await service
+      .from('attendance_makeup_requests')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('clock_date', clockDate)
+      .eq('clock_type', 'in')
+      .eq('status', 'pending')
+      .limit(1)
+      .maybeSingle()
+    if (!pendingMakeupIn) {
+      return NextResponse.json({ error: t('attendanceClock.notClockedIn') }, { status: 400 })
+    }
+  }
 
-  const { error } = await service.from('attendance_records').update({
+  const outFields = {
     clock_out: now.toISOString(),
     clock_out_lat: lat ?? null,
     clock_out_lng: lng ?? null,
     is_auto_out: false,
-  }).eq('id', record.id)
+  }
+  const { error } = record
+    ? await service.from('attendance_records').update(outFields).eq('id', record.id)
+    : await service.from('attendance_records').insert({
+        user_id: user.id,
+        clock_date: clockDate,
+        ...outFields,
+      })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
   return NextResponse.json({ data: { action: 'out', time: now.toISOString() } })
@@ -146,5 +171,16 @@ export async function GET() {
     .is('voided_at', null)
     .single()
 
-  return NextResponse.json({ data })
+  // 前端據此在「沒有上班卡」時仍開放下班鈕（見 POST 的 6e585611 註解）
+  const { data: pendingMakeupIn } = await supabase
+    .from('attendance_makeup_requests')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('clock_date', today)
+    .eq('clock_type', 'in')
+    .eq('status', 'pending')
+    .limit(1)
+    .maybeSingle()
+
+  return NextResponse.json({ data, pending_makeup_in: !!pendingMakeupIn })
 }

@@ -203,6 +203,11 @@ export function PurchaseRequestDetailClient({ docId, users, vendors, products }:
       }
       next.purchaser_id = typeof d.doc.purchaser_id === 'string' ? d.doc.purchaser_id : ''
       next.vendor_id = typeof d.doc.vendor_id === 'string' ? d.doc.vendor_id : ''
+      // 稅率預設 5%（feedback 22dafc0d）：只在草稿且稅率/稅額都還沒被存過任何值時
+      // 帶入，之後仍可自由改稅率或切手動稅額——存過一次（即使清空）就不再覆蓋。
+      if (d.doc.status === 'draft' && d.doc.tax_rate == null && d.doc.tax_amount == null && d.doc.tax_amount_manual !== true) {
+        next.tax_rate = '5'
+      }
       setForm(next)
       setTaxManual(d.doc.tax_amount_manual === true)
       setItems(d.items.map(it => ({

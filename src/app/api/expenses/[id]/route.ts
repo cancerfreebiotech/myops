@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { getTranslations } from 'next-intl/server'
 
@@ -14,6 +14,7 @@ async function isApprover(supabase: Awaited<ReturnType<typeof createClient>>, us
 // PATCH /api/expenses/[id]
 //   審批者：{ action: 'approve' | 'reject' | 'pay', review_note? }（需 MFA aal2）
 //   本人（pending）：{ action: 'cancel' }
+//   本人（pending/approved/paid）：{ action: 'add_receipts', receipt_paths: string[] }
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
@@ -26,10 +27,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { data: claim } = await supabase
     .from('expense_claims')
-    .select('id, user_id, status')
+    .select('id, user_id, status, receipt_paths')
     .eq('id', id)
     .maybeSingle()
   if (!claim) return NextResponse.json({ error: t('common.notFound') }, { status: 404 })
+
+  if (action === 'add_receipts') {
+    // 核准後補發票（feedback cc241c8f）：報帳常在核准/撥付後才收到發票，
+    // 開放本人在單子還「活著」（未退回、未取消）時追加附件。
+    // RLS 的 expense_claims_own_update 只允許本人更新 pending 列，所以這裡走
+    // admin client 繞過——但欄位嚴格白名單：只能「追加」receipt_paths，
+    // 不能移除既有附件、不能碰 status/amount 等任何其他欄位。
+    if (claim.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    if (!['pending', 'approved', 'paid'].includes(claim.status)) {
+      return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })
+    }
+    const incoming = body.receipt_paths
+    const valid = Array.isArray(incoming)
+      && incoming.length > 0
+      && incoming.length <= 10
+      && incoming.every((p: unknown) => typeof p === 'string' && p.length > 0 && p.length <= 300)
+    if (!valid) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+
+    const existing = (claim.receipt_paths as string[] | null) ?? []
+    const merged = [...existing, ...(incoming as string[]).filter(p => !existing.includes(p))]
+    if (merged.length > 30) return NextResponse.json({ error: t('common.invalidRequest') }, { status: 400 })
+
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('expense_claims')
+      .update({ receipt_paths: merged })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ data })
+  }
 
   if (action === 'cancel') {
     if (claim.user_id !== user.id) return NextResponse.json({ error: t('common.forbidden') }, { status: 403 })

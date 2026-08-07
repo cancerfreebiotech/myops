@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -67,7 +68,7 @@ const formatTime = (t: string | null) => {
   if (!t) return null
   // Handle both time-only "HH:MM:SS" and ISO datetime strings
   if (t.includes('T')) {
-    return new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })
+    return new Date(t).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Taipei' })
   }
   return t.substring(0, 5)
 }
@@ -100,12 +101,15 @@ export function AdminAttendanceClient({
   // 作廢 / 取消作廢 對話框狀態
   const [voidTarget, setVoidTarget] = useState<AttendanceRecord | null>(null)
   const [voidReason, setVoidReason] = useState('')
+  // 'day'＝整列軟作廢；'in'/'out'＝只清除單一打卡欄位（feedback 9931abcb）
+  const [voidScope, setVoidScope] = useState<'day' | 'in' | 'out'>('day')
   const [unvoidTarget, setUnvoidTarget] = useState<AttendanceRecord | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const openVoid = (r: AttendanceRecord) => {
     setVoidTarget(r)
     setVoidReason('')
+    setVoidScope('day')
   }
 
   const submitVoid = async () => {
@@ -119,7 +123,7 @@ export function AdminAttendanceClient({
     const res = await fetch(`/api/admin/attendance/${voidTarget.id}/void`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reason }),
+      body: JSON.stringify({ reason, scope: voidScope }),
     })
     const { error } = await res.json().catch(() => ({ error: 'error' }))
     setSubmitting(false)
@@ -127,7 +131,7 @@ export function AdminAttendanceClient({
       toast.error(error)
       return
     }
-    toast.success(ta('voidSuccess'))
+    toast.success(voidScope === 'day' ? ta('voidSuccess') : ta('voidClearSuccess'))
     setVoidTarget(null)
     router.refresh()
   }
@@ -490,7 +494,9 @@ export function AdminAttendanceClient({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{ta('voidDialogTitle')}</DialogTitle>
-            <DialogDescription>{ta('voidDialogDesc')}</DialogDescription>
+            <DialogDescription>
+              {voidScope === 'day' ? ta('voidDialogDesc') : ta('voidClearDesc')}
+            </DialogDescription>
           </DialogHeader>
           {voidTarget && (
             <div className="text-sm text-slate-600 dark:text-slate-400">
@@ -500,6 +506,17 @@ export function AdminAttendanceClient({
               <span className="mx-1.5 tabular-nums">· {voidTarget.clock_date}</span>
             </div>
           )}
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="void-scope">{ta('voidScopeLabel')}</Label>
+            <Select value={voidScope} onValueChange={v => setVoidScope((v ?? 'day') as 'day' | 'in' | 'out')}>
+              <SelectTrigger id="void-scope"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">{ta('voidScopeDay')}</SelectItem>
+                <SelectItem value="in" disabled={!voidTarget?.clock_in}>{ta('voidScopeIn')}</SelectItem>
+                <SelectItem value="out" disabled={!voidTarget?.clock_out}>{ta('voidScopeOut')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="void-reason">
               {ta('voidReasonLabel')} <span className="text-red-500">*</span>

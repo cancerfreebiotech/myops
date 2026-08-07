@@ -4,28 +4,30 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { format, addDays, parseISO } from 'date-fns'
 import { taipeiToday } from '@/lib/taipei-date'
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Circle, ClipboardList, BarChart3 } from 'lucide-react'
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CheckCircle2, Circle, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import type { DrScheduleItem, DrCompletionItem, DrKpiDefinition, DrKpiEntry, DrSchItem, DrWorkItem } from '@/lib/daily-report/types'
+import type { DrScheduleItem, DrKpiDefinition, DrKpiEntry, DrSchItem } from '@/lib/daily-report/types'
 
 interface Props {
   userId: string
   isViewer: boolean
 }
 
-type Tab = 'schedule' | 'completion' | 'kpi'
+// 「完成回報」分頁已於 feedback 00dbbd55 移除：今日行程的完成勾選（done）
+// 就是完成回報，主管的團隊檢視直接讀 daily_schedules.items[].done。
+type Tab = 'schedule' | 'kpi'
 
-// 行程項目穩定識別碼：用於今日行程 ↔ 完成回報之間的同步對應
+// 行程項目穩定識別碼（列 key 與跨儲存識別用）
 const newSid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`
 
-// 舊資料可能缺 sid / done，載入時補齊，確保儲存後可與完成回報對應
+// 舊資料可能缺 sid / done，載入時補齊
 const normalizeScheduleItems = (items: DrScheduleItem[]): DrScheduleItem[] =>
   items.map(item => ({ ...item, sid: item.sid || newSid(), done: item.done === true }))
 
@@ -38,10 +40,6 @@ export function DailyReportClient({ userId }: Props) {
   // Schedule state
   const [scheduleItems, setScheduleItems] = useState<DrScheduleItem[]>([])
   const [schTemplates, setSchTemplates] = useState<DrSchItem[]>([])
-
-  // Completion state
-  const [completionItems, setCompletionItems] = useState<DrCompletionItem[]>([])
-  const [workTemplates, setWorkTemplates] = useState<DrWorkItem[]>([])
 
   // KPI state
   const [kpiDefs, setKpiDefs] = useState<DrKpiDefinition[]>([])
@@ -56,22 +54,18 @@ export function DailyReportClient({ userId }: Props) {
           if (!r.ok) throw new Error(String(r.status))
           return r.json()
         }
-        const [sch, comp, kpi, entries, schT, workT] = await Promise.all([
+        const [sch, kpi, entries, schT] = await Promise.all([
           fetch(`/api/daily-report/schedule?date=${date}`).then(okJson),
-          fetch(`/api/daily-report/completion?date=${date}`).then(okJson),
           fetch(`/api/daily-report/kpi?date=${date}`).then(okJson),
           fetch(`/api/daily-report/kpi-definitions?userId=${userId}`).then(okJson),
           fetch(`/api/daily-report/sch-items`).then(okJson),
-          fetch(`/api/daily-report/work-items`).then(okJson),
         ])
         if (cancelled) return
         setScheduleItems(normalizeScheduleItems(sch.data?.items ?? []))
-        setCompletionItems(comp.data?.items ?? [])
         setKpiEntries(kpi.data ?? [])
         setKpiDrafts({})
         setKpiDefs(entries.data ?? [])
         setSchTemplates(schT.data ?? [])
-        setWorkTemplates(workT.data ?? [])
       } catch {
         if (!cancelled) toast.error(t('loadFailed'))
       }
@@ -117,55 +111,8 @@ export function DailyReportClient({ userId }: Props) {
         body: JSON.stringify({ date, items: scheduleItems }),
       })
       if (!res.ok) throw new Error()
-      // 伺服器會把行程項目同步到完成回報（並可能認領舊項目）。
-      // 衍生（sid）與舊資料以伺服器為準；本地 manual 項目（含尚未儲存的編輯）保留，避免被覆蓋丟失
       const json = await res.json()
       if (json.data?.items) setScheduleItems(normalizeScheduleItems(json.data.items))
-      if (json.completion !== undefined) {
-        const serverItems: DrCompletionItem[] = json.completion?.items ?? []
-        setCompletionItems(prev => [
-          ...serverItems.filter(i => i.sid || !i.manual),
-          ...prev.filter(i => !i.sid && i.manual === true),
-        ])
-      }
-      toast.success(t('saved'))
-    } catch {
-      toast.error(t('saveFailed'))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  // ── Completion ───────────────────────────────────────────────
-  const initCompletionFromWork = () => {
-    // 保留由今日行程同步來的項目（有 sid），只重建手動項目
-    const fromWork = workTemplates.map(w => ({ label: w.label, note: '', done: false, manual: true }))
-    setCompletionItems(prev => [...prev.filter(i => i.sid), ...fromWork])
-  }
-
-  const updateCompletionItem = (idx: number, field: keyof DrCompletionItem, val: string | boolean) =>
-    setCompletionItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item))
-
-  const addCompletionItem = () =>
-    setCompletionItems(prev => [...prev, { label: '', note: '', done: false, manual: true }])
-
-  const removeCompletionItem = (idx: number) =>
-    setCompletionItems(prev => prev.filter((_, i) => i !== idx))
-
-  const saveCompletion = async () => {
-    setSaving(true)
-    try {
-      const res = await fetch('/api/daily-report/completion', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, items: completionItems }),
-      })
-      if (!res.ok) throw new Error()
-      // 伺服器會依 sid 把 done 回寫到今日行程，本地鏡射同一結果讓兩分頁勾選一致
-      setScheduleItems(prev => prev.map(s => {
-        const c = completionItems.find(ci => ci.sid && ci.sid === s.sid)
-        return c && c.done !== s.done ? { ...s, done: c.done === true } : s
-      }))
       toast.success(t('saved'))
     } catch {
       toast.error(t('saveFailed'))
@@ -223,7 +170,6 @@ export function DailyReportClient({ userId }: Props) {
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
     { key: 'schedule', label: t('tabSchedule'), icon: CalendarDays },
-    { key: 'completion', label: t('tabCompletion'), icon: ClipboardList },
     { key: 'kpi', label: t('tabKpi'), icon: BarChart3 },
   ]
 
@@ -326,81 +272,6 @@ export function DailyReportClient({ userId }: Props) {
             <p className="text-xs text-slate-400 dark:text-slate-500 pt-1">{t('scheduleSyncHint')}</p>
             <div className="pt-2">
               <Button onClick={saveSchedule} disabled={saving}>
-                {saving ? t('saving') : t('save')}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Completion tab ───────────────────────────────────── */}
-      {tab === 'completion' && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center justify-between">
-              {t('completionTitle')}
-              <div className="flex gap-2">
-                {workTemplates.length > 0 && (
-                  <Button variant="outline" size="sm" onClick={initCompletionFromWork}>
-                    {t('fromWorkTemplate')}
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={addCompletionItem}>
-                  <Plus size={14} className="mr-1" />{t('add')}
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {completionItems.length === 0 && (
-              <p className="text-sm text-slate-400 py-4 text-center">{t('emptyCompletion')}</p>
-            )}
-            {completionItems.map((item, idx) => (
-              <div key={item.sid ?? `manual-${idx}`} className="flex gap-2 items-center">
-                <button
-                  onClick={() => updateCompletionItem(idx, 'done', !item.done)}
-                  aria-label={t(item.done ? 'markItemUndone' : 'markItemDone')}
-                  className="shrink-0 cursor-pointer text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-                >
-                  {item.done
-                    ? <CheckCircle2 size={20} className="text-green-600 dark:text-green-400" />
-                    : <Circle size={20} />
-                  }
-                </button>
-                {/* 行程衍生項目：名稱由今日行程分頁管理，這裡唯讀，僅可勾選完成與補充備註 */}
-                {item.sid ? (
-                  <div className={`flex-1 flex items-center gap-2 min-w-0 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm ${item.done ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
-                    <span className="truncate">{item.label || t('completionLabelPlaceholder')}</span>
-                    <Badge variant="outline" className="text-xs shrink-0 ml-auto">{t('fromScheduleBadge')}</Badge>
-                  </div>
-                ) : (
-                  <Input
-                    value={item.label}
-                    onChange={e => updateCompletionItem(idx, 'label', e.target.value)}
-                    placeholder={t('completionLabelPlaceholder')}
-                    className={`flex-1 ${item.done ? 'line-through text-slate-400' : ''}`}
-                  />
-                )}
-                <Input
-                  value={item.note}
-                  onChange={e => updateCompletionItem(idx, 'note', e.target.value)}
-                  placeholder={t('completionNotePlaceholder')}
-                  className="flex-1"
-                />
-                {item.sid ? (
-                  <div className="w-8 shrink-0" aria-hidden />
-                ) : (
-                  <Button variant="ghost" size="icon" aria-label={t('removeItem')} onClick={() => removeCompletionItem(idx)} className="text-slate-400 hover:text-red-500 shrink-0">
-                    <Trash2 size={15} />
-                  </Button>
-                )}
-              </div>
-            ))}
-            {completionItems.some(i => i.sid) && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 pt-1">{t('completionDerivedHint')}</p>
-            )}
-            <div className="pt-2">
-              <Button onClick={saveCompletion} disabled={saving}>
                 {saving ? t('saving') : t('save')}
               </Button>
             </div>

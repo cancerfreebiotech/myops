@@ -66,13 +66,13 @@ export async function GET(request: NextRequest) {
   // supabase-js 將 many-to-one 關聯推斷為陣列，runtime 實為單一物件
   const memberRows = (members ?? []) as unknown as MemberRow[]
   const memberIds = memberRows.map(m => m.user_id)
-  if (!memberIds.length) return NextResponse.json({ data: { members: [], schedules: [], completions: [], kpiEntries: [], kpiDefs: [], canSeeKpi } })
+  if (!memberIds.length) return NextResponse.json({ data: { members: [], schedules: [], kpiEntries: [], kpiDefs: [], canSeeKpi } })
 
   // member 請求完全不查 KPI（回應中也不含 KPI 資料）；
-  // 行程與完成回報靠 RLS（viewer / 同群組 groupmate policy）逐列把關。
-  const [schedules, completions, kpiEntries, kpiDefs] = await Promise.all([
+  // 行程靠 RLS（viewer / 同群組 groupmate policy）逐列把關。
+  // 完成狀態直接讀 daily_schedules.items[].done（feedback 00dbbd55 移除完成回報後的單一來源）。
+  const [schedules, kpiEntries, kpiDefs] = await Promise.all([
     service.from('daily_schedules').select('*').in('user_id', memberIds).eq('date', date),
-    service.from('daily_completions').select('*').in('user_id', memberIds).eq('date', date),
     canSeeKpi
       ? service.from('dr_kpi_entries').select('*').in('user_id', memberIds).eq('date', date)
       : Promise.resolve({ data: [] }),
@@ -85,7 +85,6 @@ export async function GET(request: NextRequest) {
     data: {
       members: memberRows.map(m => ({ user_id: m.user_id, ...m.users })),
       schedules: schedules.data ?? [],
-      completions: completions.data ?? [],
       kpiEntries: kpiEntries.data ?? [],
       kpiDefs: kpiDefs.data ?? [],
       canSeeKpi,

@@ -212,7 +212,7 @@ export function ApprovalsClient() {
           <Row
             key={r.id}
             main={<>{r.user?.display_name} — {r.clock_type === 'in' ? t('clockIn') : t('clockOut')}</>}
-            sub={<>{r.clock_date} {new Date(r.clock_time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Taipei' })}　{r.reason}</>}
+            sub={<>{r.clock_date} {new Date(r.clock_time).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Taipei' })}　{r.reason}</>}
             actions={<ApproveRejectButtons
               onApprove={() => act(`/api/attendance/makeup/${r.id}`, { action: 'approve' })}
               onReject={() => rejectWithReason(reason => act(`/api/attendance/makeup/${r.id}`, { action: 'reject', reject_reason: reason }))}

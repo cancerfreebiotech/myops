@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { isValidDateString } from '@/lib/taipei-date'
 import { getFeatureFlags, canAccessFeature } from '@/lib/feature-flags'
-import type { DrCompletionItem, DrScheduleItem } from '@/lib/daily-report/types'
+import type { DrScheduleItem } from '@/lib/daily-report/types'
 
 // 模組關閉時（feature.daily_report off）非 admin 一律擋下，與頁面 canAccessFeature 一致
 async function dailyReportEnabled(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
@@ -36,10 +36,9 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/daily-report/schedule  { date, items }
-// 儲存今日行程，並將行程項目同步到 daily_completions（完成回報）：
-// - 行程項目以 sid 對應完成回報中的衍生項目（label/done 以行程為準，note 保留完成回報側的補充）
-// - 舊資料（完成回報項目無 sid）以 label 認領一次，認領後改由 sid 對應
-// - 行程刪除的項目會移除其衍生的完成回報項目；手動新增（無 sid）的完成回報項目一律保留
+// 儲存今日行程。items[].done 就是完成回報（feedback 00dbbd55 移除了獨立的
+// 「完成回報」分頁與 daily_completions 同步；歷史資料仍留在 daily_completions 表，
+// 只是不再讀寫）。
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -65,50 +64,6 @@ export async function POST(request: NextRequest) {
     done: raw?.done === true,
   }))
 
-  const { data: existingCompletion, error: compReadError } = await supabase
-    .from('daily_completions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('date', date)
-    .maybeSingle()
-  if (compReadError) return NextResponse.json({ error: compReadError.message }, { status: 500 })
-
-  const existingItems: DrCompletionItem[] = Array.isArray(existingCompletion?.items)
-    ? existingCompletion.items
-    : []
-
-  const claimed = new Set<number>()
-  const derived: DrCompletionItem[] = scheduleItems.map((s, idx) => {
-    // 先以 sid 對應；找不到再以 label 認領一個尚無 sid 的舊項目（一次性遷移）
-    let matchIdx = existingItems.findIndex((c, i) => !claimed.has(i) && !!c.sid && c.sid === s.sid)
-    const adoptedLegacy = matchIdx < 0
-    if (matchIdx < 0) {
-      // manual === true 的項目是使用者在完成回報手動新增的，永不認領；
-      // 只認領無任何標記的舊資料（sid 機制上線前的列）
-      matchIdx = existingItems.findIndex(
-        (c, i) => !claimed.has(i) && !c.sid && c.manual !== true && typeof c.label === 'string' && c.label.trim() !== '' && c.label === s.label
-      )
-    }
-    if (matchIdx >= 0) {
-      claimed.add(matchIdx)
-      const c = existingItems[matchIdx]
-      // 舊項目認領時尊重其既有完成狀態（避免重存舊行程把歷史紀錄改回未完成）；之後以行程勾選為準
-      const done = adoptedLegacy ? (s.done === true || c.done === true) : s.done === true
-      scheduleItems[idx] = { ...s, done }
-      return { sid: s.sid, label: s.label, note: typeof c.note === 'string' ? c.note : '', done }
-    }
-    return { sid: s.sid, label: s.label, note: '', done: s.done === true }
-  })
-
-  // 未被認領的手動項目（無 sid）保留；
-  // 被行程刪除的衍生項目：有補充備註者降級為手動項目保留（避免使用者輸入遺失），其餘移除
-  const leftover = existingItems.filter((_, i) => !claimed.has(i))
-  const manual = leftover.filter(c => !c.sid)
-  const demoted = leftover
-    .filter(c => !!c.sid && typeof c.note === 'string' && c.note.trim() !== '')
-    .map(c => ({ label: c.label, note: c.note, done: c.done === true, manual: true }))
-  const mergedCompletionItems = [...derived, ...manual, ...demoted]
-
   const { data, error } = await supabase
     .from('daily_schedules')
     .upsert({ user_id: user.id, date, items: scheduleItems }, { onConflict: 'user_id,date' })
@@ -116,18 +71,5 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // 完成回報無既有列且合併後也沒有任何項目時，不建立空列
-  let completion = existingCompletion ?? null
-  if (existingCompletion || mergedCompletionItems.length > 0) {
-    const { data: compData, error: compError } = await supabase
-      .from('daily_completions')
-      .upsert({ user_id: user.id, date, items: mergedCompletionItems }, { onConflict: 'user_id,date' })
-      .select()
-      .single()
-    if (compError) return NextResponse.json({ error: compError.message }, { status: 500 })
-    completion = compData
-  }
-
-  return NextResponse.json({ data, completion })
+  return NextResponse.json({ data })
 }

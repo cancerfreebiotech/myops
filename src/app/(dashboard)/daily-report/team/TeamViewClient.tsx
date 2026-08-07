@@ -23,8 +23,7 @@ interface MemberData {
 
 interface TeamData {
   members: MemberData[]
-  schedules: { user_id: string; items: { label: string; note: string }[] }[]
-  completions: { user_id: string; items: { label: string; note: string; done: boolean }[] }[]
+  schedules: { user_id: string; items: { label: string; note: string; done?: boolean }[] }[]
   kpiEntries: { user_id: string; kpi_def_id: string; value: number }[]
   kpiDefs: { user_id: string; kpi_id: string; name: string; unit: string; target: number; cat: string }[]
   /** API 依請求者身分決定：admin / 該群組 viewer 為 true，一般 member 為 false（不回傳 KPI） */
@@ -120,12 +119,12 @@ export function TeamViewClient({ groups }: Props) {
 
       {!loading && data && data.members.map(member => {
         const schedule = data.schedules.find(s => s.user_id === member.user_id)
-        const completion = data.completions.find(c => c.user_id === member.user_id)
         const memberKpiDefs = data.kpiDefs.filter(d => d.user_id === member.user_id)
         const memberKpiEntries = data.kpiEntries.filter(e => e.user_id === member.user_id)
 
-        const completionCount = completion?.items.filter(i => i.done).length ?? 0
-        const completionTotal = completion?.items.length ?? 0
+        // 完成統計直接來自今日行程的勾選（feedback 00dbbd55 移除完成回報後的單一來源）
+        const completionCount = schedule?.items.filter(i => i.done === true).length ?? 0
+        const completionTotal = schedule?.items.length ?? 0
 
         return (
           <Card key={member.user_id}>
@@ -153,36 +152,21 @@ export function TeamViewClient({ groups }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Schedule */}
+              {/* Schedule（含完成勾選狀態） */}
               {schedule && schedule.items.length > 0 && (
                 <div>
                   <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t('tabSchedule')}</p>
                   <div className="space-y-1">
                     {schedule.items.map((item, i) => (
-                      <div key={i} className="flex gap-2 text-sm">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium min-w-0 truncate">{item.label}</span>
-                        {item.note && <span className="text-slate-400 min-w-0 truncate">— {item.note}</span>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Completion */}
-              {completion && completion.items.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">{t('tabCompletion')}</p>
-                  <div className="space-y-1">
-                    {completion.items.map((item, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm">
-                        {item.done
+                        {item.done === true
                           ? <CheckCircle2 size={14} className="text-green-600 dark:text-green-400 shrink-0" />
                           : <Circle size={14} className="text-slate-300 dark:text-slate-600 shrink-0" />
                         }
-                        <span className={`min-w-0 truncate ${item.done ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
+                        <span className={`min-w-0 truncate font-medium ${item.done === true ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>
                           {item.label}
                         </span>
-                        {item.note && <span className="text-slate-400 truncate">— {item.note}</span>}
+                        {item.note && <span className="text-slate-400 min-w-0 truncate">— {item.note}</span>}
                       </div>
                     ))}
                   </div>
@@ -209,7 +193,7 @@ export function TeamViewClient({ groups }: Props) {
                 </div>
               )}
 
-              {!schedule?.items.length && !completion?.items.length && memberKpiDefs.length === 0 && (
+              {!schedule?.items.length && memberKpiDefs.length === 0 && (
                 <p className="text-sm text-slate-400">{t('noReport')}</p>
               )}
             </CardContent>

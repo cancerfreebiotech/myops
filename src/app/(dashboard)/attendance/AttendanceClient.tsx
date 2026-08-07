@@ -69,13 +69,17 @@ export function AttendanceClient({ currentUser, isHR, tab, allRecords }: Props) 
   const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()))
   const [filterMonth, setFilterMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'))
   const [makeupOpen, setMakeupOpen] = useState(false)
+  const [pendingMakeupIn, setPendingMakeupIn] = useState(false)
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'getting' | 'ok' | 'denied'>('idle')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
 
   const fetchTodayRecord = useCallback(() => {
     return fetch('/api/attendance/clock')
       .then(res => res.json())
-      .then(({ data }) => { setTodayRecord(data ?? null) })
+      .then(({ data, pending_makeup_in }) => {
+        setTodayRecord(data ?? null)
+        setPendingMakeupIn(pending_makeup_in === true)
+      })
   }, [])
 
   useEffect(() => { fetchTodayRecord() }, [fetchTodayRecord])
@@ -145,7 +149,9 @@ export function AttendanceClient({ currentUser, isHR, tab, allRecords }: Props) 
   }
 
   const canClockIn = !todayRecord?.clock_in
-  const canClockOut = todayRecord?.clock_in && !todayRecord?.clock_out
+  // 沒有上班卡但有 pending 的上班補卡申請時仍可打下班卡（feedback 6e585611），
+  // 補卡核准後會補回同一列的 clock_in
+  const canClockOut = (todayRecord?.clock_in || pendingMakeupIn) && !todayRecord?.clock_out
 
   const now = new Date()
   const years = [String(now.getFullYear()), String(now.getFullYear() - 1)]
@@ -239,6 +245,11 @@ export function AttendanceClient({ currentUser, isHR, tab, allRecords }: Props) 
           </div>
 
           {/* Makeup request */}
+          {!todayRecord?.clock_in && pendingMakeupIn && (
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+              {t('pendingMakeupInHint')}
+            </p>
+          )}
           <div className="text-center">
             <button
               onClick={() => setMakeupOpen(true)}

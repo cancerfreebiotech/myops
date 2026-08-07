@@ -508,11 +508,10 @@ Shows a single project's basic details, member list, and linked overtime request
 
 #### Daily Report — `/daily-report`
 
-Field staff (sales, case managers, etc.) fill in three tabs each day — "Today's Schedule," "Completion Report," and "KPI Values" — replacing a separate standalone reporting site. The "Fill from Template" and "Fill from Task" buttons only appear once template rows already exist in the database — **there is currently no screen anywhere that lets a user create or delete their own templates**, so don't describe how to "create a schedule template" in user-facing material.
+Field staff (sales, case managers, etc.) fill in two tabs each day — "Today's Schedule" and "KPI Values" — replacing a separate standalone reporting site. (The separate "Completion Report" tab duplicated the schedule done-checkmarks and has been removed — feedback 00dbbd55; checking a schedule item off *is* the completion report.) The "Fill from Template" button only appears once template rows already exist in the database — **there is currently no screen anywhere that lets a user create or delete their own templates**, so don't describe how to "create a schedule template" in user-facing material.
 
 - Switch dates with the date picker ("today" is calculated in Taipei time).
-- "Today's Schedule": add, edit, or delete schedule items and check them off — checking one off automatically syncs to the matching item in "Completion Report."
-- "Completion Report": add, edit, or delete manual entries; checking one off writes back to the matching schedule item — the two tabs stay in sync both directions.
+- "Today's Schedule": add, edit, or delete schedule items and check them off as done — once saved, managers see the completion progress in Team View.
 - "KPI": enter values for indicators your manager or HR set up in advance (only active indicators appear); input auto-saves after a 600ms pause, and switching dates before a value saves doesn't lose it — it's saved to the date it was actually typed for.
 - Creating, editing, or disabling KPI indicators isn't done here — that happens on the "Team Overview" page by a group viewer or admin.
 
@@ -532,7 +531,7 @@ View tasks and subtasks assigned by a group viewer or admin; mark a task "pendin
 
 #### Team Overview — `/daily-report/team`
 
-Lets a manager (viewer) or admin review a group's members' daily schedules, completion reports, and KPIs for a chosen date. Regular members can also view — read-only — their groupmates' schedules and completion reports (deliberately, per the code's own comments, so teammates can support each other), but **not** their KPI figures, and this is where KPI indicators themselves get managed.
+Lets a manager (viewer) or admin review a group's members' daily schedules (with completion checkmarks) and KPIs for a chosen date. Regular members can also view — read-only — their groupmates' schedules and completion status (deliberately, per the code's own comments, so teammates can support each other), but **not** their KPI figures, and this is where KPI indicators themselves get managed.
 
 - Pick a group (a dropdown appears if you belong to more than one) and a date, to see every member's schedule and completion checkmarks for that day.
 - Regular members see their groupmates' schedule/completion data, but the KPI section is missing entirely for them — this is enforced by the backend API not returning the data at all, not just hidden in the UI.

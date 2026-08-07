@@ -74,6 +74,10 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
   const [receipts, setReceipts] = useState<{ path: string; name: string }[]>([])
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  // 審批分頁預設只看待處理（pending/approved），可切「全部」看撥付完的歷史（feedback 6e192e66）
+  const [approveFilter, setApproveFilter] = useState<'active' | 'all'>('active')
+  // 正在補充附件的那張單（feedback cc241c8f）
+  const [addingReceiptTo, setAddingReceiptTo] = useState<string | null>(null)
 
   const view = tab === 'approve' ? 'all' : 'mine'
 
@@ -96,23 +100,29 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
     load()
   }, [loadClaims])
 
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    const presignedRes = await fetch('/api/storage/presigned', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bucket: 'expense-receipts', filename: file.name }),
+    })
+    if (!presignedRes.ok) return null
+    const { data: presigned } = await presignedRes.json()
+    const uploadRes = await fetch(presigned.signedUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type },
+    })
+    if (!uploadRes.ok) return null
+    return presigned.path as string
+  }
+
   const uploadReceipt = async (file: File) => {
     setUploading(true)
     try {
-      const presignedRes = await fetch('/api/storage/presigned', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bucket: 'expense-receipts', filename: file.name }),
-      })
-      if (!presignedRes.ok) throw new Error()
-      const { data: presigned } = await presignedRes.json()
-      const uploadRes = await fetch(presigned.signedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: { 'Content-Type': file.type },
-      })
-      if (!uploadRes.ok) throw new Error()
-      setReceipts(prev => [...prev, { path: presigned.path, name: file.name }])
+      const path = await uploadToStorage(file)
+      if (!path) throw new Error()
+      setReceipts(prev => [...prev, { path, name: file.name }])
     } catch {
       toast.error(t('uploadFailed'))
     } finally {
@@ -120,12 +130,32 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
     }
   }
 
-  const submitClaim = async () => {
-    const numAmount = Number(amount)
-    if (!expenseDate || !/^\d{4}-\d{2}$/.test(claimMonth) || !description.trim() || !Number.isFinite(numAmount) || numAmount <= 0) {
-      toast.error(t('requiredFields'))
-      return
+  // 事後補附件（feedback cc241c8f）：核准/撥付後才收到發票也能補上
+  const addReceiptToClaim = async (claimId: string, file: File) => {
+    setAddingReceiptTo(claimId)
+    try {
+      const path = await uploadToStorage(file)
+      if (!path) { toast.error(t('uploadFailed')); return }
+      const res = await fetch(`/api/expenses/${claimId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_receipts', receipt_paths: [path] }),
+      })
+      if (!res.ok) { toast.error(t('saveFailed')); return }
+      toast.success(t('receiptAdded'))
+      await loadClaims()
+    } finally {
+      setAddingReceiptTo(null)
     }
+  }
+
+  const submitClaim = async () => {
+    // 具名的必填提示（feedback eddbc480）：說清楚缺哪一欄，而不是籠統的「請填必填欄位」
+    if (!/^\d{4}-\d{2}$/.test(claimMonth)) { toast.error(t('missingClaimMonth')); return }
+    if (!expenseDate) { toast.error(t('missingExpenseDate')); return }
+    if (!description.trim()) { toast.error(t('missingDescription')); return }
+    const numAmount = Number(amount)
+    if (!Number.isFinite(numAmount) || numAmount <= 0) { toast.error(t('missingAmount')); return }
     setSubmitting(true)
     try {
       const res = await fetch('/api/expenses', {
@@ -194,7 +224,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
     ...(isApprover ? [{ key: 'approve' as Tab, label: t('tabApprove') }] : []),
   ]
 
-  const visibleClaims = tab === 'approve'
+  const visibleClaims = tab === 'approve' && approveFilter === 'active'
     ? claims.filter(c => c.status === 'pending' || c.status === 'approved')
     : claims
 
@@ -252,6 +282,25 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {tab === 'mine' && ['pending', 'approved', 'paid'].includes(c.status) && (
+              <label
+                className={`inline-flex items-center gap-1 px-2 py-1.5 text-xs rounded-lg cursor-pointer text-slate-500 hover:text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${addingReceiptTo === c.id ? 'opacity-50 pointer-events-none' : ''}`}
+              >
+                <Paperclip size={13} />
+                {addingReceiptTo === c.id ? t('submitting') : t('addReceipt')}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
+                  className="hidden"
+                  disabled={addingReceiptTo === c.id}
+                  onChange={e => {
+                    const f = e.target.files?.[0]
+                    if (f) addReceiptToClaim(c.id, f)
+                    e.target.value = ''
+                  }}
+                />
+              </label>
+            )}
             {tab === 'mine' && c.status === 'pending' && (
               <Button variant="ghost" size="icon" onClick={() => cancelClaim(c.id)} className="text-slate-400 hover:text-red-500 h-8 w-8">
                 <Trash2 size={14} />
@@ -316,7 +365,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
             )}
             <div className="flex gap-2 flex-wrap">
               <div>
-                <label className="block text-xs text-slate-500 mb-1">{t('claimMonth')}</label>
+                <label className="block text-xs text-slate-500 mb-1">{t('claimMonth')} <span className="text-red-500">*</span></label>
                 <input
                   type="month"
                   value={claimMonth}
@@ -325,7 +374,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
                 />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">{t('expenseDate')}</label>
+                <label className="block text-xs text-slate-500 mb-1">{t('expenseDate')} <span className="text-red-500">*</span></label>
                 <input
                   type="date"
                   value={expenseDate}
@@ -346,7 +395,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-slate-500 mb-1">{t('amount')}（TWD）</label>
+                <label className="block text-xs text-slate-500 mb-1">{t('amount')}（TWD）<span className="text-red-500">*</span></label>
                 <Input
                   type="number"
                   min="1"
@@ -358,7 +407,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
               </div>
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">{t('descriptionLabel')}</label>
+              <label className="block text-xs text-slate-500 mb-1">{t('descriptionLabel')} <span className="text-red-500">*</span></label>
               <Input
                 value={description}
                 onChange={e => setDescription(e.target.value)}
@@ -366,7 +415,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">{t('invoiceNo')}</label>
+              <label className="block text-xs text-slate-500 mb-1">{t('invoiceNo')}（{t('optional')}）</label>
               <Input
                 value={invoiceNo}
                 onChange={e => setInvoiceNo(e.target.value)}
@@ -375,7 +424,7 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">{t('receipts')}</label>
+              <label className="block text-xs text-slate-500 mb-1">{t('receipts')}（{t('optional')}）</label>
               <div className="flex items-center gap-2 flex-wrap">
                 <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
                   <Paperclip size={14} />
@@ -412,10 +461,27 @@ export function ExpensesClient({ isApprover, prefillTrip }: Props) {
       {/* Claims list */}
       {tab !== 'new' && (
         <div className="space-y-2">
+          {tab === 'approve' && (
+            <div className="flex items-center gap-1">
+              {(['active', 'all'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setApproveFilter(f)}
+                  className={`px-3 py-1 text-xs rounded-full border transition-colors cursor-pointer ${
+                    approveFilter === f
+                      ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300'
+                      : 'border-slate-200 text-slate-500 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {f === 'active' ? t('filterActive') : t('filterAll')}
+                </button>
+              ))}
+            </div>
+          )}
           {loading && <p className="text-sm text-slate-400">…</p>}
           {!loading && visibleClaims.length === 0 && (
             <p className="text-sm text-slate-400 text-center py-8">
-              {tab === 'approve' ? t('noPending') : t('noClaims')}
+              {tab === 'approve' && approveFilter === 'active' ? t('noPending') : t('noClaims')}
             </p>
           )}
           {visibleClaims.map(renderClaim)}
